@@ -7,7 +7,8 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@vueuse/motion/nuxt',
     '@vueuse/nuxt',
-    '@nuxtjs/google-fonts'
+    '@nuxtjs/google-fonts',
+    '@nuxt/eslint'
   ],
   css: ['~/assets/css/tailwind.css'],
   googleFonts: {

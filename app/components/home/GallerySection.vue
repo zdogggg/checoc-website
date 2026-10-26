@@ -2,8 +2,8 @@
   <section class="py-24 bg-[#0D241B] overflow-hidden">
     <div class="container mx-auto px-4 max-w-7xl">
       <div 
-        class="text-center mb-16 flex flex-col items-center"
         v-motion
+        class="text-center mb-16 flex flex-col items-center"
         :initial="{ opacity: 0, y: 30 }"
         :visibleOnce="{ opacity: 1, y: 0, transition: { duration: 800 } }"
       >
@@ -17,8 +17,8 @@
         <div 
           v-for="(image, index) in images" 
           :key="index"
-          class="relative group overflow-hidden rounded-2xl break-inside-avoid"
           v-motion
+          class="relative group overflow-hidden rounded-2xl break-inside-avoid"
           :initial="{ opacity: 0, scale: 0.95 }"
           :visibleOnce="{ opacity: 1, scale: 1, transition: { duration: 600, delay: index * 100 } }"
         >

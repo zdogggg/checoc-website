@@ -52,7 +52,7 @@
 
       <!-- Right Content (Images) -->
       <!-- Right Content (Images) -->
-      <div class="relative min-h-[500px] hidden lg:block" v-motion-fade-visible-once>
+      <div v-motion-fade-visible-once class="relative min-h-[500px] hidden lg:block">
         <!-- Circular Main Image -->
         <div class="absolute right-10 top-0 w-[450px] h-[450px] rounded-full overflow-hidden shadow-2xl">
           <img src="https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=800&auto=format&fit=crop" class="w-full h-full object-cover" alt="Chè Cốc" />

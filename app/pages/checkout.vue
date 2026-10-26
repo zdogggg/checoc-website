@@ -36,8 +36,13 @@
         </div>
       </div>
 
+      <!-- STATE 0: Cart not yet restored from localStorage -->
+      <div v-if="!cartStore.isHydrated" class="py-24 text-center text-gray-500">
+        Đang tải giỏ hàng...
+      </div>
+
       <!-- STATE 1: Empty Cart -->
-      <div v-if="cartStore.items.length === 0 && !isOrderPlaced" class="bg-white rounded-3xl p-10 sm:p-16 text-center max-w-xl mx-auto shadow-sm border border-gray-100">
+      <div v-else-if="cartStore.items.length === 0 && !isOrderPlaced" class="bg-white rounded-3xl p-10 sm:p-16 text-center max-w-xl mx-auto shadow-sm border border-gray-100">
         <div class="w-24 h-24 bg-brand-cream rounded-full flex items-center justify-center mx-auto mb-6 text-4xl shadow-inner">
           🥣
         </div>
@@ -122,8 +127,8 @@
           </div>
           <NuxtLink 
             to="/" 
-            @click="resetOrderState"
             class="bg-brand-dark-green text-brand-cream font-bold px-6 py-3 rounded-full hover:bg-[#1a4132] transition-colors text-xs sm:text-sm shadow-md"
+            @click="resetOrderState"
           >
             Quay về trang chủ
           </NuxtLink>
@@ -254,9 +259,9 @@
                 :class="form.paymentMethod === 'cod' ? 'border-brand-gold bg-brand-cream/50 shadow-sm' : 'border-gray-200 hover:border-gray-300 bg-white'"
               >
                 <input 
+                  v-model="form.paymentMethod" 
                   type="radio" 
                   value="cod" 
-                  v-model="form.paymentMethod" 
                   class="mt-1 w-4 h-4 text-brand-dark-green focus:ring-brand-gold accent-brand-dark-green"
                 />
                 <div class="flex-grow">
@@ -276,9 +281,9 @@
                 :class="form.paymentMethod === 'vietqr' ? 'border-brand-gold bg-brand-cream/50 shadow-sm' : 'border-gray-200 hover:border-gray-300 bg-white'"
               >
                 <input 
+                  v-model="form.paymentMethod" 
                   type="radio" 
                   value="vietqr" 
-                  v-model="form.paymentMethod" 
                   class="mt-1 w-4 h-4 text-brand-dark-green focus:ring-brand-gold accent-brand-dark-green"
                 />
                 <div class="flex-grow">
@@ -321,9 +326,9 @@
                 :class="form.paymentMethod === 'momo' ? 'border-brand-gold bg-brand-cream/50 shadow-sm' : 'border-gray-200 hover:border-gray-300 bg-white'"
               >
                 <input 
+                  v-model="form.paymentMethod" 
                   type="radio" 
                   value="momo" 
-                  v-model="form.paymentMethod" 
                   class="mt-1 w-4 h-4 text-brand-dark-green focus:ring-brand-gold accent-brand-dark-green"
                 />
                 <div class="flex-grow">
@@ -385,8 +390,8 @@
                   class="flex-grow bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs uppercase focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold"
                 />
                 <button 
-                  @click="handleApplyCoupon" 
-                  class="bg-brand-dark-green text-brand-cream px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-[#1a4132] transition-colors shrink-0"
+                  class="bg-brand-dark-green text-brand-cream px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-[#1a4132] transition-colors shrink-0" 
+                  @click="handleApplyCoupon"
                 >
                   Áp dụng
                 </button>
@@ -399,7 +404,7 @@
                   <strong>{{ cartStore.appliedCoupon.code }}:</strong>
                   <span>{{ cartStore.appliedCoupon.description }}</span>
                 </div>
-                <button @click="cartStore.removeCoupon" class="text-green-700 hover:text-red-600 font-bold ml-2">✕</button>
+                <button class="text-green-700 hover:text-red-600 font-bold ml-2" @click="cartStore.removeCoupon">✕</button>
               </div>
 
               <div v-if="couponMessage" class="text-xs mt-1.5" :class="couponMessageSuccess ? 'text-green-600' : 'text-red-500'">
@@ -439,8 +444,8 @@
 
             <!-- Place Order CTA -->
             <button 
-              @click="submitOrder" 
-              class="w-full bg-brand-dark-green text-brand-cream py-4 rounded-2xl font-bold hover:bg-[#1a4132] transition-all transform active:scale-[0.99] shadow-lg flex items-center justify-center gap-2 cursor-pointer text-sm sm:text-base group"
+              class="w-full bg-brand-dark-green text-brand-cream py-4 rounded-2xl font-bold hover:bg-[#1a4132] transition-all transform active:scale-[0.99] shadow-lg flex items-center justify-center gap-2 cursor-pointer text-sm sm:text-base group" 
+              @click="submitOrder"
             >
               <span>Xác nhận đặt hàng</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-1 transition-transform"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -529,7 +534,8 @@ const validate = () => {
     valid = false
   }
 
-  const phoneRegex = /(84|0[3|5|7|8|9])+([0-9]{8})\b/
+  // VN mobile: 0xxxxxxxxx or (+)84xxxxxxxxx, prefixes 3/5/7/8/9
+  const phoneRegex = /^(0|\+?84)[35789]\d{8}$/
   if (!form.phone.trim()) {
     errors.phone = 'Vui lòng nhập số điện thoại nhận hàng'
     valid = false

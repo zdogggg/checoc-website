@@ -3,8 +3,8 @@
     <!-- Overlay -->
     <div 
       v-if="uiStore.isCartDrawerOpen" 
-      @click="uiStore.toggleCartDrawer(false)"
       class="fixed inset-0 bg-brand-dark-green/60 backdrop-blur-sm z-50 transition-opacity duration-300"
+      @click="uiStore.toggleCartDrawer(false)"
     ></div>
 
     <!-- Drawer -->
@@ -24,9 +24,9 @@
           </span>
         </div>
         <button 
-          @click="uiStore.toggleCartDrawer(false)" 
-          class="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-700"
+          class="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-700" 
           title="Đóng"
+          @click="uiStore.toggleCartDrawer(false)"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
@@ -62,8 +62,8 @@
           <p class="text-sm text-gray-500 mb-6 max-w-xs">Hãy khám phá thực đơn chè thanh mát tươi mới của Chè Cốc ngay nhé!</p>
           <NuxtLink 
             to="/products" 
-            @click="uiStore.toggleCartDrawer(false)" 
-            class="bg-brand-dark-green text-brand-cream px-6 py-3 rounded-full text-sm font-bold hover:bg-[#1a4132] transition-colors shadow-md"
+            class="bg-brand-dark-green text-brand-cream px-6 py-3 rounded-full text-sm font-bold hover:bg-[#1a4132] transition-colors shadow-md" 
+            @click="uiStore.toggleCartDrawer(false)"
           >
             Khám phá thực đơn
           </NuxtLink>
@@ -108,8 +108,8 @@
         </div>
 
         <button 
-          @click="proceedToCheckout" 
-          class="w-full bg-brand-dark-green text-brand-cream py-4 rounded-2xl font-bold hover:bg-[#1a4132] transition-all transform active:scale-[0.98] shadow-lg flex justify-center items-center gap-2 group cursor-pointer"
+          class="w-full bg-brand-dark-green text-brand-cream py-4 rounded-2xl font-bold hover:bg-[#1a4132] transition-all transform active:scale-[0.98] shadow-lg flex justify-center items-center gap-2 group cursor-pointer" 
+          @click="proceedToCheckout"
         >
           <span>Tiến hành đặt hàng</span>
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-1 transition-transform"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>

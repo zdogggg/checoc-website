@@ -34,8 +34,8 @@
           </div>
           <button 
             v-if="searchQuery" 
-            @click="searchQuery = ''"
             class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full"
+            @click="searchQuery = ''"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
@@ -62,11 +62,11 @@
           <button 
             v-for="filter in tagFilters"
             :key="filter.value"
-            @click="activeTag = filter.value"
             class="text-xs px-3 py-1.5 rounded-full font-medium transition-all shrink-0 border"
             :class="activeTag === filter.value 
               ? 'bg-brand-peach text-brand-dark-green border-brand-peach font-bold shadow-sm' 
               : 'bg-white/80 text-gray-600 border-gray-200 hover:border-gray-300'"
+            @click="activeTag = filter.value"
           >
             {{ filter.label }}
           </button>

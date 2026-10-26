@@ -1,6 +1,6 @@
 <template>
   <section class="py-20 bg-[#FBF5F1] text-brand-dark-green relative overflow-hidden">
-    <div class="container mx-auto px-6 relative z-10" v-motion-slide-visible-once-bottom>
+    <div v-motion-slide-visible-once-bottom class="container mx-auto px-6 relative z-10">
       
       <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
         <div>

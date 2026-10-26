@@ -2,7 +2,7 @@
   <section class="py-24 bg-brand-dark-green text-brand-white relative overflow-hidden">
     <!-- Decor leaves background could go here -->
     
-    <div class="container mx-auto px-6 relative z-10" v-motion-slide-visible-once-bottom>
+    <div v-motion-slide-visible-once-bottom class="container mx-auto px-6 relative z-10">
       
       <div class="flex justify-between items-end mb-12">
         <div>

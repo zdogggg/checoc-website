@@ -69,7 +69,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </NuxtLink>
 
-      <button class="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors" @click="uiStore.toggleMobileMenu" aria-label="Menu">
+      <button class="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors" aria-label="Menu" @click="uiStore.toggleMobileMenu">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
       </button>
     </div>
@@ -79,12 +79,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { useCartStore } from '~/stores/cart'
 import { useUiStore } from '~/stores/ui'
 import CartButton from '~/components/cart/CartButton.vue'
 
 const route = useRoute()
-const cartStore = useCartStore()
 const uiStore = useUiStore()
 const isScrolled = ref(false)
 

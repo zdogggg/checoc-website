@@ -9,7 +9,7 @@
 
     <div class="container mx-auto px-8 pb-24 md:pb-32 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
       <!-- Left Content -->
-      <div class="text-white" v-motion-fade-visible>
+      <div v-motion-fade-visible class="text-white">
         <div class="inline-block border border-white/30 rounded-full px-4 py-1.5 text-xs font-semibold tracking-widest uppercase mb-6">
           CHÈ CỐC – MÓN NGON MỖI NGÀY
         </div>
@@ -24,7 +24,7 @@
         </p>
         
         <div class="flex flex-col sm:flex-row gap-4 mb-16">
-          <button @click="$emit('explore')" class="bg-[#F6B99F] text-brand-dark-green px-8 py-4 rounded-full font-bold hover:bg-[#f3a886] transition-colors flex items-center justify-center gap-2">
+          <button class="bg-[#F6B99F] text-brand-dark-green px-8 py-4 rounded-full font-bold hover:bg-[#f3a886] transition-colors flex items-center justify-center gap-2" @click="$emit('explore')">
             Khám phá thực đơn
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </button>

@@ -60,9 +60,9 @@
               <button 
                 v-for="(img, idx) in galleryList" 
                 :key="idx"
-                @click="activeImage = img"
                 class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer"
                 :class="activeImage === img ? 'border-brand-gold ring-2 ring-brand-gold/30 scale-[1.02]' : 'border-gray-200 opacity-70 hover:opacity-100'"
+                @click="activeImage = img"
               >
                 <img :src="img" :alt="`${product?.name || 'Chè'} ${idx + 1}`" class="w-full h-full object-cover" />
               </button>
@@ -141,11 +141,11 @@
                     v-for="opt in sugarOptions" 
                     :key="opt.id"
                     type="button"
-                    @click="selectedSugar = opt"
                     class="p-2.5 rounded-xl text-left border transition-all text-xs cursor-pointer flex flex-col justify-center"
                     :class="selectedSugar.id === opt.id 
                       ? 'bg-brand-dark-green text-brand-cream border-brand-dark-green shadow-sm' 
                       : 'bg-white text-gray-700 border-gray-200 hover:border-brand-gold/40 hover:bg-brand-cream/30'"
+                    @click="selectedSugar = opt"
                   >
                     <span class="font-bold">{{ opt.shortLabel }}</span>
                     <span class="text-[10px] opacity-80 mt-0.5 truncate">{{ opt.label.replace(opt.shortLabel, '').trim() || 'Tiêu chuẩn' }}</span>
@@ -166,11 +166,11 @@
                     v-for="opt in iceOptions" 
                     :key="opt.id"
                     type="button"
-                    @click="selectedIce = opt"
                     class="p-2.5 rounded-xl text-left border transition-all text-xs cursor-pointer flex flex-col justify-center"
                     :class="selectedIce.id === opt.id 
                       ? 'bg-brand-dark-green text-brand-cream border-brand-dark-green shadow-sm' 
                       : 'bg-white text-gray-700 border-gray-200 hover:border-brand-gold/40 hover:bg-brand-cream/30'"
+                    @click="selectedIce = opt"
                   >
                     <span class="font-bold">{{ opt.shortLabel }}</span>
                     <span class="text-[10px] opacity-80 mt-0.5 truncate">{{ opt.label.replace(opt.shortLabel, '').trim() || 'Đá chuẩn' }}</span>
@@ -199,9 +199,9 @@
                   >
                     <div class="flex items-center gap-2.5">
                       <input 
+                        v-model="selectedToppings" 
                         type="checkbox" 
-                        :value="top" 
-                        v-model="selectedToppings"
+                        :value="top"
                         class="w-4 h-4 rounded text-brand-dark-green focus:ring-brand-gold accent-brand-dark-green cursor-pointer"
                       />
                       <span>{{ top.name }}</span>
@@ -235,17 +235,17 @@
 
                 <div class="flex items-center gap-3 bg-white border border-gray-200 rounded-full p-1 shadow-sm">
                   <button 
+                    type="button"
+                    class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-brand-dark-green font-bold text-base hover:bg-gray-200 transition-colors" 
                     @click="quantity > 1 ? quantity-- : null"
-                    type="button" 
-                    class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-brand-dark-green font-bold text-base hover:bg-gray-200 transition-colors"
                   >
                     -
                   </button>
                   <span class="font-bold w-6 text-center text-sm">{{ quantity }}</span>
                   <button 
+                    type="button"
+                    class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-brand-dark-green font-bold text-base hover:bg-gray-200 transition-colors" 
                     @click="quantity++"
-                    type="button" 
-                    class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 text-brand-dark-green font-bold text-base hover:bg-gray-200 transition-colors"
                   >
                     +
                   </button>
@@ -256,16 +256,16 @@
             <!-- Action Buttons (Desktop / Tablet) -->
             <div class="mt-auto hidden sm:flex items-center gap-4">
               <button 
-                @click="addToCart" 
-                class="flex-1 bg-brand-dark-green text-brand-cream py-4 px-6 rounded-2xl font-bold hover:bg-[#1a4132] transition-all transform active:scale-[0.99] shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                class="flex-1 bg-brand-dark-green text-brand-cream py-4 px-6 rounded-2xl font-bold hover:bg-[#1a4132] transition-all transform active:scale-[0.99] shadow-lg flex items-center justify-center gap-2 cursor-pointer" 
+                @click="addToCart"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
                 <span>Thêm vào giỏ hàng • {{ (unitPrice * quantity).toLocaleString('vi-VN') }}đ</span>
               </button>
 
               <button 
-                @click="buyNow" 
-                class="bg-brand-peach text-brand-dark-green py-4 px-8 rounded-2xl font-bold hover:bg-[#f3a886] transition-all transform active:scale-[0.99] shadow-md flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                class="bg-brand-peach text-brand-dark-green py-4 px-8 rounded-2xl font-bold hover:bg-[#f3a886] transition-all transform active:scale-[0.99] shadow-md flex items-center justify-center gap-2 cursor-pointer shrink-0" 
+                @click="buyNow"
               >
                 <span>Mua ngay</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -402,21 +402,6 @@
       </div>
     </div>
 
-    <!-- Product Not Found State -->
-    <div v-else class="container mx-auto max-w-lg px-4 text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100 my-10">
-      <div class="w-20 h-20 bg-brand-cream rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-        🥣
-      </div>
-      <h1 class="font-heading text-2xl font-bold text-brand-dark-green mb-2">Không tìm thấy món ăn này</h1>
-      <p class="text-sm text-gray-500 mb-6">Món bạn đang tìm kiếm có thể đã tạm hết hoặc không còn trong thực đơn.</p>
-      <NuxtLink 
-        to="/products" 
-        class="bg-brand-dark-green text-brand-cream font-bold px-6 py-3 rounded-full hover:bg-[#1a4132] transition-colors inline-block text-sm"
-      >
-        Xem toàn bộ thực đơn
-      </NuxtLink>
-    </div>
-
     <!-- Mobile Sticky Floating Order Bar -->
     <div 
       v-if="product" 
@@ -431,14 +416,14 @@
 
       <div class="flex items-center gap-2">
         <button 
-          @click="addToCart" 
-          class="bg-brand-peach text-brand-dark-green font-bold text-xs px-3.5 py-2.5 rounded-xl shadow-sm"
+          class="bg-brand-peach text-brand-dark-green font-bold text-xs px-3.5 py-2.5 rounded-xl shadow-sm" 
+          @click="addToCart"
         >
           Thêm giỏ
         </button>
         <button 
-          @click="buyNow" 
-          class="bg-brand-dark-green text-brand-cream font-bold text-xs px-4 py-2.5 rounded-xl shadow-md"
+          class="bg-brand-dark-green text-brand-cream font-bold text-xs px-4 py-2.5 rounded-xl shadow-md" 
+          @click="buyNow"
         >
           Đặt ngay
         </button>
@@ -471,6 +456,10 @@ const uiStore = useUiStore()
 
 const slug = computed(() => route.params.slug as string)
 const product = computed(() => getProductBySlug(slug.value))
+
+if (!product.value) {
+  throw createError({ statusCode: 404 })
+}
 
 const defaultSugar: CustomOption = sugarOptions[0] ?? {
   id: '100',

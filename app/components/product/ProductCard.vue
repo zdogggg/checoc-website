@@ -42,19 +42,19 @@
 
       <!-- Quick View button (Desktop hover) -->
       <button 
-        @click.stop="openQuickView"
         class="hidden sm:flex absolute bottom-3 right-3 w-9 h-9 bg-white/90 hover:bg-white text-brand-dark-green rounded-full items-center justify-center shadow-md transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-10"
         title="Xem nhanh"
+        @click.stop="openQuickView"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
       </button>
 
       <!-- Favorite button -->
       <button 
-        @click.stop="toggleFavorite"
         class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center transition-all z-10"
         :class="isFavorite ? 'bg-red-50 text-red-500 shadow-sm' : 'bg-black/20 hover:bg-white text-white hover:text-red-500 backdrop-blur-sm'"
         title="Yêu thích"
+        @click.stop="toggleFavorite"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" :fill="isFavorite ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
       </button>
@@ -73,9 +73,9 @@
 
       <!-- Title -->
       <h3 
-        @click="navigateToProduct"
         class="font-heading font-bold text-sm sm:text-base leading-snug mb-1.5 text-brand-dark-green hover:text-brand-gold transition-colors line-clamp-1 cursor-pointer"
         :title="product.name"
+        @click="navigateToProduct"
       >
         {{ product.name }}
       </h3>
@@ -98,8 +98,8 @@
 
         <div class="flex items-center gap-1.5">
           <button 
-            @click="handleAddToCart" 
-            class="flex-grow bg-[#F6B99F] text-brand-dark-green font-bold py-2 sm:py-2.5 px-3 rounded-xl hover:bg-[#f3a886] transition-all transform active:scale-95 text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm"
+            class="flex-grow bg-[#F6B99F] text-brand-dark-green font-bold py-2 sm:py-2.5 px-3 rounded-xl hover:bg-[#f3a886] transition-all transform active:scale-95 text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm" 
+            @click="handleAddToCart"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
             <span>Thêm</span>
@@ -130,8 +130,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'add-to-cart', product: Product): void
-  (e: 'quick-view', product: Product): void
+  (e: 'add-to-cart' | 'quick-view', product: Product): void
 }>()
 
 const router = useRouter()

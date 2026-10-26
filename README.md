@@ -1,75 +1,44 @@
-# Nuxt Minimal Starter
+# Chè Cốc
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Website bán chè & đồ ăn vặt — Nuxt 4, Pinia, Tailwind CSS.
+Lộ trình backend / CRUD / ERP / CRM: [docs/plan-crud-erp-crm.md](docs/plan-crud-erp-crm.md).
 
-## Setup
-
-Make sure to install dependencies:
+## Chạy bằng Docker (khuyên dùng)
 
 ```bash
-# npm
+cp .env.example .env
+docker compose up -d --build
+```
+
+- Website: http://localhost:3005
+- PostgreSQL: `localhost:5433` (user / pass / db: `checoc`)
+
+Sau khi `package.json` thay đổi, phải build lại image **và** làm mới volume `node_modules`
+(nếu không container vẫn dùng bộ package cũ):
+
+```bash
+docker compose up -d --build --renew-anon-volumes
+```
+
+Không chạy `nuxi build` / `nuxi cleanup` trên máy host trong lúc container dev đang chạy —
+thư mục `.nuxt` được dùng chung qua bind mount.
+
+## Chạy trực tiếp trên máy
+
+Cần Node `^22.21` hoặc `>=24.11` (Nuxt 4.6 không chạy dev được với Node 22.14).
+
+```bash
 npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
 npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
-## Production
+## Lệnh hữu ích
 
-Build the application for production:
+| Lệnh | Việc |
+|------|------|
+| `npm run lint` / `npm run lint:fix` | ESLint |
+| `npm run format` | Prettier |
+| `npm test` | Vitest (`tests/`) |
+| `npm run build` | Build production vào `.output/` |
 
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+Image production: `docker build --target prod -t checoc .` rồi `docker run -p 3000:3000 checoc`.

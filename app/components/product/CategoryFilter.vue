@@ -4,11 +4,11 @@
       <button
         v-for="cat in categories"
         :key="cat.id"
-        @click="$emit('select-category', cat.id)"
         class="shrink-0 flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 transform active:scale-95 cursor-pointer border"
         :class="activeCategoryId === cat.id 
           ? 'bg-brand-dark-green text-brand-cream border-brand-dark-green shadow-md scale-[1.02]' 
           : 'bg-white text-gray-700 hover:text-brand-dark-green hover:bg-brand-cream/60 border-gray-200/80 hover:border-brand-gold/40 shadow-sm'"
+        @click="$emit('select-category', cat.id)"
       >
         <span class="text-base sm:text-lg">{{ cat.icon }}</span>
         <span>{{ cat.name }}</span>

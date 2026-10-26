@@ -9,8 +9,9 @@
       <div class="flex flex-col lg:flex-row items-center gap-16">
         
         <!-- Text Content -->
-        <div class="flex-1 lg:pl-10 text-center lg:text-left order-1"
-             v-motion
+        <div
+v-motion
+             class="flex-1 lg:pl-10 text-center lg:text-left order-1"
              :initial="{ opacity: 0, x: -50 }"
              :visibleOnce="{ opacity: 1, x: 0, transition: { duration: 800 } }"
         >
@@ -53,8 +54,9 @@
         </div>
 
         <!-- Huge Image -->
-        <div class="flex-1 relative order-2 mt-12 lg:mt-0"
-             v-motion
+        <div
+v-motion
+             class="flex-1 relative order-2 mt-12 lg:mt-0"
              :initial="{ opacity: 0, scale: 0.8, rotate: -5 }"
              :visibleOnce="{ opacity: 1, scale: 1, rotate: 0, transition: { duration: 1000, type: 'spring' } }"
         >
@@ -68,8 +70,9 @@
           />
           
           <!-- Floating badge -->
-          <div class="absolute right-0 md:-right-4 top-1/4 md:top-1/4 bg-white p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-xl z-20 scale-90 md:scale-100 origin-right"
-               v-motion
+          <div
+v-motion
+               class="absolute right-0 md:-right-4 top-1/4 md:top-1/4 bg-white p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-xl z-20 scale-90 md:scale-100 origin-right"
                :initial="{ y: 0 }"
                :enter="{ y: [-10, 10, -10], transition: { duration: 4000, repeat: Infinity } }"
           >

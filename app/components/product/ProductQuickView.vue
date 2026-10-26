@@ -2,18 +2,18 @@
   <Teleport to="body">
     <div 
       v-if="uiStore.isQuickViewOpen && product" 
-      @click="uiStore.closeQuickView"
       class="fixed inset-0 bg-brand-dark-green/60 backdrop-blur-sm z-[60] transition-opacity flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+      @click="uiStore.closeQuickView"
     >
       <div 
-        @click.stop
         class="bg-brand-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row transform transition-all duration-300 relative max-h-[92vh] border border-brand-gold/20"
+        @click.stop
       >
         <!-- Close button -->
         <button 
-          @click="uiStore.closeQuickView" 
-          class="absolute top-3 right-3 z-30 w-9 h-9 bg-white/90 hover:bg-white backdrop-blur-md rounded-full flex items-center justify-center text-brand-dark-green shadow-sm transition-colors"
+          class="absolute top-3 right-3 z-30 w-9 h-9 bg-white/90 hover:bg-white backdrop-blur-md rounded-full flex items-center justify-center text-brand-dark-green shadow-sm transition-colors" 
           title="Đóng"
+          @click="uiStore.closeQuickView"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
@@ -69,10 +69,10 @@
                 <button 
                   v-for="opt in sugarOptions" 
                   :key="opt.id"
-                  @click="selectedSugar = opt.shortLabel"
                   type="button"
                   class="py-1.5 px-2 rounded-xl text-xs font-medium border text-center transition-all cursor-pointer"
                   :class="selectedSugar === opt.shortLabel ? 'bg-brand-dark-green text-brand-cream border-brand-dark-green shadow-sm' : 'bg-white text-gray-700 border-gray-200 hover:border-brand-gold/40'"
+                  @click="selectedSugar = opt.shortLabel"
                 >
                   {{ opt.shortLabel }}
                 </button>
@@ -88,10 +88,10 @@
                 <button 
                   v-for="opt in iceOptions" 
                   :key="opt.id"
-                  @click="selectedIce = opt.shortLabel"
                   type="button"
                   class="py-1.5 px-2 rounded-xl text-xs font-medium border text-center transition-all cursor-pointer"
                   :class="selectedIce === opt.shortLabel ? 'bg-brand-dark-green text-brand-cream border-brand-dark-green shadow-sm' : 'bg-white text-gray-700 border-gray-200 hover:border-brand-gold/40'"
+                  @click="selectedIce = opt.shortLabel"
                 >
                   {{ opt.shortLabel }}
                 </button>
@@ -112,9 +112,9 @@
                 >
                   <div class="flex items-center gap-2">
                     <input 
+                      v-model="selectedToppings" 
                       type="checkbox" 
-                      :value="top" 
-                      v-model="selectedToppings"
+                      :value="top"
                       class="rounded text-brand-dark-green focus:ring-brand-gold"
                     />
                     <span>{{ top.name }}</span>
@@ -129,15 +129,15 @@
               <span class="text-xs font-bold text-brand-dark-green uppercase tracking-wider">Số lượng</span>
               <div class="flex items-center gap-3 bg-gray-100 rounded-full p-1">
                 <button 
-                  @click="quantity > 1 ? quantity-- : null" 
-                  class="w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-sm text-sm font-bold hover:bg-gray-50 transition-colors"
+                  class="w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-sm text-sm font-bold hover:bg-gray-50 transition-colors" 
+                  @click="quantity > 1 ? quantity-- : null"
                 >
                   -
                 </button>
                 <span class="font-bold w-6 text-center text-sm">{{ quantity }}</span>
                 <button 
-                  @click="quantity++" 
-                  class="w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-sm text-sm font-bold hover:bg-gray-50 transition-colors"
+                  class="w-8 h-8 flex items-center justify-center rounded-full bg-white shadow-sm text-sm font-bold hover:bg-gray-50 transition-colors" 
+                  @click="quantity++"
                 >
                   +
                 </button>
@@ -148,8 +148,8 @@
           <!-- CTAs -->
           <div class="mt-auto space-y-2">
             <button 
-              @click="addToCart" 
-              class="w-full bg-brand-dark-green text-brand-cream py-3.5 rounded-xl font-bold hover:bg-[#1a4132] transition-all transform active:scale-[0.98] shadow-md flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer"
+              class="w-full bg-brand-dark-green text-brand-cream py-3.5 rounded-xl font-bold hover:bg-[#1a4132] transition-all transform active:scale-[0.98] shadow-md flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer" 
+              @click="addToCart"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
               Thêm vào giỏ • {{ (unitPrice * quantity).toLocaleString('vi-VN') }}đ
@@ -158,8 +158,8 @@
             <NuxtLink 
               v-if="product?.slug"
               :to="`/products/${product.slug}`" 
-              @click="uiStore.closeQuickView"
               class="block text-center text-xs text-brand-gold hover:underline py-1 font-semibold"
+              @click="uiStore.closeQuickView"
             >
               Xem trang chi tiết món ăn →
             </NuxtLink>

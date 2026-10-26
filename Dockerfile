@@ -1,19 +1,26 @@
-FROM node:22-alpine
-
+# ---- deps: install node_modules once, shared by the other stages ----
+FROM node:22-alpine AS deps
 WORKDIR /app
-
-# Install dependencies first for better caching
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
-# Copy the rest of the application code
+# ---- dev: used by docker-compose for local development (hot reload) ----
+FROM deps AS dev
 COPY . .
-
-# Expose port
+ENV HOST=0.0.0.0 PORT=3000
 EXPOSE 3000
-
-# Set environment variables
-ENV HOST=0.0.0.0
-ENV PORT=3000
-
 CMD ["npm", "run", "dev"]
+
+# ---- build: produce the standalone Nitro server in .output ----
+FROM deps AS build
+COPY . .
+RUN npm run build
+
+# ---- prod: small runtime image, only .output is needed ----
+FROM node:22-alpine AS prod
+WORKDIR /app
+ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
+COPY --from=build /app/.output ./.output
+USER node
+EXPOSE 3000
+CMD ["node", ".output/server/index.mjs"]

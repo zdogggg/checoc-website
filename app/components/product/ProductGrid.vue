@@ -25,8 +25,8 @@
         Rất tiếc chúng tôi không tìm thấy kết quả phù hợp với tiêu chí tìm kiếm của bạn. Hãy thử từ khóa khác hoặc làm mới bộ lọc.
       </p>
       <button 
-        @click="$emit('reset-filter')" 
-        class="bg-brand-peach text-brand-dark-green font-bold px-6 py-2.5 rounded-full hover:bg-[#f3a886] transition-all text-sm shadow-sm"
+        class="bg-brand-peach text-brand-dark-green font-bold px-6 py-2.5 rounded-full hover:bg-[#f3a886] transition-all text-sm shadow-sm" 
+        @click="$emit('reset-filter')"
       >
         Xem tất cả món
       </button>

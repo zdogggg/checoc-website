@@ -1,20 +1,42 @@
-version: '3.8'
-
 services:
   frontend:
     build:
       context: .
       dockerfile: Dockerfile
+      target: dev
     container_name: checoc_frontend
     ports:
       - "3005:3000"
     volumes:
       - .:/app
       - /app/node_modules
+    env_file:
+      - path: .env
+        required: false
     environment:
       - NODE_ENV=development
-      - HOST=0.0.0.0
-      - PORT=3000
       - CHOKIDAR_USEPOLLING=true # Required for hot-reloading inside Docker on Windows
-    # Fix for file watching issues
-    command: npm run dev
+      - DATABASE_URL=postgres://checoc:checoc@db:5432/checoc
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    container_name: checoc_db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: checoc
+      POSTGRES_PASSWORD: checoc
+      POSTGRES_DB: checoc
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U checoc -d checoc"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  db_data:

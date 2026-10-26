@@ -2,8 +2,8 @@
   <section class="py-24 bg-[#FFFDF8] relative overflow-hidden">
     <!-- Floating leaves decoration -->
     <div 
-      class="absolute top-20 right-20 w-32 h-32 opacity-10 pointer-events-none"
       v-motion
+      class="absolute top-20 right-20 w-32 h-32 opacity-10 pointer-events-none"
       :initial="{ y: 0, rotate: 0 }"
       :enter="{ y: [0, 15, 0], rotate: [0, 5, 0], transition: { duration: 5000, repeat: Infinity } }"
     >
@@ -14,8 +14,8 @@
     
     <div class="container mx-auto px-4 relative z-10 max-w-7xl">
       <div 
-        class="text-center mb-16"
         v-motion
+        class="text-center mb-16"
         :initial="{ opacity: 0, y: 30 }"
         :visibleOnce="{ opacity: 1, y: 0, transition: { duration: 800 } }"
       >
@@ -27,15 +27,15 @@
         <div 
           v-for="(feature, index) in features" 
           :key="index"
-          class="flex flex-col items-center text-center group"
           v-motion
+          class="flex flex-col items-center text-center group"
           :initial="{ opacity: 0, y: 30 }"
           :visibleOnce="{ opacity: 1, y: 0, transition: { duration: 600, delay: index * 150 } }"
         >
           <!-- Icon Circle -->
           <div class="w-24 h-24 rounded-full bg-[#F7F1E5] flex items-center justify-center mb-6 text-[#0D241B] group-hover:-translate-y-2 group-hover:shadow-lg group-hover:bg-[#DDE8D6] transition-all duration-500 ease-out relative">
              <div class="absolute inset-0 rounded-full border border-[#D9A441] opacity-0 group-hover:opacity-30 scale-90 group-hover:scale-110 transition-all duration-500"></div>
-             <div v-html="feature.icon" class="w-10 h-10"></div>
+             <div class="w-10 h-10" v-html="feature.icon"></div>
           </div>
           <h3 class="text-xl font-serif font-semibold text-[#0D241B] mb-3">{{ feature.title }}</h3>
           <p class="text-gray-600 leading-relaxed max-w-xs">{{ feature.desc }}</p>

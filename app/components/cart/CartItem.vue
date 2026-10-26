@@ -8,13 +8,13 @@
     <div class="flex-grow min-w-0 flex flex-col justify-between">
       <div>
         <div class="flex justify-between items-start gap-2">
-          <NuxtLink :to="`/products/${item.slug}`" @click="uiStore.toggleCartDrawer(false)" class="font-bold text-brand-dark-green text-sm sm:text-base hover:text-brand-gold transition-colors line-clamp-1">
+          <NuxtLink :to="`/products/${item.slug}`" class="font-bold text-brand-dark-green text-sm sm:text-base hover:text-brand-gold transition-colors line-clamp-1" @click="uiStore.toggleCartDrawer(false)">
             {{ item.name }}
           </NuxtLink>
           <button 
-            @click="cartStore.removeItem(item.cartKey)" 
-            class="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition-colors shrink-0"
+            class="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition-colors shrink-0" 
             title="Xóa món"
+            @click="cartStore.removeItem(item.cartKey)"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
           </button>
@@ -50,17 +50,17 @@
 
         <div class="flex items-center gap-2 bg-gray-100 rounded-full px-2 py-1">
           <button 
-            @click="cartStore.updateQuantity(item.cartKey, item.quantity - 1)" 
-            class="w-6 h-6 flex items-center justify-center rounded-full bg-white shadow-sm text-xs font-bold text-gray-700 hover:bg-gray-200 transition-colors"
+            class="w-6 h-6 flex items-center justify-center rounded-full bg-white shadow-sm text-xs font-bold text-gray-700 hover:bg-gray-200 transition-colors" 
             title="Giảm"
+            @click="cartStore.updateQuantity(item.cartKey, item.quantity - 1)"
           >
             -
           </button>
           <span class="text-xs font-semibold w-4 text-center text-brand-dark-green">{{ item.quantity }}</span>
           <button 
-            @click="cartStore.updateQuantity(item.cartKey, item.quantity + 1)" 
-            class="w-6 h-6 flex items-center justify-center rounded-full bg-white shadow-sm text-xs font-bold text-gray-700 hover:bg-gray-200 transition-colors"
+            class="w-6 h-6 flex items-center justify-center rounded-full bg-white shadow-sm text-xs font-bold text-gray-700 hover:bg-gray-200 transition-colors" 
             title="Tăng"
+            @click="cartStore.updateQuantity(item.cartKey, item.quantity + 1)"
           >
             +
           </button>

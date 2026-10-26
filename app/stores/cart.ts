@@ -32,8 +32,10 @@ export const useCartStore = defineStore('cart', () => {
   const appliedCoupon = ref<AppliedCoupon | null>(null)
   const isHydrated = ref(false)
 
-  // Hydrate safely from localStorage on client
-  if (typeof window !== 'undefined') {
+  // Load cart from localStorage. Must run after the app is mounted on the client
+  // (see plugins/cart.client.ts) so the first client render matches the SSR HTML.
+  function hydrate() {
+    if (isHydrated.value || typeof window === 'undefined') return
     try {
       const saved = localStorage.getItem('checoc_cart')
       if (saved) {
@@ -166,28 +168,17 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
-  function removeItem(keyOrId: string | number) {
-    items.value = items.value.filter(item => {
-      if (typeof keyOrId === 'number') {
-        return item.id !== keyOrId
-      }
-      return item.cartKey !== keyOrId && String(item.id) !== keyOrId
-    })
+  function removeItem(cartKey: string) {
+    items.value = items.value.filter(item => item.cartKey !== cartKey)
   }
 
-  function updateQuantity(keyOrId: string | number, quantity: number) {
-    const item = items.value.find(item => {
-      if (typeof keyOrId === 'number') {
-        return item.id === keyOrId
-      }
-      return item.cartKey === keyOrId || String(item.id) === keyOrId
-    })
-    if (item) {
-      if (quantity <= 0) {
-        removeItem(keyOrId)
-      } else {
-        item.quantity = quantity
-      }
+  function updateQuantity(cartKey: string, quantity: number) {
+    const item = items.value.find(item => item.cartKey === cartKey)
+    if (!item) return
+    if (quantity <= 0) {
+      removeItem(cartKey)
+    } else {
+      item.quantity = quantity
     }
   }
 
@@ -253,6 +244,7 @@ export const useCartStore = defineStore('cart', () => {
     freeshipThreshold,
     appliedCoupon,
     isHydrated,
+    hydrate,
     addItem,
     removeItem,
     updateQuantity,

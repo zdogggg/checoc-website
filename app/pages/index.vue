@@ -6,7 +6,7 @@
 
     <div id="products-section">
       <CategorySection 
-        :activeCategoryId="activeCategoryId"
+        :active-category-id="activeCategoryId"
         @select="activeCategoryId = $event"
       />
       

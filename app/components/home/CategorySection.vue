@@ -1,6 +1,6 @@
 <template>
   <section class="pb-20 pt-10 bg-brand-white">
-    <div class="container mx-auto px-6" v-motion-slide-visible-once-bottom>
+    <div v-motion-slide-visible-once-bottom class="container mx-auto px-6">
       
       <div class="flex flex-col md:flex-row justify-between md:items-end mb-8 md:mb-12 gap-4">
         <div>
@@ -22,9 +22,9 @@
         <div 
           v-for="cat in categories" 
           :key="cat.id" 
-          @click="$emit('select', cat.id)"
           class="relative flex-shrink-0 cursor-pointer snap-start w-24 h-36 md:w-32 md:h-48 rounded-full overflow-hidden group transition-all duration-500 transform"
           :class="activeCategoryId === cat.id ? '-translate-y-3 shadow-xl ring-2 ring-brand-gold ring-offset-4 ring-offset-brand-white opacity-100' : 'shadow-md opacity-70 hover:opacity-100 hover:-translate-y-1'"
+          @click="$emit('select', cat.id)"
         >
           <!-- Background -->
           <div class="absolute inset-0">
@@ -45,7 +45,8 @@
           </div>
           
           <!-- Active Dot Indicator -->
-          <div class="absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-brand-gold transition-all duration-300"
+          <div
+class="absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-brand-gold transition-all duration-300"
                :class="activeCategoryId === cat.id ? 'opacity-100 scale-100' : 'opacity-0 scale-0'"></div>
         </div>
       </div>
