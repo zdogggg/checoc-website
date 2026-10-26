@@ -73,6 +73,30 @@
             </h2>
 
             <div class="space-y-4">
+              <!-- Signed-in shopper: saved addresses; otherwise an invitation to sign in for points -->
+              <div v-if="account" class="bg-brand-cream/50 rounded-2xl p-3.5 text-xs text-brand-dark-green">
+                <p>
+                  Đã đăng nhập: <strong>{{ account.name || account.phone }}</strong> · {{ account.phone }} ·
+                  <strong>{{ account.points.toLocaleString('vi-VN') }} điểm</strong>
+                </p>
+                <div v-if="account.addresses.length" class="flex flex-wrap gap-2 mt-2">
+                  <button
+                    v-for="a in account.addresses"
+                    :key="a.id"
+                    type="button"
+                    class="px-3 py-1.5 rounded-full border border-brand-gold/40 bg-white hover:border-brand-gold text-left"
+                    @click="useAddress(a)"
+                  >
+                    📍 {{ a.address }}, {{ a.district }}
+                  </button>
+                </div>
+              </div>
+              <p v-else-if="smsReady" class="text-xs text-gray-600 bg-brand-cream/50 rounded-2xl p-3.5">
+                Đã có tài khoản?
+                <NuxtLink to="/account?redirect=/checkout" class="font-bold underline text-brand-dark-green">Đăng nhập bằng số điện thoại</NuxtLink>
+                để điền nhanh địa chỉ và dùng điểm thưởng. Không đăng nhập bạn vẫn được tích điểm theo số điện thoại.
+              </p>
+
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-xs font-bold uppercase tracking-wider text-brand-dark-green mb-1.5">
@@ -317,6 +341,24 @@
               </div>
             </div>
 
+            <!-- Loyalty points -->
+            <div v-if="account && account.points > 0" class="mb-6 pb-6 border-b border-gray-100 text-xs">
+              <label v-if="redeemablePoints > 0 && phoneMatchesAccount" class="flex items-start gap-2.5 cursor-pointer">
+                <input v-model="usePoints" type="checkbox" class="mt-0.5 w-4 h-4 accent-brand-dark-green">
+                <span>
+                  Dùng <strong>{{ redeemablePoints.toLocaleString('vi-VN') }} điểm</strong>
+                  để giảm <strong class="text-red-600">{{ formatVnd(pointsValue(redeemablePoints)) }}</strong>
+                  <span class="block text-gray-500">Bạn đang có {{ account.points.toLocaleString('vi-VN') }} điểm</span>
+                </span>
+              </label>
+              <p v-else-if="!phoneMatchesAccount" class="text-gray-500">
+                Điểm thưởng chỉ dùng được khi đặt bằng số điện thoại của tài khoản ({{ account.phone }}).
+              </p>
+              <p v-else class="text-gray-500">
+                Bạn có {{ account.points.toLocaleString('vi-VN') }} điểm. Cần từ {{ MIN_POINTS_TO_REDEEM }} điểm và đơn đủ lớn để đổi.
+              </p>
+            </div>
+
             <!-- Pricing Breakdown -->
             <div class="space-y-2.5 text-xs text-gray-600 mb-6">
               <div class="flex justify-between">
@@ -339,10 +381,15 @@
                 <span class="font-bold">-{{ cartStore.discountAmount.toLocaleString('vi-VN') }}đ</span>
               </div>
 
+              <div v-if="pointsDiscount > 0" class="flex justify-between text-red-600">
+                <span>Dùng {{ pointsToUse.toLocaleString('vi-VN') }} điểm:</span>
+                <span class="font-bold">-{{ pointsDiscount.toLocaleString('vi-VN') }}đ</span>
+              </div>
+
               <div class="pt-3 border-t border-gray-100 flex items-center justify-between text-brand-dark-green">
                 <span class="font-heading font-bold text-base">Tổng thanh toán:</span>
                 <span class="font-heading font-bold text-2xl text-brand-gold">
-                  {{ cartStore.orderTotal.toLocaleString('vi-VN') }}đ
+                  {{ grandTotal.toLocaleString('vi-VN') }}đ
                 </span>
               </div>
             </div>
@@ -381,6 +428,7 @@ import { useCartStore } from '~/stores/cart'
 import { useUiStore } from '~/stores/ui'
 import { orderInput } from '#shared/schemas/orders'
 import type { PlacedOrder } from '#shared/types/orders'
+import type { CustomerAddressView } from '#shared/types/customers'
 
 useHead({
   title: 'Thanh Toán Đơn Hàng — Chè Cốc',
@@ -395,6 +443,10 @@ const config = useRuntimeConfig()
 
 const bankReady = isBankConfigured(config.public.bank)
 
+const { data: accountData } = await useCustomerAccount()
+const account = computed(() => accountData.value.account)
+const smsReady = computed(() => accountData.value.smsReady)
+
 const form = reactive({
   fullName: '',
   phone: '',
@@ -404,6 +456,29 @@ const form = reactive({
   note: '',
   paymentMethod: (bankReady ? 'vietqr' : 'cod') as 'cod' | 'vietqr'
 })
+
+// Prefill from the signed-in account (most recently used address first)
+const useAddress = (a: CustomerAddressView) => Object.assign(form, { city: a.city, district: a.district, address: a.address })
+watch(
+  account,
+  (a) => {
+    if (!a) return
+    if (!form.fullName) form.fullName = a.name
+    if (!form.phone) form.phone = a.phone
+    if (!form.address && a.addresses[0]) useAddress(a.addresses[0])
+  },
+  { immediate: true }
+)
+
+// Points: the server re-checks all of this; here it only drives the checkbox and the totals
+const usePoints = ref(false)
+const phoneMatchesAccount = computed(() => !!account.value && normalizePhone(form.phone) === account.value.phone)
+const redeemablePoints = computed(() =>
+  account.value ? maxRedeemablePoints(account.value.points, cartStore.subtotal - cartStore.discountAmount) : 0
+)
+const pointsToUse = computed(() => (usePoints.value && phoneMatchesAccount.value ? redeemablePoints.value : 0))
+const pointsDiscount = computed(() => pointsValue(pointsToUse.value))
+const grandTotal = computed(() => Math.max(0, cartStore.orderTotal - pointsDiscount.value))
 
 const errors = reactive({
   fullName: '',
@@ -421,7 +496,7 @@ const handleApplyCoupon = async () => {
   if (isApplyingCoupon.value) return
   couponMessage.value = ''
   isApplyingCoupon.value = true
-  const res = await cartStore.applyCoupon(couponCodeInput.value)
+  const res = await cartStore.applyCoupon(couponCodeInput.value, form.phone)
   isApplyingCoupon.value = false
   couponMessage.value = res.message
   couponMessageSuccess.value = res.success
@@ -438,6 +513,7 @@ const submitError = ref('')
 const buildOrder = () => ({
   ...form,
   couponCode: cartStore.appliedCoupon?.code ?? null,
+  pointsToUse: pointsToUse.value,
   items: cartStore.items.map(item => ({
     productId: item.id,
     quantity: item.quantity,
@@ -470,6 +546,8 @@ const submitOrder = async () => {
     const placed = await $fetch<PlacedOrder>('/api/orders', { method: 'POST', body: result.data })
     uiStore.showToast(`Đặt hàng thành công! Mã đơn: ${placed.code}`)
     await navigateTo({ path: `/orders/${placed.trackingToken}`, query: { new: '1' } })
+    // The balance changed if points were used
+    if (pointsToUse.value) refreshNuxtData('account:me')
     // Cleared after leaving the page, so the empty-cart state never flashes
     cartStore.clearCart()
   } catch (error) {

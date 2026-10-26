@@ -1,13 +1,15 @@
 import { and, eq, isNull, lt, or, sql } from 'drizzle-orm'
 import type { AppliedCoupon } from '#shared/types/catalog'
+import { normalizePhone } from '#shared/utils/orders'
 
 const invalid = (message: string) => createError({ statusCode: 400, statusMessage: 'Invalid coupon', message })
 
 type Db = ReturnType<typeof useDb>
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 
-// Look up a coupon and check it can be used for this subtotal; throws a 400 with a customer-facing message
-export async function findUsableCoupon(db: Db | Tx, code: string, subtotal: number) {
+// Look up a coupon and check it can be used for this subtotal (and phone, for personal coupons);
+// throws a 400 with a customer-facing message
+export async function findUsableCoupon(db: Db | Tx, code: string, subtotal: number, phone?: string | null) {
   const coupon = await db.query.coupons.findFirst({ where: eq(schema.coupons.code, code.trim().toUpperCase()) })
   const now = new Date()
   if (
@@ -21,6 +23,17 @@ export async function findUsableCoupon(db: Db | Tx, code: string, subtotal: numb
   }
   if (subtotal < coupon.minOrder) {
     throw invalid(`Mã chỉ áp dụng cho đơn từ ${coupon.minOrder.toLocaleString('vi-VN')}đ`)
+  }
+  if (coupon.customerId) {
+    const normalized = phone ? normalizePhone(phone) : ''
+    if (!normalized) {
+      throw invalid('Đây là mã dành riêng cho một khách hàng. Vui lòng nhập số điện thoại trước khi áp dụng.')
+    }
+    const owner = await db.query.customers.findFirst({
+      where: eq(schema.customers.id, coupon.customerId),
+      columns: { phone: true },
+    })
+    if (owner?.phone !== normalized) throw invalid('Mã này không áp dụng cho số điện thoại của bạn')
   }
   return coupon
 }

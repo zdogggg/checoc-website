@@ -45,6 +45,7 @@ export interface PricedOrder {
   lines: PricedLine[]
   subtotal: number
   discount: number
+  pointsDiscount: number
   shippingFee: number
   total: number
 }
@@ -98,9 +99,18 @@ export function priceOrderLines(
   })
 }
 
-export function totalsFor(lines: PricedLine[], coupon: AppliedCoupon | null): PricedOrder {
+// pointsDiscount comes from loyalty points (already capped by the caller); it never covers shipping
+export function totalsFor(lines: PricedLine[], coupon: AppliedCoupon | null, pointsDiscount = 0): PricedOrder {
   const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0)
   const discount = couponDiscount(coupon, subtotal)
+  const points = Math.min(pointsDiscount, subtotal - discount)
   const shippingFee = shippingFeeFor(subtotal, coupon)
-  return { lines, subtotal, discount, shippingFee, total: Math.max(0, subtotal - discount + shippingFee) }
+  return {
+    lines,
+    subtotal,
+    discount,
+    pointsDiscount: points,
+    shippingFee,
+    total: Math.max(0, subtotal - discount - points + shippingFee),
+  }
 }

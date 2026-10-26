@@ -15,6 +15,13 @@
       "when": 1793015989741,
       "tag": "0001_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793017650493,
+      "tag": "0002_crm",
+      "breakpoints": true
     }
   ]
 }

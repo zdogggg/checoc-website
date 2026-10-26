@@ -20,7 +20,10 @@ export default defineEventHandler(async (event) => {
         .from(products)
         .where(and(isNull(products.deletedAt), eq(products.isAvailable, false))),
       db.select({ n: count() }).from(categories),
-      db.select({ n: count() }).from(coupons).where(eq(coupons.isActive, true)),
+      db
+      .select({ n: count() })
+      .from(coupons)
+      .where(and(eq(coupons.isActive, true), isNull(coupons.customerId))),
       db
         .select({ orders: count(), revenue: sum(orders.total).mapWith(Number) })
         .from(orders)

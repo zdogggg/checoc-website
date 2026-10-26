@@ -9,6 +9,7 @@ import {
   type OrderStatus,
   type PaymentStatus,
 } from '#shared/utils/orders'
+import { maxRedeemablePoints, MIN_POINTS_TO_REDEEM, pointsValue } from '#shared/utils/loyalty'
 
 const { orders, orderItems, orderStatusLogs, products } = schema
 
@@ -44,6 +45,9 @@ export function toPublicOrder(order: OrderRow & { items: ItemRow[]; logs: LogRow
     shippingFee: order.shippingFee,
     total: order.total,
     couponCode: order.couponCode,
+    pointsUsed: order.pointsUsed,
+    pointsDiscount: order.pointsDiscount,
+    pointsEarned: order.pointsEarned,
     cancelReason: order.cancelReason,
     createdAt: order.createdAt.toISOString(),
     // Staff notes stay internal; the customer only sees when each step happened
@@ -56,6 +60,7 @@ export function toAdminOrder(order: OrderRow & { items: ItemRow[]; logs: LogRow[
     ...toPublicOrder(order),
     id: order.id,
     trackingToken: order.trackingToken,
+    customerId: order.customerId,
     customerPhone: order.customerPhone,
     paidAt: order.paidAt?.toISOString() ?? null,
     completedAt: order.completedAt?.toISOString() ?? null,
@@ -99,7 +104,8 @@ async function loadPricingInputs(productIds: number[]) {
   return { productMap, options }
 }
 
-export async function createOrder(input: OrderInput) {
+// sessionCustomer: the shopper signed in by SMS code, if any (needed to spend points)
+export async function createOrder(input: OrderInput, sessionCustomer?: { id: number; phone: string }) {
   const { productMap, options } = await loadPricingInputs([...new Set(input.items.map((i) => i.productId))])
 
   let lines: PricedLine[]
@@ -116,10 +122,42 @@ export async function createOrder(input: OrderInput) {
     let coupon: Awaited<ReturnType<typeof findUsableCoupon>> | null = null
     if (input.couponCode) {
       const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0)
-      coupon = await findUsableCoupon(tx, input.couponCode, subtotal)
+      coupon = await findUsableCoupon(tx, input.couponCode, subtotal, input.phone)
       await claimCouponUse(tx, coupon.id)
     }
-    const totals = totalsFor(lines, coupon ? toAppliedCoupon(coupon) : null)
+    const applied = coupon ? toAppliedCoupon(coupon) : null
+    const customer = await upsertCustomerForOrder(tx, {
+      phone: input.phone,
+      name: input.fullName,
+      city: input.city,
+      district: input.district,
+      address: input.address,
+    })
+
+    // Spending points: only for the signed-in owner of this phone number, within the limits
+    let pointsUsed = 0
+    if (input.pointsToUse > 0) {
+      if (!sessionCustomer || sessionCustomer.phone !== input.phone) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: 'Forbidden',
+          message: 'Vui lòng đăng nhập bằng đúng số điện thoại đặt hàng để dùng điểm',
+        })
+      }
+      const beforePoints = totalsFor(lines, applied)
+      const max = maxRedeemablePoints(customer.points, beforePoints.subtotal - beforePoints.discount)
+      if (input.pointsToUse > max) {
+        throw createError({
+          statusCode: 409,
+          statusMessage: 'Conflict',
+          message: max
+            ? `Đơn này dùng được tối đa ${max.toLocaleString('vi-VN')} điểm`
+            : `Cần ít nhất ${MIN_POINTS_TO_REDEEM} điểm và đơn đủ lớn để dùng điểm`,
+        })
+      }
+      pointsUsed = input.pointsToUse
+    }
+    const totals = totalsFor(lines, applied, pointsValue(pointsUsed))
 
     const [order] = await tx
       .insert(orders)
@@ -138,8 +176,15 @@ export async function createOrder(input: OrderInput) {
         total: totals.total,
         couponId: coupon?.id ?? null,
         couponCode: coupon?.code ?? null,
+        customerId: customer.id,
+        pointsUsed,
+        pointsDiscount: totals.pointsDiscount,
       })
       .returning()
+
+    if (pointsUsed) {
+      await adjustPoints(tx, customer.id, -pointsUsed, 'order_redeem', { orderId: order!.id })
+    }
 
     await tx.insert(orderItems).values(totals.lines.map((l) => ({ ...l, orderId: order!.id })))
     await tx.insert(orderStatusLogs).values({ orderId: order!.id, toStatus: 'pending', note: 'Khách đặt hàng' })
@@ -165,6 +210,7 @@ export async function changeOrderStatus(id: number, to: OrderStatus, note: strin
     const patch: Partial<typeof orders.$inferInsert> = { status: to }
     if (to === 'completed') {
       patch.completedAt = now
+      patch.pointsEarned = await applyOrderCompletion(tx, order)
       // Cash is collected on delivery
       if (order.paymentMethod === 'cod' && order.paymentStatus === 'unpaid') {
         patch.paymentStatus = 'paid'
@@ -175,6 +221,9 @@ export async function changeOrderStatus(id: number, to: OrderStatus, note: strin
       patch.cancelledAt = now
       patch.cancelReason = note
       if (order.couponId) await releaseCouponUse(tx, order.couponId)
+      if (order.customerId && order.pointsUsed > 0) {
+        await adjustPoints(tx, order.customerId, order.pointsUsed, 'redeem_refund', { orderId: id })
+      }
     }
 
     await tx.update(orders).set(patch).where(eq(orders.id, id))

@@ -8,6 +8,8 @@ import {
   pgSequence,
   pgTable,
   real,
+  date,
+  uniqueIndex,
   serial,
   text,
   timestamp,
@@ -147,8 +149,85 @@ export const coupons = pgTable('coupons', {
   usageLimit: integer('usage_limit'),
   usedCount: integer('used_count').notNull().default(0),
   isActive: boolean('is_active').notNull().default(true),
+  // Personal coupon: only this customer (matched by phone at checkout) can use it
+  customerId: integer('customer_id').references(() => customers.id, { onDelete: 'cascade' }),
   ...timestamps,
 })
+
+// ---------------------------------------------------------------------------
+// CRM: customers are identified by phone number; an account is optional
+// ---------------------------------------------------------------------------
+
+export const customerTier = pgEnum('customer_tier', ['member', 'silver', 'gold'])
+
+export const customers = pgTable('customers', {
+  id: serial('id').primaryKey(),
+  phone: varchar('phone', { length: 20 }).notNull().unique(),
+  name: varchar('name', { length: 120 }).notNull().default(''),
+  email: varchar('email', { length: 255 }),
+  birthday: date('birthday'),
+  tier: customerTier('tier').notNull().default('member'),
+  points: integer('points').notNull().default(0),
+  // Completed orders only
+  totalSpent: integer('total_spent').notNull().default(0),
+  completedOrders: integer('completed_orders').notNull().default(0),
+  // Any order placed, whatever its status
+  lastOrderAt: timestamp('last_order_at', { withTimezone: true }),
+  tags: jsonb('tags').$type<string[]>().notNull().default([]),
+  // Internal note shown on the admin profile
+  note: text('note').notNull().default(''),
+  lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+  ...timestamps,
+}, (t) => [index('customers_last_order_at_idx').on(t.lastOrderAt)])
+
+export const customerAddresses = pgTable('customer_addresses', {
+  id: serial('id').primaryKey(),
+  customerId: integer('customer_id')
+    .notNull()
+    .references(() => customers.id, { onDelete: 'cascade' }),
+  city: varchar('city', { length: 80 }).notNull(),
+  district: varchar('district', { length: 80 }).notNull(),
+  address: varchar('address', { length: 255 }).notNull(),
+  lastUsedAt: timestamp('last_used_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex('customer_addresses_unique').on(t.customerId, t.city, t.district, t.address)])
+
+export const loyaltyReason = pgEnum('loyalty_reason', ['order_earn', 'order_redeem', 'redeem_refund', 'manual'])
+
+// Every change to a customer's points; customers.points is the running balance
+export const loyaltyLedger = pgTable('loyalty_ledger', {
+  id: serial('id').primaryKey(),
+  customerId: integer('customer_id')
+    .notNull()
+    .references(() => customers.id, { onDelete: 'cascade' }),
+  delta: integer('delta').notNull(),
+  balanceAfter: integer('balance_after').notNull(),
+  reason: loyaltyReason('reason').notNull(),
+  orderId: integer('order_id').references(() => orders.id, { onDelete: 'set null' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+  note: varchar('note', { length: 255 }).notNull().default(''),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('loyalty_ledger_customer_idx').on(t.customerId)])
+
+export const customerNotes = pgTable('customer_notes', {
+  id: serial('id').primaryKey(),
+  customerId: integer('customer_id')
+    .notNull()
+    .references(() => customers.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+  content: varchar('content', { length: 1000 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('customer_notes_customer_idx').on(t.customerId)])
+
+// One-time login codes sent by SMS; only a hash is stored
+export const otpCodes = pgTable('otp_codes', {
+  id: serial('id').primaryKey(),
+  phone: varchar('phone', { length: 20 }).notNull(),
+  codeHash: varchar('code_hash', { length: 64 }).notNull(),
+  attempts: integer('attempts').notNull().default(0),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  consumedAt: timestamp('consumed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('otp_codes_phone_idx').on(t.phone)])
 
 // ---------------------------------------------------------------------------
 // Orders
@@ -198,6 +277,11 @@ export const orders = pgTable('orders', {
   total: integer('total').notNull(),
   couponId: integer('coupon_id').references(() => coupons.id, { onDelete: 'set null' }),
   couponCode: varchar('coupon_code', { length: 40 }),
+  customerId: integer('customer_id').references(() => customers.id, { onDelete: 'set null' }),
+  // Loyalty: points spent on this order and the discount they gave, points granted on completion
+  pointsUsed: integer('points_used').notNull().default(0),
+  pointsDiscount: integer('points_discount').notNull().default(0),
+  pointsEarned: integer('points_earned').notNull().default(0),
   cancelReason: varchar('cancel_reason', { length: 255 }),
   paidAt: timestamp('paid_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
@@ -207,6 +291,7 @@ export const orders = pgTable('orders', {
   index('orders_status_idx').on(t.status),
   index('orders_created_at_idx').on(t.createdAt),
   index('orders_customer_phone_idx').on(t.customerPhone),
+  index('orders_customer_id_idx').on(t.customerId),
 ])
 
 export const orderItems = pgTable('order_items', {
@@ -266,9 +351,32 @@ export const optionsRelations = relations(options, ({ one }) => ({
   group: one(optionGroups, { fields: [options.groupId], references: [optionGroups.id] }),
 }))
 
-export const ordersRelations = relations(orders, ({ many }) => ({
+export const ordersRelations = relations(orders, ({ one, many }) => ({
   items: many(orderItems),
   logs: many(orderStatusLogs),
+  customer: one(customers, { fields: [orders.customerId], references: [customers.id] }),
+}))
+
+export const customersRelations = relations(customers, ({ many }) => ({
+  addresses: many(customerAddresses),
+  ledger: many(loyaltyLedger),
+  notes: many(customerNotes),
+  orders: many(orders),
+}))
+
+export const customerAddressesRelations = relations(customerAddresses, ({ one }) => ({
+  customer: one(customers, { fields: [customerAddresses.customerId], references: [customers.id] }),
+}))
+
+export const loyaltyLedgerRelations = relations(loyaltyLedger, ({ one }) => ({
+  customer: one(customers, { fields: [loyaltyLedger.customerId], references: [customers.id] }),
+  order: one(orders, { fields: [loyaltyLedger.orderId], references: [orders.id] }),
+  user: one(users, { fields: [loyaltyLedger.userId], references: [users.id] }),
+}))
+
+export const customerNotesRelations = relations(customerNotes, ({ one }) => ({
+  customer: one(customers, { fields: [customerNotes.customerId], references: [customers.id] }),
+  user: one(users, { fields: [customerNotes.userId], references: [users.id] }),
 }))
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({

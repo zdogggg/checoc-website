@@ -107,4 +107,6 @@ export const loginInput = z.object({
 export const couponValidateInput = z.object({
   code: z.string().trim().min(1, 'Vui lòng nhập mã giảm giá').max(40),
   subtotal: z.coerce.number().int().min(0),
+  // Needed for personal coupons
+  phone: z.string().trim().max(20).nullish(),
 })

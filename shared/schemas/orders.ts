@@ -26,6 +26,8 @@ export const orderInput = z.object({
   note: z.string().trim().max(500).default(''),
   paymentMethod: z.enum(['cod', 'vietqr']),
   couponCode: z.string().trim().max(40).nullish(),
+  // Loyalty points to spend; requires being signed in with the same phone
+  pointsToUse: z.coerce.number().int().min(0).max(1_000_000).default(0),
   items: z.array(orderItemInput).min(1, 'Giỏ hàng đang trống').max(30),
 })
 export type OrderInput = z.infer<typeof orderInput>

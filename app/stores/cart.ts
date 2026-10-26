@@ -174,7 +174,8 @@ export const useCartStore = defineStore('cart', () => {
     appliedCoupon.value = null
   }
 
-  async function applyCoupon(rawCode: string): Promise<{ success: boolean; message: string }> {
+  // phone is needed for personal coupons (sent when the customer already typed it)
+  async function applyCoupon(rawCode: string, phone?: string): Promise<{ success: boolean; message: string }> {
     const code = rawCode.trim().toUpperCase()
     if (!code) {
       return { success: false, message: 'Vui lòng nhập mã giảm giá' }
@@ -186,7 +187,7 @@ export const useCartStore = defineStore('cart', () => {
     try {
       appliedCoupon.value = await $fetch<AppliedCoupon>('/api/coupons/validate', {
         method: 'POST',
-        body: { code, subtotal: subtotal.value }
+        body: { code, subtotal: subtotal.value, phone: phone || undefined }
       })
       return { success: true, message: `Áp dụng mã ${code} thành công!` }
     } catch (error) {

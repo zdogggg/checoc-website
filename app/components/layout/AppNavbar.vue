@@ -15,7 +15,7 @@
     </NuxtLink>
     
     <!-- Links -->
-    <nav class="hidden md:flex gap-8 font-medium text-sm">
+    <nav class="hidden md:flex gap-5 lg:gap-8 font-medium text-sm whitespace-nowrap">
       <NuxtLink 
         to="/" 
         class="transition-colors pb-1 border-b-2"
@@ -54,16 +54,20 @@
     </nav>
     
     <!-- Actions -->
-    <div class="flex items-center gap-3 sm:gap-6">
+    <div class="flex items-center gap-1 sm:gap-2 lg:gap-4 md:ml-4">
       <NuxtLink to="/products" class="hover:text-brand-peach transition-colors p-2 rounded-full hover:bg-white/10" title="Tìm kiếm chè">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
       </NuxtLink>
       
+      <NuxtLink to="/account" class="hover:text-brand-peach transition-colors p-2 rounded-full hover:bg-white/10" title="Tài khoản & điểm thưởng" aria-label="Tài khoản">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </NuxtLink>
+
       <CartButton />
-      
+
       <NuxtLink 
         to="/products"
-        class="hidden md:flex items-center gap-2 bg-[#F6B99F] text-brand-dark-green px-5 py-2.5 rounded-full font-bold text-sm hover:bg-[#f3a886] transition-all transform hover:-translate-y-0.5 shadow-md"
+        class="hidden lg:flex items-center gap-2 whitespace-nowrap bg-[#F6B99F] text-brand-dark-green px-5 py-2.5 rounded-full font-bold text-sm hover:bg-[#f3a886] transition-all transform hover:-translate-y-0.5 shadow-md"
       >
         Đặt hàng ngay
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>

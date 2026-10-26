@@ -15,6 +15,7 @@
     <p class="row"><span>Tạm tính</span><span>{{ formatVnd(order.subtotal) }}</span></p>
     <p class="row"><span>Phí giao</span><span>{{ formatVnd(order.shippingFee) }}</span></p>
     <p v-if="order.discount" class="row"><span>Giảm ({{ order.couponCode }})</span><span>-{{ formatVnd(order.discount) }}</span></p>
+    <p v-if="order.pointsDiscount" class="row"><span>Dùng {{ order.pointsUsed }} điểm</span><span>-{{ formatVnd(order.pointsDiscount) }}</span></p>
     <p class="row big"><span>TỔNG</span><span>{{ formatVnd(order.total) }}</span></p>
     <p class="row"><span>{{ order.paymentMethod === 'cod' ? 'Thu tiền mặt (COD)' : 'Chuyển khoản' }}</span><span>{{ PAYMENT_STATUS_LABELS[order.paymentStatus] }}</span></p>
     <hr>

@@ -98,11 +98,22 @@
             <dt>Giảm giá <span v-if="order.couponCode" class="font-mono">({{ order.couponCode }})</span></dt>
             <dd>-{{ formatVnd(order.discount) }}</dd>
           </div>
+          <div v-if="order.pointsDiscount" class="flex justify-between text-red-600">
+            <dt>Dùng {{ order.pointsUsed.toLocaleString('vi-VN') }} điểm</dt>
+            <dd>-{{ formatVnd(order.pointsDiscount) }}</dd>
+          </div>
           <div class="flex justify-between pt-2 border-t border-gray-100 text-brand-dark-green">
             <dt class="font-heading font-bold text-base">Tổng cộng</dt>
             <dd class="font-heading font-bold text-xl text-brand-gold">{{ formatVnd(order.total) }}</dd>
           </div>
         </dl>
+        <p v-if="order.pointsEarned" class="mt-4 text-sm bg-green-50 text-green-800 rounded-xl px-3 py-2">
+          🎉 Bạn được cộng <strong>{{ order.pointsEarned.toLocaleString('vi-VN') }} điểm</strong> cho đơn này.
+          <NuxtLink to="/account" class="underline">Xem điểm</NuxtLink>
+        </p>
+        <p v-else-if="order.status !== 'cancelled' && order.status !== 'completed'" class="mt-4 text-xs text-gray-500">
+          Điểm thưởng sẽ được cộng theo số điện thoại {{ order.customerPhone }} khi đơn hoàn tất.
+        </p>
       </section>
 
       <!-- Delivery -->

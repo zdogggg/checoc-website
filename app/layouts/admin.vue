@@ -77,6 +77,7 @@ const isNavOpen = ref(false)
 const navItems = [
   { to: '/admin', label: 'Tổng quan', icon: '📊' },
   { to: '/admin/orders', label: 'Đơn hàng', icon: '🧾' },
+  { to: '/admin/customers', label: 'Khách hàng', icon: '👥' },
   { to: '/admin/products', label: 'Món ăn', icon: '🥣' },
   { to: '/admin/categories', label: 'Danh mục', icon: '🗂️' },
   { to: '/admin/options', label: 'Đường · Đá · Topping', icon: '🧊' },

@@ -30,6 +30,7 @@ class="fixed top-0 right-0 h-full w-[80%] max-w-sm bg-brand-white shadow-2xl z-[
         <NuxtLink to="/about" class="font-heading text-2xl text-brand-dark-green hover:text-brand-peach transition-colors" @click="uiStore.toggleMobileMenu">Về chúng tôi</NuxtLink>
         <NuxtLink to="/news" class="font-heading text-2xl text-brand-dark-green hover:text-brand-peach transition-colors" @click="uiStore.toggleMobileMenu">Tin tức</NuxtLink>
         <NuxtLink to="/contact" class="font-heading text-2xl text-brand-dark-green hover:text-brand-peach transition-colors" @click="uiStore.toggleMobileMenu">Liên hệ</NuxtLink>
+        <NuxtLink to="/account" class="font-heading text-2xl text-brand-dark-green hover:text-brand-peach transition-colors" @click="uiStore.toggleMobileMenu">Tài khoản & điểm</NuxtLink>
       </nav>
 
       <div class="p-8 border-t border-gray-100">

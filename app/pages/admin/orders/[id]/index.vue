@@ -50,6 +50,10 @@
               <dt>Giảm giá <span class="font-mono">{{ order.couponCode }}</span></dt>
               <dd class="tabular-nums">-{{ formatVnd(order.discount) }}</dd>
             </div>
+            <div v-if="order.pointsDiscount" class="flex justify-between text-red-600">
+              <dt>Dùng {{ order.pointsUsed.toLocaleString('vi-VN') }} điểm</dt>
+              <dd class="tabular-nums">-{{ formatVnd(order.pointsDiscount) }}</dd>
+            </div>
             <div class="flex justify-between font-bold text-base pt-2 border-t border-gray-100">
               <dt>Tổng thu</dt><dd class="tabular-nums">{{ formatVnd(order.total) }}</dd>
             </div>
@@ -74,7 +78,10 @@
       <div class="space-y-6">
         <section class="admin-card p-6 text-sm space-y-2">
           <h2 class="font-bold mb-2">Khách hàng</h2>
-          <p class="font-semibold">{{ order.customerName }}</p>
+          <p class="font-semibold">
+            {{ order.customerName }}
+            <NuxtLink v-if="order.customerId" :to="`/admin/customers/${order.customerId}`" class="text-xs font-normal underline ml-1">Hồ sơ khách →</NuxtLink>
+          </p>
           <a :href="`tel:${order.customerPhone}`" class="text-brand-dark-green font-mono underline">{{ order.customerPhone }}</a>
           <p class="text-gray-600">{{ order.address }}, {{ order.district }}, {{ order.city }}</p>
           <p v-if="order.note" class="bg-amber-50 text-amber-800 rounded-xl px-3 py-2">"{{ order.note }}"</p>
@@ -84,6 +91,7 @@
         <section class="admin-card p-6 text-sm space-y-3">
           <h2 class="font-bold">Thanh toán</h2>
           <p class="text-gray-600">{{ PAYMENT_METHOD_LABELS[order.paymentMethod] }}</p>
+          <p v-if="order.pointsEarned" class="text-xs text-green-700">Khách đã được cộng {{ order.pointsEarned.toLocaleString('vi-VN') }} điểm.</p>
           <div class="flex items-center gap-2">
             <span class="text-xs font-semibold px-2.5 py-1 rounded-full" :class="PAYMENT_STATUS_BADGE[order.paymentStatus]">{{ PAYMENT_STATUS_LABELS[order.paymentStatus] }}</span>
             <span v-if="order.paidAt" class="text-xs text-gray-500">{{ formatDateTime(order.paidAt) }}</span>
@@ -117,6 +125,7 @@
         <p class="text-sm text-gray-600">
           Khách sẽ thấy lý do này trên trang theo dõi đơn.
           <span v-if="order.couponCode">Lượt dùng mã {{ order.couponCode }} sẽ được trả lại.</span>
+          <span v-if="order.pointsUsed">{{ order.pointsUsed.toLocaleString('vi-VN') }} điểm khách đã dùng sẽ được hoàn lại.</span>
         </p>
         <div class="flex flex-wrap gap-2">
           <button v-for="r in cancelPresets" :key="r" type="button" class="text-xs px-3 py-1.5 rounded-full border border-gray-200 hover:border-brand-gold" @click="cancelReason = r">{{ r }}</button>

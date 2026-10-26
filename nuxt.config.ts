@@ -16,6 +16,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     telegramBotToken: '',
     telegramChatId: '',
+    // SMS provider for customer login codes (see server/utils/sms.ts); empty = not set up
+    smsProvider: '',
     public: {
       siteUrl: '',
       // VietQR transfers; the option is hidden at checkout until all three are set

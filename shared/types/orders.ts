@@ -42,6 +42,10 @@ export interface PublicOrder {
   shippingFee: number
   total: number
   couponCode: string | null
+  pointsUsed: number
+  pointsDiscount: number
+  // Granted when the order is completed
+  pointsEarned: number
   cancelReason: string | null
   createdAt: string
   timeline: OrderTimelineEntry[]
@@ -50,6 +54,7 @@ export interface PublicOrder {
 export interface AdminOrder extends Omit<PublicOrder, 'timeline'> {
   id: number
   trackingToken: string
+  customerId: number | null
   paidAt: string | null
   completedAt: string | null
   cancelledAt: string | null
