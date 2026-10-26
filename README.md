@@ -47,6 +47,7 @@ npm run dev
 | Lệnh | Việc |
 |------|------|
 | `npm run lint` / `npm run lint:fix` | ESLint |
+| `npm run typecheck` | Kiểm tra kiểu TypeScript (chạy trong container: `docker compose exec frontend npm run typecheck`) |
 | `npm run format` | Prettier |
 | `npm test` | Vitest (`tests/`) |
 | `npm run build` | Build production vào `.output/` |
@@ -57,9 +58,21 @@ npm run dev
 ## Cấu trúc backend
 
 - `server/db/schema.ts` — bảng dữ liệu (Drizzle ORM, PostgreSQL); migration trong `server/db/migrations/`
-- `server/api/` — API công khai (`/api/products`, `/api/categories`, `/api/options`, `/api/coupons/validate`)
+- `server/api/` — API công khai (`/api/products`, `/api/categories`, `/api/options`, `/api/coupons/validate`,
+  `/api/orders` đặt hàng, `/api/orders/:token` theo dõi đơn, `/api/orders/lookup` tra cứu bằng mã đơn + SĐT)
 - `server/api/admin/` — API quản trị, cần đăng nhập; chỉ `owner` / `manager` được sửa thực đơn
 - `shared/` — kiểu dữ liệu, Zod schema và hàm tính giá dùng chung cho client và server
+
+## Đơn hàng
+
+- Server tự tính lại toàn bộ giá từ thực đơn hiện tại; client không gửi giá.
+- Mã đơn tuần tự (`CC1001`, ...) để đọc qua điện thoại; khách theo dõi đơn qua link có token ngẫu nhiên.
+- Trạng thái: chờ xác nhận → đã xác nhận → đang chuẩn bị → đang giao → hoàn tất (huỷ được ở mọi bước trước hoàn tất,
+  bắt buộc ghi lý do; huỷ đơn trả lại lượt dùng mã giảm giá). Đơn COD tự chuyển "đã thanh toán" khi hoàn tất.
+- Chuyển khoản VietQR: cấu hình `NUXT_PUBLIC_BANK_*` trong `.env`; quán xác nhận đã nhận tiền thủ công trong trang đơn.
+- Thông báo đơn mới: trang admin tự kiểm tra mỗi 20 giây (badge, tiếng chuông, toast); thêm Telegram nếu cấu hình
+  `NUXT_TELEGRAM_*`.
+- Giờ hiển thị luôn theo múi giờ của quán (Asia/Ho_Chi_Minh).
 
 ## Production
 

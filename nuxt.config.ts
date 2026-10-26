@@ -12,6 +12,20 @@ export default defineNuxtConfig({
     'nuxt-auth-utils'
   ],
   css: ['~/assets/css/tailwind.css'],
+  // Overridden by NUXT_* env vars, e.g. NUXT_TELEGRAM_BOT_TOKEN, NUXT_PUBLIC_BANK_ACCOUNT_NO
+  runtimeConfig: {
+    telegramBotToken: '',
+    telegramChatId: '',
+    public: {
+      siteUrl: '',
+      // VietQR transfers; the option is hidden at checkout until all three are set
+      bank: {
+        bankId: '',
+        accountNo: '',
+        accountName: '',
+      },
+    },
+  },
   googleFonts: {
     families: {
       Inter: [400, 500, 600, 700],

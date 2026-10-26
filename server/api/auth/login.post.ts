@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm'
 import { loginInput } from '#shared/schemas/catalog'
 
 export default defineEventHandler(async (event) => {
+  rateLimit(event, 'login', 10, 15 * 60 * 1000)
   const { email, password } = await readValidated(event, loginInput)
 
   const user = await useDb().query.users.findFirst({ where: eq(schema.users.email, email) })

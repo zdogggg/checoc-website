@@ -18,8 +18,8 @@ const client = postgres(url, { max: 1, onnotice: () => {} })
 const db = drizzle(client, { schema })
 
 async function seedCatalog() {
-  const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.categories)
-  if (count > 0) {
+  const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.categories)
+  if (row && row.count > 0) {
     console.log('• Catalog already present, skipping')
     return
   }

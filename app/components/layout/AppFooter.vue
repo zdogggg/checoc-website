@@ -36,6 +36,7 @@
             <li><NuxtLink to="/about" class="hover:text-brand-peach transition-colors">Về chúng tôi</NuxtLink></li>
             <li><NuxtLink to="/news" class="hover:text-brand-peach transition-colors">Tin tức</NuxtLink></li>
             <li><NuxtLink to="/contact" class="hover:text-brand-peach transition-colors">Liên hệ</NuxtLink></li>
+            <li><NuxtLink to="/orders" class="hover:text-brand-peach transition-colors">Tra cứu đơn hàng</NuxtLink></li>
           </ul>
         </div>
         

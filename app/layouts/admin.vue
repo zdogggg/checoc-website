@@ -32,6 +32,12 @@
         >
           <span class="text-base w-5 text-center" aria-hidden="true">{{ item.icon }}</span>
           {{ item.label }}
+          <span
+            v-if="item.to === '/admin/orders' && pulse?.pending"
+            class="ml-auto min-w-[1.5rem] text-center text-xs font-bold px-1.5 py-0.5 rounded-full bg-brand-gold text-brand-dark-green tabular-nums"
+          >
+            {{ pulse.pending }}
+          </span>
         </NuxtLink>
       </nav>
 
@@ -70,6 +76,7 @@ const isNavOpen = ref(false)
 
 const navItems = [
   { to: '/admin', label: 'Tổng quan', icon: '📊' },
+  { to: '/admin/orders', label: 'Đơn hàng', icon: '🧾' },
   { to: '/admin/products', label: 'Món ăn', icon: '🥣' },
   { to: '/admin/categories', label: 'Danh mục', icon: '🗂️' },
   { to: '/admin/options', label: 'Đường · Đá · Topping', icon: '🧊' },
@@ -86,5 +93,44 @@ async function logout() {
   await navigateTo('/admin/login')
 }
 
-useHead({ titleTemplate: (title) => (title ? `${title} · Quản trị Chè Cốc` : 'Quản trị Chè Cốc') })
+// New-order watch: badge with the pending count, plus a chime and a toast when an order arrives
+const uiStore = useUiStore()
+const { data: pulse, refresh: refreshPulse } = await useFetch<{ pending: number; latestId: number }>('/api/admin/orders/pulse', {
+  key: 'admin:pulse',
+})
+useIntervalFn(refreshPulse, 20_000)
+
+watch(
+  () => pulse.value?.latestId,
+  (latest, previous) => {
+    if (!latest || !previous || latest <= previous) return
+    uiStore.showToast('Có đơn hàng mới!', 'info')
+    playChime()
+  }
+)
+
+function playChime() {
+  try {
+    const ctx = new AudioContext()
+    for (const [i, freq] of [880, 1320].entries()) {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.frequency.value = freq
+      gain.gain.setValueAtTime(0.25, ctx.currentTime + i * 0.18)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.18 + 0.35)
+      osc.connect(gain).connect(ctx.destination)
+      osc.start(ctx.currentTime + i * 0.18)
+      osc.stop(ctx.currentTime + i * 0.18 + 0.4)
+    }
+  } catch {
+    // Audio blocked (no user interaction yet) - the toast and badge still show
+  }
+}
+
+useHead({
+  titleTemplate: (title) => {
+    const base = title ? `${title} · Quản trị Chè Cốc` : 'Quản trị Chè Cốc'
+    return pulse.value?.pending ? `(${pulse.value.pending}) ${base}` : base
+  },
+})
 </script>

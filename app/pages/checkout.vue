@@ -20,15 +20,15 @@
             <span class="hidden sm:inline">1. Chọn món</span>
           </div>
           <div class="flex-grow h-0.5 bg-green-200 mx-2 sm:mx-4"></div>
-          <div class="flex items-center gap-2" :class="isOrderPlaced ? 'text-green-700' : 'text-brand-gold'">
-            <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold" :class="isOrderPlaced ? 'bg-green-100 text-green-700' : 'bg-brand-dark-green text-brand-cream'">
-              {{ isOrderPlaced ? '✓' : '2' }}
+          <div class="flex items-center gap-2 text-brand-gold">
+            <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-brand-dark-green text-brand-cream">
+              2
             </span>
             <span>2. Thông tin & Thanh toán</span>
           </div>
-          <div class="flex-grow h-0.5 mx-2 sm:mx-4" :class="isOrderPlaced ? 'bg-green-200' : 'bg-gray-200'"></div>
-          <div class="flex items-center gap-2" :class="isOrderPlaced ? 'text-brand-gold' : 'text-gray-400'">
-            <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs" :class="isOrderPlaced ? 'bg-brand-dark-green text-brand-cream font-bold' : 'bg-gray-100 text-gray-400'">
+          <div class="flex-grow h-0.5 mx-2 sm:mx-4 bg-gray-200"></div>
+          <div class="flex items-center gap-2 text-gray-400">
+            <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs bg-gray-100 text-gray-400">
               3
             </span>
             <span class="hidden sm:inline">3. Hoàn tất</span>
@@ -42,7 +42,7 @@
       </div>
 
       <!-- STATE 1: Empty Cart -->
-      <div v-else-if="cartStore.items.length === 0 && !isOrderPlaced" class="bg-white rounded-3xl p-10 sm:p-16 text-center max-w-xl mx-auto shadow-sm border border-gray-100">
+      <div v-else-if="cartStore.items.length === 0" class="bg-white rounded-3xl p-10 sm:p-16 text-center max-w-xl mx-auto shadow-sm border border-gray-100">
         <div class="w-24 h-24 bg-brand-cream rounded-full flex items-center justify-center mx-auto mb-6 text-4xl shadow-inner">
           🥣
         </div>
@@ -57,82 +57,6 @@
           Khám phá thực đơn ngay
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
         </NuxtLink>
-      </div>
-
-      <!-- STATE 2: Order Placed Success View -->
-      <div v-else-if="isOrderPlaced" class="bg-white rounded-3xl p-6 sm:p-12 max-w-3xl mx-auto shadow-md border border-brand-gold/20">
-        <div class="text-center mb-8">
-          <div class="w-20 h-20 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-200">
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <span class="text-xs font-bold uppercase tracking-wider text-green-700 bg-green-100 px-3 py-1 rounded-full">
-            Đặt hàng thành công
-          </span>
-          <h2 class="font-heading text-2xl sm:text-4xl font-bold text-brand-dark-green mt-3 mb-2">
-            Cảm ơn bạn đã đặt chè tại Chè Cốc!
-          </h2>
-          <p class="text-gray-600 text-xs sm:text-sm max-w-md mx-auto">
-            Mã đơn hàng: <strong class="text-brand-dark-green font-mono text-base font-bold">{{ placedOrderCode }}</strong>
-          </p>
-        </div>
-
-        <!-- Estimated Timeline -->
-        <div class="bg-brand-cream/50 rounded-2xl p-5 mb-8 border border-brand-gold/15">
-          <h4 class="font-bold text-sm text-brand-dark-green mb-4 flex items-center gap-2">
-            <span>🛵</span> Tiến độ giao hàng ước tính (khoảng 30 phút)
-          </h4>
-          <div class="grid grid-cols-4 text-center text-xs gap-2">
-            <div class="flex flex-col items-center">
-              <span class="w-7 h-7 rounded-full bg-brand-dark-green text-brand-cream flex items-center justify-center text-xs font-bold mb-1 shadow-sm">1</span>
-              <span class="font-bold text-brand-dark-green">Đã nhận đơn</span>
-              <span class="text-[10px] text-gray-400">Vừa xong</span>
-            </div>
-            <div class="flex flex-col items-center">
-              <span class="w-7 h-7 rounded-full bg-brand-gold text-brand-dark-green flex items-center justify-center text-xs font-bold mb-1 animate-pulse shadow-sm">2</span>
-              <span class="font-bold text-brand-gold">Chuẩn bị món</span>
-              <span class="text-[10px] text-gray-500">Đang nấu mới</span>
-            </div>
-            <div class="flex flex-col items-center opacity-60">
-              <span class="w-7 h-7 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-xs font-bold mb-1">3</span>
-              <span class="font-medium text-gray-600">Đang giao</span>
-              <span class="text-[10px] text-gray-400">Shipper nhận</span>
-            </div>
-            <div class="flex flex-col items-center opacity-60">
-              <span class="w-7 h-7 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-xs font-bold mb-1">4</span>
-              <span class="font-medium text-gray-600">Hoàn tất</span>
-              <span class="text-[10px] text-gray-400">Thưởng thức</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Order Summary Recap -->
-        <div class="border border-gray-100 rounded-2xl p-5 mb-8 bg-gray-50/50 text-xs sm:text-sm">
-          <h4 class="font-bold text-brand-dark-green mb-3 pb-2 border-b border-gray-200">
-            Thông tin người nhận
-          </h4>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-gray-600">
-            <div><strong>Người nhận:</strong> {{ form.fullName }}</div>
-            <div><strong>Số điện thoại:</strong> {{ form.phone }}</div>
-            <div class="sm:col-span-2"><strong>Địa chỉ:</strong> {{ form.address }}, {{ form.district }}, {{ form.city }}</div>
-            <div v-if="form.note" class="sm:col-span-2"><strong>Ghi chú:</strong> "{{ form.note }}"</div>
-            <div><strong>Phương thức thanh toán:</strong> {{ paymentMethodLabel(form.paymentMethod) }}</div>
-            <div><strong>Tổng tiền thanh toán:</strong> <span class="font-bold text-brand-gold text-base">{{ placedOrderTotal.toLocaleString('vi-VN') }}đ</span></div>
-          </div>
-        </div>
-
-        <!-- Support Info & Actions -->
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100">
-          <div class="text-xs text-gray-500 text-center sm:text-left">
-            Cần hỗ trợ gấp? Gọi ngay hotline: <strong class="text-brand-dark-green text-sm">1900 8888</strong> (08:00 - 22:30)
-          </div>
-          <NuxtLink 
-            to="/" 
-            class="bg-brand-dark-green text-brand-cream font-bold px-6 py-3 rounded-full hover:bg-[#1a4132] transition-colors text-xs sm:text-sm shadow-md"
-            @click="resetOrderState"
-          >
-            Quay về trang chủ
-          </NuxtLink>
-        </div>
       </div>
 
       <!-- STATE 3: Active Checkout Form & Order Summary -->
@@ -275,8 +199,9 @@
                 </div>
               </label>
 
-              <!-- Method 2: VietQR / Bank Transfer -->
+              <!-- Method 2: VietQR / Bank Transfer (only when the shop bank account is configured) -->
               <label 
+                v-if="bankReady"
                 class="flex items-start gap-3 p-4 rounded-2xl border transition-all cursor-pointer"
                 :class="form.paymentMethod === 'vietqr' ? 'border-brand-gold bg-brand-cream/50 shadow-sm' : 'border-gray-200 hover:border-gray-300 bg-white'"
               >
@@ -300,47 +225,26 @@
                     Quét mã QR tự động điền số tiền và nội dung, xác nhận trong 10 giây qua 30+ ngân hàng.
                   </p>
 
-                  <!-- Dynamic QR Preview Box when selected -->
-                  <div v-if="form.paymentMethod === 'vietqr'" class="mt-4 p-4 bg-white rounded-xl border border-brand-gold/30 flex flex-col sm:flex-row items-center gap-4">
-                    <div class="w-32 h-32 bg-gray-100 rounded-lg p-1.5 shrink-0 border border-gray-200 flex items-center justify-center">
-                      <img 
-                        :src="`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=CHECOC_${cartStore.orderTotal}_${encodeURIComponent(form.fullName || 'KHACH')}`" 
-                        alt="QR Ngân hàng" 
-                        class="w-full h-full object-contain"
-                      />
-                    </div>
-                    <div class="text-xs space-y-1 text-gray-600">
-                      <div>Ngân hàng: <strong class="text-brand-dark-green">MB Bank (Quân Đội)</strong></div>
-                      <div>Số tài khoản: <strong class="text-brand-dark-green font-mono text-sm">8888 6688 9999</strong></div>
-                      <div>Tên thụ hưởng: <strong class="text-brand-dark-green">CHE COC VIET NAM</strong></div>
-                      <div>Số tiền: <strong class="text-brand-gold font-bold text-sm">{{ cartStore.orderTotal.toLocaleString('vi-VN') }}đ</strong></div>
-                      <div>Nội dung CK: <strong class="text-brand-dark-green font-mono bg-yellow-100 px-1 py-0.5 rounded">CHECOC {{ form.phone || 'DONHANG' }}</strong></div>
-                    </div>
-                  </div>
+                  <p v-if="form.paymentMethod === 'vietqr'" class="text-xs text-brand-dark-green mt-2 font-medium">
+                    Mã QR kèm đúng số tiền và nội dung chuyển khoản sẽ hiện ngay sau khi bạn đặt hàng.
+                  </p>
                 </div>
               </label>
 
-              <!-- Method 3: MoMo -->
-              <label 
-                class="flex items-start gap-3 p-4 rounded-2xl border transition-all cursor-pointer"
-                :class="form.paymentMethod === 'momo' ? 'border-brand-gold bg-brand-cream/50 shadow-sm' : 'border-gray-200 hover:border-gray-300 bg-white'"
-              >
-                <input 
-                  v-model="form.paymentMethod" 
-                  type="radio" 
-                  value="momo" 
-                  class="mt-1 w-4 h-4 text-brand-dark-green focus:ring-brand-gold accent-brand-dark-green"
-                />
+              <!-- Method 3: MoMo (integration planned, not available yet) -->
+              <div class="flex items-start gap-3 p-4 rounded-2xl border border-gray-200 bg-gray-50 opacity-70" aria-disabled="true">
+                <input type="radio" disabled class="mt-1 w-4 h-4" />
                 <div class="flex-grow">
                   <div class="flex items-center gap-2 font-bold text-sm text-brand-dark-green">
                     <span class="w-5 h-5 rounded-md bg-[#A50064] text-white flex items-center justify-center text-[10px] font-bold">M</span>
                     <span>Ví điện tử MoMo</span>
+                    <span class="text-[10px] bg-gray-200 text-gray-600 font-bold px-2 py-0.5 rounded-full">Sắp có</span>
                   </div>
                   <p class="text-xs text-gray-500 mt-1">
                     Thanh toán tiện lợi qua ứng dụng MoMo trên điện thoại.
                   </p>
                 </div>
-              </label>
+              </div>
             </div>
           </div>
         </div>
@@ -368,7 +272,7 @@
                       {{ item.options.sugar }} • {{ item.options.ice }}
                     </div>
                     <div v-if="item.options.toppings?.length" class="text-[10px] text-brand-gold truncate">
-                      +{{ item.options.toppings.map((t: any) => t.name).join(', ') }}
+                      +{{ item.options.toppings.map(t => t.name).join(', ') }}
                     </div>
                   </div>
                 </div>
@@ -444,11 +348,15 @@
             </div>
 
             <!-- Place Order CTA -->
+            <p v-if="submitError" class="text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2 mb-3">
+              {{ submitError }}
+            </p>
             <button 
-              class="w-full bg-brand-dark-green text-brand-cream py-4 rounded-2xl font-bold hover:bg-[#1a4132] transition-all transform active:scale-[0.99] shadow-lg flex items-center justify-center gap-2 cursor-pointer text-sm sm:text-base group" 
+              class="w-full bg-brand-dark-green text-brand-cream py-4 rounded-2xl font-bold hover:bg-[#1a4132] transition-all transform active:scale-[0.99] shadow-lg flex items-center justify-center gap-2 cursor-pointer text-sm sm:text-base group disabled:opacity-60 disabled:cursor-wait" 
+              :disabled="isSubmitting"
               @click="submitOrder"
             >
-              <span>Xác nhận đặt hàng</span>
+              <span>{{ isSubmitting ? 'Đang gửi đơn...' : 'Xác nhận đặt hàng' }}</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-1 transition-transform"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
             </button>
 
@@ -471,6 +379,8 @@
 import { ref, reactive } from 'vue'
 import { useCartStore } from '~/stores/cart'
 import { useUiStore } from '~/stores/ui'
+import { orderInput } from '#shared/schemas/orders'
+import type { PlacedOrder } from '#shared/types/orders'
 
 useHead({
   title: 'Thanh Toán Đơn Hàng — Chè Cốc',
@@ -481,10 +391,9 @@ useHead({
 
 const cartStore = useCartStore()
 const uiStore = useUiStore()
+const config = useRuntimeConfig()
 
-const isOrderPlaced = ref(false)
-const placedOrderCode = ref('')
-const placedOrderTotal = ref(0)
+const bankReady = isBankConfigured(config.public.bank)
 
 const form = reactive({
   fullName: '',
@@ -493,7 +402,7 @@ const form = reactive({
   district: 'Cầu Giấy',
   address: '',
   note: '',
-  paymentMethod: 'vietqr'
+  paymentMethod: (bankReady ? 'vietqr' : 'cod') as 'cod' | 'vietqr'
 })
 
 const errors = reactive({
@@ -522,69 +431,56 @@ const handleApplyCoupon = async () => {
   }
 }
 
-const paymentMethodLabel = (val: string) => {
-  if (val === 'cod') return 'Tiền mặt khi nhận hàng (COD)'
-  if (val === 'vietqr') return 'Chuyển khoản VietQR MB Bank'
-  if (val === 'momo') return 'Ví điện tử MoMo'
-  return val
+const isSubmitting = ref(false)
+const submitError = ref('')
+
+// Prices are not sent: the server prices every line from the current menu
+const buildOrder = () => ({
+  ...form,
+  couponCode: cartStore.appliedCoupon?.code ?? null,
+  items: cartStore.items.map(item => ({
+    productId: item.id,
+    quantity: item.quantity,
+    sugar: item.options.sugar,
+    ice: item.options.ice,
+    toppings: item.options.toppings.map(t => t.name),
+    note: item.options.note ?? ''
+  }))
+})
+
+const showFieldErrors = (fieldErrors: FieldErrors) => {
+  errors.fullName = fieldErrors.fullName ?? ''
+  errors.phone = fieldErrors.phone ?? ''
+  errors.address = fieldErrors.address ?? ''
 }
 
-const validate = () => {
-  let valid = true
-  errors.fullName = ''
-  errors.phone = ''
-  errors.address = ''
+const submitOrder = async () => {
+  if (isSubmitting.value) return
+  submitError.value = ''
 
-  if (!form.fullName.trim()) {
-    errors.fullName = 'Vui lòng nhập họ và tên của bạn'
-    valid = false
-  }
-
-  // VN mobile: 0xxxxxxxxx or (+)84xxxxxxxxx, prefixes 3/5/7/8/9
-  const phoneRegex = /^(0|\+?84)[35789]\d{8}$/
-  if (!form.phone.trim()) {
-    errors.phone = 'Vui lòng nhập số điện thoại nhận hàng'
-    valid = false
-  } else if (!phoneRegex.test(form.phone.trim().replace(/\s+/g, ''))) {
-    errors.phone = 'Số điện thoại chưa đúng định dạng (VD: 0988123456)'
-    valid = false
-  }
-
-  if (!form.address.trim()) {
-    errors.address = 'Vui lòng cung cấp địa chỉ số nhà/tòa nhà chi tiết'
-    valid = false
-  }
-
-  return valid
-}
-
-const submitOrder = () => {
-  if (!validate()) {
+  const result = validateForm(orderInput, buildOrder())
+  showFieldErrors(result.errors ?? {})
+  if (!result.data) {
     uiStore.showToast('Vui lòng kiểm tra lại thông tin nhận hàng', 'warning')
     return
   }
 
-  // Generate random order ID
-  const randomNum = Math.floor(10000 + Math.random() * 90000)
-  placedOrderCode.value = `CC-${randomNum}`
-  placedOrderTotal.value = cartStore.orderTotal
-
-  // Set order placed state
-  isOrderPlaced.value = true
-  uiStore.showToast(`Đặt hàng thành công! Mã đơn: ${placedOrderCode.value}`)
-
-  // Clear cart
-  cartStore.clearCart()
-
-  // Scroll to top
-  if (typeof window !== 'undefined') {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+  isSubmitting.value = true
+  try {
+    const placed = await $fetch<PlacedOrder>('/api/orders', { method: 'POST', body: result.data })
+    uiStore.showToast(`Đặt hàng thành công! Mã đơn: ${placed.code}`)
+    await navigateTo({ path: `/orders/${placed.trackingToken}`, query: { new: '1' } })
+    // Cleared after leaving the page, so the empty-cart state never flashes
+    cartStore.clearCart()
+  } catch (error) {
+    showFieldErrors(apiFieldErrors(error))
+    submitError.value = apiErrorMessage(error, 'Không gửi được đơn hàng, vui lòng thử lại')
+    // The coupon was rejected (expired, used up, minimum not met): drop it so the totals are honest
+    if (apiStatus(error) === 400 && cartStore.appliedCoupon) {
+      cartStore.removeCoupon()
+    }
+  } finally {
+    isSubmitting.value = false
   }
-}
-
-const resetOrderState = () => {
-  isOrderPlaced.value = false
-  placedOrderCode.value = ''
-  placedOrderTotal.value = 0
 }
 </script>

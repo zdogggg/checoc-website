@@ -137,7 +137,7 @@ const canEdit = useCanEditCatalog()
 const uiStore = useUiStore()
 const { data: coupons, refresh } = await useFetch<AdminCoupon[]>('/api/admin/coupons', { default: () => [] })
 
-const dateFmt = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short' })
+const dateFmt = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: SHOP_TIME_ZONE })
 
 function benefit(c: AdminCoupon) {
   if (c.type === 'free_shipping') return 'Miễn phí ship'

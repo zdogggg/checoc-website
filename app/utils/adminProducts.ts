@@ -10,10 +10,6 @@ export const BADGE_LABELS: Record<ProductBadge, string> = {
   new: '✨ Món mới',
 }
 
-export function formatVnd(value: number): string {
-  return `${value.toLocaleString('vi-VN')}đ`
-}
-
 // API product -> body accepted by PUT /api/admin/products/:id
 export function toProductInput(p: Product & { sortOrder?: number }): ProductInput {
   return {

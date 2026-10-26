@@ -18,3 +18,7 @@ export function couponDiscount(coupon: AppliedCoupon | null, subtotal: number): 
   if (coupon.maxDiscount != null) discount = Math.min(discount, coupon.maxDiscount)
   return Math.min(discount, subtotal)
 }
+
+export function formatVnd(value: number): string {
+  return `${value.toLocaleString('vi-VN')}đ`
+}

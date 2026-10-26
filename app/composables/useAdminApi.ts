@@ -1,11 +1,17 @@
+import type { NitroFetchOptions } from 'nitropack'
+
+// Nitro's typed-route inference over every admin URL overflows the type checker,
+// so the admin client calls $fetch through a plain signature
+const untypedFetch = $fetch as unknown as <T>(url: string, options?: NitroFetchOptions<string>) => Promise<T>
+
 // $fetch for the admin API: a 401 (expired session) sends the user back to the login page
 export function useAdminApi() {
   const route = useRoute()
   const { clear } = useUserSession()
 
-  return async function adminFetch<T>(url: string, options: Parameters<typeof $fetch>[1] = {}): Promise<T> {
+  return async function adminFetch<T>(url: string, options: NitroFetchOptions<string> = {}): Promise<T> {
     try {
-      return (await $fetch(url, options)) as T
+      return await untypedFetch<T>(url, options)
     } catch (error) {
       if (apiStatus(error) === 401) {
         await clear()

@@ -1,9 +1,11 @@
-import { relations } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import {
   boolean,
+  index,
   integer,
   jsonb,
   pgEnum,
+  pgSequence,
   pgTable,
   real,
   serial,
@@ -149,6 +151,97 @@ export const coupons = pgTable('coupons', {
 })
 
 // ---------------------------------------------------------------------------
+// Orders
+// ---------------------------------------------------------------------------
+
+// Order status and payment status are separate on purpose (see the website plan)
+export const orderStatus = pgEnum('order_status', [
+  'pending',
+  'confirmed',
+  'preparing',
+  'shipping',
+  'completed',
+  'cancelled',
+])
+export const paymentStatus = pgEnum('payment_status', ['unpaid', 'paid', 'refunded'])
+export const paymentMethod = pgEnum('payment_method', ['cod', 'vietqr'])
+
+// Human-friendly order codes: CC1001, CC1002, ...
+export const orderCodeSeq = pgSequence('order_code_seq', { startWith: 1001 })
+
+export interface OrderItemTopping {
+  name: string
+  price: number
+}
+
+export const orders = pgTable('orders', {
+  id: serial('id').primaryKey(),
+  code: varchar('code', { length: 20 })
+    .notNull()
+    .unique()
+    .default(sql`'CC' || nextval('order_code_seq')`),
+  // Unguessable id for the customer's tracking link (the code is sequential)
+  trackingToken: varchar('tracking_token', { length: 32 }).notNull().unique(),
+  status: orderStatus('status').notNull().default('pending'),
+  paymentStatus: paymentStatus('payment_status').notNull().default('unpaid'),
+  paymentMethod: paymentMethod('payment_method').notNull(),
+  // Delivery details are a snapshot taken at checkout
+  customerName: varchar('customer_name', { length: 120 }).notNull(),
+  customerPhone: varchar('customer_phone', { length: 20 }).notNull(),
+  city: varchar('city', { length: 80 }).notNull(),
+  district: varchar('district', { length: 80 }).notNull(),
+  address: varchar('address', { length: 255 }).notNull(),
+  note: varchar('note', { length: 500 }).notNull().default(''),
+  subtotal: integer('subtotal').notNull(),
+  discount: integer('discount').notNull().default(0),
+  shippingFee: integer('shipping_fee').notNull().default(0),
+  total: integer('total').notNull(),
+  couponId: integer('coupon_id').references(() => coupons.id, { onDelete: 'set null' }),
+  couponCode: varchar('coupon_code', { length: 40 }),
+  cancelReason: varchar('cancel_reason', { length: 255 }),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+  ...timestamps,
+}, (t) => [
+  index('orders_status_idx').on(t.status),
+  index('orders_created_at_idx').on(t.createdAt),
+  index('orders_customer_phone_idx').on(t.customerPhone),
+])
+
+export const orderItems = pgTable('order_items', {
+  id: serial('id').primaryKey(),
+  orderId: integer('order_id')
+    .notNull()
+    .references(() => orders.id, { onDelete: 'cascade' }),
+  productId: integer('product_id').references(() => products.id, { onDelete: 'set null' }),
+  // Snapshots, so the order stays correct after the menu changes
+  productName: varchar('product_name', { length: 160 }).notNull(),
+  productImage: text('product_image').notNull().default(''),
+  basePrice: integer('base_price').notNull(),
+  unitPrice: integer('unit_price').notNull(),
+  quantity: integer('quantity').notNull(),
+  lineTotal: integer('line_total').notNull(),
+  sugar: varchar('sugar', { length: 60 }).notNull().default(''),
+  ice: varchar('ice', { length: 60 }).notNull().default(''),
+  toppings: jsonb('toppings').$type<OrderItemTopping[]>().notNull().default([]),
+  note: varchar('note', { length: 200 }).notNull().default(''),
+}, (t) => [index('order_items_order_id_idx').on(t.orderId)])
+
+export const orderStatusLogs = pgTable('order_status_logs', {
+  id: serial('id').primaryKey(),
+  orderId: integer('order_id')
+    .notNull()
+    .references(() => orders.id, { onDelete: 'cascade' }),
+  fromStatus: orderStatus('from_status'),
+  toStatus: orderStatus('to_status').notNull(),
+  // null = placed by the customer
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+  note: varchar('note', { length: 255 }).notNull().default(''),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('order_status_logs_order_id_idx').on(t.orderId)])
+
+// ---------------------------------------------------------------------------
 // Relations
 // ---------------------------------------------------------------------------
 
@@ -171,4 +264,18 @@ export const optionGroupsRelations = relations(optionGroups, ({ many }) => ({
 
 export const optionsRelations = relations(options, ({ one }) => ({
   group: one(optionGroups, { fields: [options.groupId], references: [optionGroups.id] }),
+}))
+
+export const ordersRelations = relations(orders, ({ many }) => ({
+  items: many(orderItems),
+  logs: many(orderStatusLogs),
+}))
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, { fields: [orderItems.orderId], references: [orders.id] }),
+}))
+
+export const orderStatusLogsRelations = relations(orderStatusLogs, ({ one }) => ({
+  order: one(orders, { fields: [orderStatusLogs.orderId], references: [orders.id] }),
+  user: one(users, { fields: [orderStatusLogs.userId], references: [users.id] }),
 }))
