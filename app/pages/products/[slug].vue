@@ -435,16 +435,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { 
-  getProductBySlug, 
-  getRelatedProducts, 
-  sugarOptions, 
-  iceOptions, 
-  extraToppings, 
-  mockProductReviews,
-  type CustomOption,
-  type ToppingOption
-} from '~/utils/mockData'
+import type { CustomOption, ToppingOption } from '#shared/types/catalog'
+import { sampleReviews } from '~/utils/sampleReviews'
 import { useCartStore } from '~/stores/cart'
 import { useUiStore } from '~/stores/ui'
 import ProductCard from '~/components/product/ProductCard.vue'
@@ -455,24 +447,24 @@ const cartStore = useCartStore()
 const uiStore = useUiStore()
 
 const slug = computed(() => route.params.slug as string)
-const product = computed(() => getProductBySlug(slug.value))
+const [{ data: detail, error }, { data: productOptions }] = await Promise.all([
+  useProductDetail(slug),
+  useProductOptions()
+])
 
-if (!product.value) {
-  throw createError({ statusCode: 404 })
+if (error.value || !detail.value) {
+  throw createError({ statusCode: error.value?.statusCode ?? 404, fatal: true })
 }
 
-const defaultSugar: CustomOption = sugarOptions[0] ?? {
-  id: '100',
-  label: '100% Đường tiêu chuẩn (Chuẩn vị quán)',
-  shortLabel: '100% đường',
-  default: true
-}
-const defaultIce: CustomOption = iceOptions[0] ?? {
-  id: '100',
-  label: 'Đá riêng mát lạnh (Khuyên dùng)',
-  shortLabel: 'Đá riêng',
-  default: true
-}
+const product = computed(() => detail.value?.product)
+const sugarOptions = computed(() => productOptions.value.sugar)
+const iceOptions = computed(() => productOptions.value.ice)
+const extraToppings = computed(() => productOptions.value.toppings)
+
+const pickDefault = (list: CustomOption[], fallback: string): CustomOption =>
+  list.find(o => o.default) ?? list[0] ?? { id: fallback, label: fallback, shortLabel: fallback }
+const defaultSugar = pickDefault(sugarOptions.value, '100% đường')
+const defaultIce = pickDefault(iceOptions.value, 'Đá riêng')
 
 const activeImage = ref('')
 const quantity = ref(1)
@@ -520,7 +512,7 @@ const unitPrice = computed(() => {
 
 const currentReviews = computed(() => {
   if (!product.value) return []
-  const reviews = mockProductReviews[product.value.slug]
+  const reviews = sampleReviews[product.value.slug]
   if (reviews?.length) return reviews
   return [
     {
@@ -544,7 +536,7 @@ const currentReviews = computed(() => {
 
 const relatedProducts = computed(() => {
   if (!product.value) return []
-  return getRelatedProducts(product.value.id, product.value.categoryId, 4)
+  return detail.value?.related ?? []
 })
 
 const addToCart = () => {

@@ -1,4 +1,7 @@
-export interface Product {
+// Initial catalog, imported by server/db/seed.ts. Originally the storefront mock data.
+import type { Nutrition } from './schema'
+
+interface SeedProduct {
   id: number
   slug: string
   name: string
@@ -15,46 +18,20 @@ export interface Product {
   reviewCount: number
   toppings: string[]
   ingredients: string[]
-  nutrition: {
-    calories: string
-    sugar: string
-    fat: string
-    serving: string
-  }
+  nutrition: Nutrition
   prepTime: string
   isAvailable: boolean
 }
 
-export interface Category {
-  id: number
-  name: string
-  icon: string
-  slug: string
-}
-
-export interface CustomOption {
+interface SeedOption {
   id: string
   label: string
   shortLabel: string
   default?: boolean
 }
 
-export interface ToppingOption {
-  id: string
-  name: string
-  price: number
-}
-
-export interface ProductReview {
-  id: number
-  author: string
-  avatar: string
-  rating: number
-  date: string
-  comment: string
-}
-
-export const mockCategories: Category[] = [
+// id 1 was the virtual "all" category in the mock data; the seed skips it
+export const seedCategories = [
   { id: 1, name: 'Tất cả món', icon: '🥣', slug: 'all' },
   { id: 2, name: 'Chè truyền thống', icon: '🫘', slug: 'che-truyen-thong' },
   { id: 3, name: 'Chè trái cây', icon: '🥭', slug: 'che-trai-cay' },
@@ -64,7 +41,7 @@ export const mockCategories: Category[] = [
   { id: 7, name: 'Đồ ăn vặt', icon: '🍢', slug: 'do-an-vat' }
 ]
 
-export const sugarOptions: CustomOption[] = [
+export const seedSugar: SeedOption[] = [
   { id: '100', label: '100% Đường tiêu chuẩn (Chuẩn vị quán)', shortLabel: '100% đường', default: true },
   { id: '70', label: '70% Ít ngọt vừa phải', shortLabel: '70% đường' },
   { id: '50', label: '50% Ngọt thanh tự nhiên', shortLabel: '50% đường' },
@@ -72,7 +49,7 @@ export const sugarOptions: CustomOption[] = [
   { id: '0', label: '0% Không thêm đường', shortLabel: 'Không đường' }
 ]
 
-export const iceOptions: CustomOption[] = [
+export const seedIce: SeedOption[] = [
   { id: '100', label: 'Đá riêng mát lạnh (Khuyên dùng)', shortLabel: 'Đá riêng', default: true },
   { id: '70', label: '70% Vừa đá (Đá chung)', shortLabel: '70% đá' },
   { id: '30', label: '30% Ít đá', shortLabel: 'Ít đá' },
@@ -80,7 +57,7 @@ export const iceOptions: CustomOption[] = [
   { id: 'hot', label: 'Ăn nóng ấm bụng', shortLabel: 'Chè nóng' }
 ]
 
-export const extraToppings: ToppingOption[] = [
+export const seedToppings = [
   { id: 'top_1', name: 'Trân châu trắng giòn 3Q', price: 5000 },
   { id: 'top_2', name: 'Dừa non Bến Tre nạo sợi', price: 5000 },
   { id: 'top_3', name: 'Hạt sen Huế bùi thơm', price: 8000 },
@@ -90,7 +67,7 @@ export const extraToppings: ToppingOption[] = [
   { id: 'top_7', name: 'Hạnh nhân lát sấy giòn', price: 6000 }
 ]
 
-export const mockProducts: Product[] = [
+export const seedProducts: SeedProduct[] = [
   {
     id: 1,
     slug: 'che-thap-cam',
@@ -424,63 +401,3 @@ export const mockProducts: Product[] = [
     isAvailable: true
   }
 ]
-
-export const mockProductReviews: Record<string, ProductReview[]> = {
-  'che-thap-cam': [
-    {
-      id: 1,
-      author: 'Nguyễn Thu Trang',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop',
-      rating: 5,
-      date: 'Hôm qua',
-      comment: 'Chè giao tới vẫn lạnh buốt, đá để riêng rất chu đáo! Cốt dừa béo thơm ngậy không bị ngọt gắt, topping đậu và trân châu nhiều ú ụ ăn no luôn.'
-    },
-    {
-      id: 2,
-      author: 'Trần Minh Hoàng',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop',
-      rating: 5,
-      date: '3 ngày trước',
-      comment: 'Vị chè truyền thống rất đúng điệu tuổi thơ, cùi bưởi giòn sần sật không hề có vị đắng. Mình chọn 70% đường ăn vừa miệng cực kỳ.'
-    },
-    {
-      id: 3,
-      author: 'Lê Hoàng Yến',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop',
-      rating: 4,
-      date: 'Tuần trước',
-      comment: 'Cốc to, đóng gói sạch sẽ có màng bọc chống tràn cẩn thận. Lần sau sẽ thử thêm chè Thái sầu riêng.'
-    }
-  ],
-  'che-thai-sau-rieng': [
-    {
-      id: 4,
-      author: 'Vũ Hải Đăng',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop',
-      rating: 5,
-      date: '2 ngày trước',
-      comment: 'Sầu riêng tươi thật chứ không phải siro hay hương liệu! Cơm sầu béo ngậy nguyên múi to đùng, mít giòn ngọt ăn sướng tê người.'
-    },
-    {
-      id: 5,
-      author: 'Đỗ Phương Linh',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=150&auto=format&fit=crop',
-      rating: 5,
-      date: '4 ngày trước',
-      comment: 'Món tủ của mình ở Chè Cốc! Đặt qua app giao trong 20 phút là tới nơi rồi, bao bì sang chảnh.'
-    }
-  ]
-}
-
-export function getProductBySlug(slug: string): Product | undefined {
-  return mockProducts.find(p => p.slug === slug)
-}
-
-export function getRelatedProducts(currentId: number, categoryId: number, limit = 4): Product[] {
-  const sameCategory = mockProducts.filter(p => p.categoryId === categoryId && p.id !== currentId)
-  if (sameCategory.length >= limit) {
-    return sameCategory.slice(0, limit)
-  }
-  const other = mockProducts.filter(p => p.id !== currentId && p.categoryId !== categoryId)
-  return [...sameCategory, ...other].slice(0, limit)
-}

@@ -8,7 +8,8 @@ export default defineNuxtConfig({
     '@vueuse/motion/nuxt',
     '@vueuse/nuxt',
     '@nuxtjs/google-fonts',
-    '@nuxt/eslint'
+    '@nuxt/eslint',
+    'nuxt-auth-utils'
   ],
   css: ['~/assets/css/tailwind.css'],
   googleFonts: {

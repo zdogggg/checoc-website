@@ -16,3 +16,40 @@
     @apply bg-[var(--color-cream)] text-[var(--color-dark-green)] font-sans antialiased;
   }
 }
+
+/* Admin area building blocks */
+@layer components {
+  .admin-input {
+    @apply w-full bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-brand-dark-green placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-gold focus:border-transparent;
+  }
+  .admin-label {
+    @apply block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1.5;
+  }
+  .admin-error {
+    @apply text-xs text-red-600 mt-1;
+  }
+  .admin-card {
+    @apply bg-white rounded-2xl border border-gray-100 shadow-sm;
+  }
+  .admin-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+  .admin-btn-primary {
+    @apply admin-btn bg-brand-dark-green text-brand-cream hover:bg-[#1a4132];
+  }
+  .admin-btn-secondary {
+    @apply admin-btn bg-white text-brand-dark-green border border-gray-200 hover:border-brand-gold;
+  }
+  .admin-btn-danger {
+    @apply admin-btn bg-white text-red-600 border border-red-200 hover:bg-red-50;
+  }
+  .admin-table {
+    @apply w-full text-sm;
+  }
+  .admin-table th {
+    @apply text-left text-xs font-semibold uppercase tracking-wide text-gray-500 px-4 py-3 bg-gray-50/80 whitespace-nowrap;
+  }
+  .admin-table td {
+    @apply px-4 py-3 border-t border-gray-100 align-middle;
+  }
+}

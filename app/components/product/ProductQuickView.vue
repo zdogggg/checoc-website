@@ -174,15 +174,22 @@
 import { ref, computed, watch } from 'vue'
 import { useUiStore } from '~/stores/ui'
 import { useCartStore } from '~/stores/cart'
-import { sugarOptions, iceOptions, extraToppings, type ToppingOption } from '~/utils/mockData'
+import type { ToppingOption } from '#shared/types/catalog'
 
 const uiStore = useUiStore()
 const cartStore = useCartStore()
 
+const { data: productOptions } = await useProductOptions()
+const sugarOptions = computed(() => productOptions.value.sugar)
+const iceOptions = computed(() => productOptions.value.ice)
+const extraToppings = computed(() => productOptions.value.toppings)
+const defaultSugar = () => (sugarOptions.value.find(o => o.default) ?? sugarOptions.value[0])?.shortLabel ?? '100% đường'
+const defaultIce = () => (iceOptions.value.find(o => o.default) ?? iceOptions.value[0])?.shortLabel ?? 'Đá riêng'
+
 const product = computed(() => uiStore.selectedProduct)
 const quantity = ref(1)
-const selectedSugar = ref('100% đường')
-const selectedIce = ref('Đá riêng')
+const selectedSugar = ref(defaultSugar())
+const selectedIce = ref(defaultIce())
 const selectedToppings = ref<ToppingOption[]>([])
 
 const isToppingSelected = (name: string) => {
@@ -198,8 +205,8 @@ const unitPrice = computed(() => {
 watch(() => uiStore.isQuickViewOpen, (isOpen) => {
   if (isOpen) {
     quantity.value = 1
-    selectedSugar.value = '100% đường'
-    selectedIce.value = 'Đá riêng'
+    selectedSugar.value = defaultSugar()
+    selectedIce.value = defaultIce()
     selectedToppings.value = []
   }
 })

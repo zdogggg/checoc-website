@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Category, Product } from '~/utils/mockData'
+import { ALL_CATEGORY_ID, type Category, type Product } from '#shared/types/catalog'
 
 const props = defineProps<{
   categories: Category[]
@@ -38,7 +38,7 @@ defineEmits<{
 }>()
 
 const getCount = (categoryId: number) => {
-  if (categoryId === 1) return props.products.length
+  if (categoryId === ALL_CATEGORY_ID) return props.products.length
   return props.products.filter(p => p.categoryId === categoryId).length
 }
 </script>

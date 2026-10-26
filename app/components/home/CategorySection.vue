@@ -28,10 +28,10 @@
         >
           <!-- Background -->
           <div class="absolute inset-0">
-            <div v-if="cat.id === 1" class="w-full h-full bg-brand-dark-green flex items-center justify-center pb-8">
+            <div v-if="cat.id === ALL_CATEGORY_ID" class="w-full h-full bg-brand-dark-green flex items-center justify-center pb-8">
               <span class="text-4xl">🌿</span>
             </div>
-            <img v-else src="https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=300&auto=format&fit=crop" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+            <img v-else :src="cat.image || 'https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=300&auto=format&fit=crop'" :alt="cat.name" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
           </div>
           
           <!-- Gradient Overlay -->
@@ -55,7 +55,7 @@ class="absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-b
 </template>
 
 <script setup lang="ts">
-import { mockCategories } from '~/utils/mockData'
+import { ALL_CATEGORY_ID } from '#shared/types/catalog'
 
 defineProps({
   activeCategoryId: {
@@ -66,7 +66,7 @@ defineProps({
 
 defineEmits(['select'])
 
-const categories = mockCategories
+const categories = await useCategoryFilters()
 </script>
 
 <style scoped>

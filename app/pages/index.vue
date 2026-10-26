@@ -2,7 +2,7 @@
   <div>
     <HeroSection @explore="scrollToProducts" />
     
-    <BestSellerHighlight @add-to-cart="handleAddToCart(mockProducts[0])" />
+    <BestSellerHighlight v-if="bestSeller" @add-to-cart="handleAddToCart(bestSeller)" />
 
     <div id="products-section">
       <CategorySection 
@@ -39,18 +39,22 @@ import WhyChooseUs from '~/components/home/WhyChooseUs.vue'
 import GallerySection from '~/components/home/GallerySection.vue'
 import ReviewSection from '~/components/home/ReviewSection.vue'
 import OrderCTA from '~/components/home/OrderCTA.vue'
-import { mockProducts } from '~/utils/mockData'
+import { ALL_CATEGORY_ID, type Product } from '#shared/types/catalog'
 import { useCartStore } from '~/stores/cart'
 import { useUiStore } from '~/stores/ui'
 
 const cartStore = useCartStore()
 const uiStore = useUiStore()
 
-const activeCategoryId = ref(1) // 1 is 'Tất cả'
+const { data: products } = await useProducts()
+
+const activeCategoryId = ref(ALL_CATEGORY_ID)
+
+const bestSeller = computed(() => products.value.find(p => p.badge === 'best-seller') ?? products.value[0])
 
 const filteredProducts = computed(() => {
-  if (activeCategoryId.value === 1) return mockProducts
-  return mockProducts.filter(p => p.categoryId === activeCategoryId.value)
+  if (activeCategoryId.value === ALL_CATEGORY_ID) return products.value
+  return products.value.filter(p => p.categoryId === activeCategoryId.value)
 })
 
 const scrollToProducts = () => {
@@ -60,7 +64,7 @@ const scrollToProducts = () => {
   }
 }
 
-const handleAddToCart = (product: any) => {
+const handleAddToCart = (product: Product) => {
   cartStore.addItem(product)
   uiStore.isCartDrawerOpen = true
   uiStore.showToast(`Đã thêm 1 ${product.name} vào giỏ hàng!`)

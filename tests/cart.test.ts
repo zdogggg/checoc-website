@@ -1,13 +1,25 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useCartStore } from '~/stores/cart'
+import type { AppliedCoupon } from '#shared/types/catalog'
 
 const che = { id: 1, slug: 'che-thai', name: 'Chè Thái', price: 35000, image: '' }
 const banhFlan = { id: 2, slug: 'banh-flan', name: 'Bánh flan', price: 20000, image: '' }
 
+const coupon = (c: Partial<AppliedCoupon> & Pick<AppliedCoupon, 'code' | 'type' | 'discount'>): AppliedCoupon => ({
+  description: '',
+  minOrder: 0,
+  maxDiscount: null,
+  ...c,
+})
+
 describe('cart store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   it('merges identical items and keeps different toppings as separate lines', () => {
@@ -51,20 +63,49 @@ describe('cart store', () => {
     expect(cart.orderTotal).toBe(110000)
   })
 
-  it('applies percent, fixed and free-ship coupons', () => {
+  it('applies percent, fixed and free-ship coupons returned by the API', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('$fetch', fetchMock)
     const cart = useCartStore()
     cart.addItem(che, 2) // 70.000 + 15.000 ship
 
-    expect(cart.applyCoupon('checoc10').success).toBe(true)
+    fetchMock.mockResolvedValueOnce(coupon({ code: 'CHECOC10', type: 'percent', discount: 10 }))
+    expect((await cart.applyCoupon('checoc10')).success).toBe(true)
+    expect(fetchMock).toHaveBeenCalledWith('/api/coupons/validate', {
+      method: 'POST',
+      body: { code: 'CHECOC10', subtotal: 70000 },
+    })
     expect(cart.discountAmount).toBe(7000)
 
-    cart.applyCoupon('CHAOHE')
+    fetchMock.mockResolvedValueOnce(coupon({ code: 'CHAOHE', type: 'fixed', discount: 20000 }))
+    await cart.applyCoupon('CHAOHE')
     expect(cart.discountAmount).toBe(20000)
 
-    cart.applyCoupon('FREESHIP')
+    fetchMock.mockResolvedValueOnce(coupon({ code: 'FREESHIP', type: 'free_shipping', discount: 0 }))
+    await cart.applyCoupon('FREESHIP')
     expect(cart.shippingFee).toBe(0)
     expect(cart.orderTotal).toBe(70000)
+  })
 
-    expect(cart.applyCoupon('KHONGCO').success).toBe(false)
+  it('reports the server message for a rejected coupon and keeps the previous one', async () => {
+    const fetchMock = vi.fn().mockRejectedValue({ data: { message: 'Mã giảm giá không hợp lệ hoặc đã hết hạn' } })
+    vi.stubGlobal('$fetch', fetchMock)
+    const cart = useCartStore()
+    cart.addItem(che, 1)
+
+    const res = await cart.applyCoupon('KHONGCO')
+    expect(res).toEqual({ success: false, message: 'Mã giảm giá không hợp lệ hoặc đã hết hạn' })
+    expect(cart.appliedCoupon).toBeNull()
+  })
+
+  it('does not call the API for an empty code or an empty cart', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('$fetch', fetchMock)
+    const cart = useCartStore()
+
+    expect((await cart.applyCoupon('CHECOC10')).success).toBe(false)
+    cart.addItem(che, 1)
+    expect((await cart.applyCoupon('   ')).success).toBe(false)
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })

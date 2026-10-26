@@ -48,9 +48,9 @@
       <!-- Category Filter Pills -->
       <div class="mb-6 sm:mb-8">
         <CategoryFilter 
-          :categories="mockCategories" 
+          :categories="categories" 
           :active-category-id="selectedCategoryId" 
-          :products="mockProducts"
+          :products="products"
           @select-category="handleCategorySelect"
         />
       </div>
@@ -131,7 +131,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { mockCategories, mockProducts } from '~/utils/mockData'
+import { ALL_CATEGORY_ID } from '#shared/types/catalog'
 import CategoryFilter from '~/components/product/CategoryFilter.vue'
 import ProductGrid from '~/components/product/ProductGrid.vue'
 
@@ -144,7 +144,9 @@ useHead({
 })
 
 const searchQuery = ref('')
-const selectedCategoryId = ref(1)
+const [categories, { data: products }] = await Promise.all([useCategoryFilters(), useProducts()])
+
+const selectedCategoryId = ref(ALL_CATEGORY_ID)
 const activeTag = ref('all')
 const selectedSort = ref('popular')
 
@@ -162,16 +164,16 @@ const handleCategorySelect = (id: number) => {
 
 const resetAllFilters = () => {
   searchQuery.value = ''
-  selectedCategoryId.value = 1
+  selectedCategoryId.value = ALL_CATEGORY_ID
   activeTag.value = 'all'
   selectedSort.value = 'popular'
 }
 
 const filteredProducts = computed(() => {
-  let list = [...mockProducts]
+  let list = [...products.value]
 
   // Category filter
-  if (selectedCategoryId.value !== 1) {
+  if (selectedCategoryId.value !== ALL_CATEGORY_ID) {
     list = list.filter(p => p.categoryId === selectedCategoryId.value)
   }
 

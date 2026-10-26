@@ -1,0 +1,90 @@
+<template>
+  <div class="min-h-screen bg-[#F6F4EE] text-brand-dark-green font-sans">
+    <!-- Mobile top bar -->
+    <header class="lg:hidden sticky top-0 z-30 flex items-center justify-between bg-brand-dark-green text-brand-cream px-4 h-14">
+      <button type="button" class="p-2 -ml-2" aria-label="Mở menu" @click="isNavOpen = true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+      </button>
+      <span class="font-heading font-bold">Chè Cốc · Quản trị</span>
+      <span class="w-8" />
+    </header>
+
+    <!-- Backdrop on mobile -->
+    <div v-if="isNavOpen" class="lg:hidden fixed inset-0 z-40 bg-black/40" @click="isNavOpen = false" />
+
+    <!-- Sidebar -->
+    <aside
+      class="fixed inset-y-0 left-0 z-50 w-64 bg-brand-dark-green text-brand-cream flex flex-col transition-transform duration-200 lg:translate-x-0"
+      :class="isNavOpen ? 'translate-x-0' : '-translate-x-full'"
+    >
+      <div class="px-6 h-16 flex items-center border-b border-white/10">
+        <NuxtLink to="/admin" class="font-heading text-xl font-bold">Chè Cốc</NuxtLink>
+        <span class="ml-2 text-[10px] uppercase tracking-widest text-brand-gold font-semibold">Admin</span>
+      </div>
+
+      <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <NuxtLink
+          v-for="item in navItems"
+          :key="item.to"
+          :to="item.to"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+          :class="isActive(item.to) ? 'bg-white/10 text-white' : 'text-brand-cream/70 hover:bg-white/5 hover:text-white'"
+        >
+          <span class="text-base w-5 text-center" aria-hidden="true">{{ item.icon }}</span>
+          {{ item.label }}
+        </NuxtLink>
+      </nav>
+
+      <div class="p-4 border-t border-white/10 text-sm">
+        <div class="font-semibold truncate">{{ user?.name }}</div>
+        <div class="text-brand-cream/60 text-xs truncate mb-3">
+          {{ user?.email }} · {{ ROLE_LABELS[user?.role ?? ''] }}
+        </div>
+        <div class="flex gap-2">
+          <NuxtLink to="/" target="_blank" class="flex-1 text-center text-xs py-2 rounded-lg bg-white/10 hover:bg-white/15">
+            Xem website
+          </NuxtLink>
+          <button type="button" class="flex-1 text-xs py-2 rounded-lg bg-white/10 hover:bg-white/15" @click="logout">
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="lg:pl-64">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-10">
+        <slot />
+      </div>
+    </main>
+
+    <AppToast />
+  </div>
+</template>
+
+<script setup lang="ts">
+import AppToast from '~/components/common/AppToast.vue'
+
+const route = useRoute()
+const { user, clear } = useUserSession()
+const isNavOpen = ref(false)
+
+const navItems = [
+  { to: '/admin', label: 'Tổng quan', icon: '📊' },
+  { to: '/admin/products', label: 'Món ăn', icon: '🥣' },
+  { to: '/admin/categories', label: 'Danh mục', icon: '🗂️' },
+  { to: '/admin/options', label: 'Đường · Đá · Topping', icon: '🧊' },
+  { to: '/admin/coupons', label: 'Mã giảm giá', icon: '🏷️' },
+]
+
+const isActive = (to: string) => (to === '/admin' ? route.path === '/admin' : route.path.startsWith(to))
+
+watch(() => route.path, () => (isNavOpen.value = false))
+
+async function logout() {
+  await $fetch('/api/auth/logout', { method: 'POST' })
+  await clear()
+  await navigateTo('/admin/login')
+}
+
+useHead({ titleTemplate: (title) => (title ? `${title} · Quản trị Chè Cốc` : 'Quản trị Chè Cốc') })
+</script>

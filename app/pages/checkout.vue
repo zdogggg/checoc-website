@@ -390,10 +390,11 @@
                   class="flex-grow bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs uppercase focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold"
                 />
                 <button 
-                  class="bg-brand-dark-green text-brand-cream px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-[#1a4132] transition-colors shrink-0" 
+                  class="bg-brand-dark-green text-brand-cream px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-[#1a4132] transition-colors shrink-0 disabled:opacity-60"
+                  :disabled="isApplyingCoupon"
                   @click="handleApplyCoupon"
                 >
-                  Áp dụng
+                  {{ isApplyingCoupon ? 'Đang kiểm tra...' : 'Áp dụng' }}
                 </button>
               </div>
 
@@ -505,9 +506,14 @@ const couponCodeInput = ref('')
 const couponMessage = ref('')
 const couponMessageSuccess = ref(false)
 
-const handleApplyCoupon = () => {
+const isApplyingCoupon = ref(false)
+
+const handleApplyCoupon = async () => {
+  if (isApplyingCoupon.value) return
   couponMessage.value = ''
-  const res = cartStore.applyCoupon(couponCodeInput.value)
+  isApplyingCoupon.value = true
+  const res = await cartStore.applyCoupon(couponCodeInput.value)
+  isApplyingCoupon.value = false
   couponMessage.value = res.message
   couponMessageSuccess.value = res.success
   if (res.success) {

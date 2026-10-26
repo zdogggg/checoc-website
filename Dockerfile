@@ -21,6 +21,8 @@ FROM node:22-alpine AS prod
 WORKDIR /app
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
 COPY --from=build /app/.output ./.output
+# Applied on boot by server/plugins/migrate.ts
+COPY --from=build /app/server/db/migrations ./server/db/migrations
 USER node
 EXPOSE 3000
 CMD ["node", ".output/server/index.mjs"]

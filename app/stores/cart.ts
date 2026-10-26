@@ -1,5 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
+import type { AppliedCoupon, Product } from '#shared/types/catalog'
+import { couponDiscount, FREESHIP_THRESHOLD, shippingFeeFor } from '#shared/utils/pricing'
+
+export type { AppliedCoupon }
 
 export interface CartItemOption {
   sugar: string
@@ -18,13 +22,6 @@ export interface CartItem {
   image: string
   quantity: number
   options: CartItemOption
-}
-
-export interface AppliedCoupon {
-  code: string
-  discount: number
-  type: 'percent' | 'fixed' | 'free_shipping'
-  description: string
 }
 
 export const useCartStore = defineStore('cart', () => {
@@ -61,7 +58,8 @@ export const useCartStore = defineStore('cart', () => {
       }
       const savedCoupon = localStorage.getItem('checoc_coupon')
       if (savedCoupon) {
-        appliedCoupon.value = JSON.parse(savedCoupon)
+        // Coupons saved before minOrder/maxDiscount existed
+        appliedCoupon.value = { minOrder: 0, maxDiscount: null, ...JSON.parse(savedCoupon) }
       }
     } catch (e) {
       console.warn('Failed to load cart from storage', e)
@@ -93,25 +91,12 @@ export const useCartStore = defineStore('cart', () => {
   const totalItems = computed(() => items.value.reduce((total, item) => total + item.quantity, 0))
   const subtotal = computed(() => items.value.reduce((total, item) => total + item.price * item.quantity, 0))
 
-  const freeshipThreshold = 100000
-  const baseShippingFee = 15000
+  const freeshipThreshold = FREESHIP_THRESHOLD
 
-  const shippingFee = computed(() => {
-    if (items.value.length === 0) return 0
-    if (appliedCoupon.value?.type === 'free_shipping') return 0
-    return subtotal.value >= freeshipThreshold ? 0 : baseShippingFee
-  })
+  const shippingFee = computed(() => shippingFeeFor(subtotal.value, appliedCoupon.value))
 
-  const discountAmount = computed(() => {
-    if (!appliedCoupon.value || items.value.length === 0) return 0
-    if (appliedCoupon.value.type === 'percent') {
-      return Math.round((subtotal.value * appliedCoupon.value.discount) / 100)
-    }
-    if (appliedCoupon.value.type === 'fixed') {
-      return Math.min(appliedCoupon.value.discount, subtotal.value)
-    }
-    return 0
-  })
+  // A coupon whose minimum order is no longer met (items removed) simply gives 0
+  const discountAmount = computed(() => couponDiscount(appliedCoupon.value, subtotal.value))
 
   const orderTotal = computed(() => {
     return Math.max(0, subtotal.value + shippingFee.value - discountAmount.value)
@@ -129,7 +114,9 @@ export const useCartStore = defineStore('cart', () => {
     return `${productId}__${sugar}__${ice}__${toppings}__${note}`
   }
 
-  function addItem(product: any, quantity: number = 1, customOptions?: Partial<CartItemOption>) {
+  type CartProduct = Pick<Product, 'id' | 'slug' | 'name' | 'price' | 'image'>
+
+  function addItem(product: CartProduct, quantity: number = 1, customOptions?: Partial<CartItemOption>) {
     const sugar = customOptions?.sugar || '100% đường'
     const ice = customOptions?.ice || 'Đá riêng'
     const rawToppings = customOptions?.toppings || []
@@ -187,7 +174,7 @@ export const useCartStore = defineStore('cart', () => {
     appliedCoupon.value = null
   }
 
-  function applyCoupon(rawCode: string): { success: boolean; message: string } {
+  async function applyCoupon(rawCode: string): Promise<{ success: boolean; message: string }> {
     const code = rawCode.trim().toUpperCase()
     if (!code) {
       return { success: false, message: 'Vui lòng nhập mã giảm giá' }
@@ -196,37 +183,16 @@ export const useCartStore = defineStore('cart', () => {
       return { success: false, message: 'Giỏ hàng đang trống' }
     }
 
-    if (code === 'CHECOC10') {
-      appliedCoupon.value = {
-        code: 'CHECOC10',
-        discount: 10,
-        type: 'percent',
-        description: 'Giảm 10% tổng đơn hàng'
-      }
-      return { success: true, message: 'Áp dụng mã giảm 10% thành công!' }
+    try {
+      appliedCoupon.value = await $fetch<AppliedCoupon>('/api/coupons/validate', {
+        method: 'POST',
+        body: { code, subtotal: subtotal.value }
+      })
+      return { success: true, message: `Áp dụng mã ${code} thành công!` }
+    } catch (error) {
+      const message = (error as { data?: { message?: string } })?.data?.message
+      return { success: false, message: message || 'Mã giảm giá không hợp lệ hoặc đã hết hạn' }
     }
-
-    if (code === 'FREESHIP') {
-      appliedCoupon.value = {
-        code: 'FREESHIP',
-        discount: baseShippingFee,
-        type: 'free_shipping',
-        description: 'Miễn phí vận chuyển toàn quốc'
-      }
-      return { success: true, message: 'Áp dụng mã miễn phí giao hàng!' }
-    }
-
-    if (code === 'CHAOHE') {
-      appliedCoupon.value = {
-        code: 'CHAOHE',
-        discount: 20000,
-        type: 'fixed',
-        description: 'Giảm 20.000đ cho đơn đầu mùa hè'
-      }
-      return { success: true, message: 'Áp dụng mã giảm 20.000đ thành công!' }
-    }
-
-    return { success: false, message: 'Mã giảm giá không hợp lệ hoặc đã hết hạn' }
   }
 
   function removeCoupon() {

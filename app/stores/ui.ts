@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import type { Product } from '#shared/types/catalog'
 
 export interface ToastMessage {
   id: number
@@ -11,7 +12,7 @@ export const useUiStore = defineStore('ui', () => {
   const isCartDrawerOpen = ref(false)
   const isMobileMenuOpen = ref(false)
   const isQuickViewOpen = ref(false)
-  const selectedProduct = ref<any>(null)
+  const selectedProduct = ref<Product | null>(null)
   const toasts = ref<ToastMessage[]>([])
 
   function toggleCartDrawer(forcedState?: boolean | unknown) {
@@ -36,7 +37,7 @@ export const useUiStore = defineStore('ui', () => {
     }
   }
 
-  function openQuickView(product: any) {
+  function openQuickView(product: Product) {
     selectedProduct.value = product
     isQuickViewOpen.value = true
   }

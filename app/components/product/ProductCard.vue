@@ -121,7 +121,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import type { Product } from '~/utils/mockData'
+import type { Product } from '#shared/types/catalog'
 import { useCartStore } from '~/stores/cart'
 import { useUiStore } from '~/stores/ui'
 

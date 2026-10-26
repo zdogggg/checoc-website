@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Product } from '~/utils/mockData'
+import type { Product } from '#shared/types/catalog'
 import ProductCard from '~/components/product/ProductCard.vue'
 import { useUiStore } from '~/stores/ui'
 
