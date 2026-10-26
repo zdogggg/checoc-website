@@ -102,24 +102,24 @@
       <!-- Benefits / Delivery Assurance Banner -->
       <div class="mt-16 bg-white rounded-3xl p-6 sm:p-8 border border-brand-gold/20 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
         <div class="flex flex-col items-center">
-          <div class="w-12 h-12 bg-brand-cream rounded-2xl flex items-center justify-center text-2xl mb-3 shadow-inner">
-            🛵
+          <div class="w-12 h-12 bg-brand-cream rounded-2xl flex items-center justify-center text-2xl mb-3 shadow-inner text-brand-dark-green">
+            <AppIcon name="bike" />
           </div>
           <h4 class="font-heading font-bold text-base text-brand-dark-green mb-1">Giao Nhanh 30 Phút</h4>
           <p class="text-xs text-gray-500 leading-relaxed max-w-xs">Chè được bảo quản trong túi giữ nhiệt chuyên dụng, đá để riêng chuẩn lạnh mát.</p>
         </div>
 
         <div class="flex flex-col items-center">
-          <div class="w-12 h-12 bg-brand-cream rounded-2xl flex items-center justify-center text-2xl mb-3 shadow-inner">
-            🌿
+          <div class="w-12 h-12 bg-brand-cream rounded-2xl flex items-center justify-center text-2xl mb-3 shadow-inner text-brand-dark-green">
+            <AppIcon name="leaf" />
           </div>
           <h4 class="font-heading font-bold text-base text-brand-dark-green mb-1">100% Tự Nhiên</h4>
           <p class="text-xs text-gray-500 leading-relaxed max-w-xs">Không chất bảo quản, không hương liệu nhân tạo, nấu mới mỗi ngày theo công thức gia truyền.</p>
         </div>
 
         <div class="flex flex-col items-center">
-          <div class="w-12 h-12 bg-brand-cream rounded-2xl flex items-center justify-center text-2xl mb-3 shadow-inner">
-            🎁
+          <div class="w-12 h-12 bg-brand-cream rounded-2xl flex items-center justify-center text-2xl mb-3 shadow-inner text-brand-dark-green">
+            <AppIcon name="gift" />
           </div>
           <h4 class="font-heading font-bold text-base text-brand-dark-green mb-1">Freeship Đơn Từ 100k</h4>
           <p class="text-xs text-gray-500 leading-relaxed max-w-xs">Áp dụng cho mọi đơn hàng đặt trực tiếp trên website hôm nay.</p>
@@ -152,10 +152,10 @@ const selectedSort = ref('popular')
 
 const tagFilters = [
   { label: 'Tất cả', value: 'all' },
-  { label: '⭐ Bán chạy', value: 'best-seller' },
-  { label: '👑 Đặc biệt', value: 'signature' },
-  { label: '🔥 Đang giảm giá', value: 'sale' },
-  { label: '✨ Món mới', value: 'new' }
+  { label: 'Bán chạy', value: 'best-seller' },
+  { label: 'Đặc biệt', value: 'signature' },
+  { label: 'Đang giảm giá', value: 'sale' },
+  { label: 'Món mới', value: 'new' }
 ]
 
 const handleCategorySelect = (id: number) => {

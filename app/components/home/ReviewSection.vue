@@ -23,7 +23,7 @@
             <div>
               <div class="font-bold text-sm">Ngọc Anh</div>
               <div class="flex text-[#D9A441] text-xs">
-                ★★★★★
+                <AppIcon v-for="n in 5" :key="n" name="star" filled />
               </div>
             </div>
           </div>
@@ -40,7 +40,7 @@
             <div>
               <div class="font-bold text-sm">Minh Tuấn</div>
               <div class="flex text-[#D9A441] text-xs">
-                ★★★★★
+                <AppIcon v-for="n in 5" :key="n" name="star" filled />
               </div>
             </div>
           </div>
@@ -57,7 +57,7 @@
             <div>
               <div class="font-bold text-sm">Thu Hà</div>
               <div class="flex text-[#D9A441] text-xs">
-                ★★★★★
+                <AppIcon v-for="n in 5" :key="n" name="star" filled />
               </div>
             </div>
           </div>
@@ -69,7 +69,7 @@
         
         <!-- Decoration -->
         <div class="absolute -right-20 -bottom-10 font-handwriting text-3xl text-brand-dark-green/40 rotate-[-10deg] hidden lg:block text-center">
-          Cảm ơn bạn <br/>đã luôn ủng hộ<br/>Chè Cốc! 🍵
+          Cảm ơn bạn <br/>đã luôn ủng hộ<br/>Chè Cốc!
         </div>
       </div>
       

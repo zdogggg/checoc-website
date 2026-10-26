@@ -10,7 +10,6 @@
           : 'bg-white text-gray-700 hover:text-brand-dark-green hover:bg-brand-cream/60 border-gray-200/80 hover:border-brand-gold/40 shadow-sm'"
         @click="$emit('select-category', cat.id)"
       >
-        <span class="text-base sm:text-lg">{{ cat.icon }}</span>
         <span>{{ cat.name }}</span>
         <span 
           v-if="getCount(cat.id)"

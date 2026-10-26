@@ -27,7 +27,7 @@
               <label class="admin-label" for="p-cat">Danh mục</label>
               <select id="p-cat" v-model.number="form.categoryId" class="admin-input" :disabled="!canEdit">
                 <option :value="0" disabled>Chọn danh mục</option>
-                <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.icon }} {{ c.name }}</option>
+                <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
               <p v-if="errors.categoryId" class="admin-error">{{ errors.categoryId }}</p>
             </div>

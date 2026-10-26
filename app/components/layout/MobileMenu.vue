@@ -15,7 +15,7 @@ class="fixed top-0 right-0 h-full w-[80%] max-w-sm bg-brand-white shadow-2xl z-[
       <div class="p-6 flex items-center justify-between border-b border-gray-100">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 bg-brand-dark-green rounded-full flex items-center justify-center">
-            <span class="text-brand-white text-xl">🍵</span>
+            <AppIcon name="cup" class="text-brand-white text-xl" />
           </div>
           <span class="font-heading text-xl font-bold text-brand-dark-green">Chè Cốc</span>
         </div>

@@ -26,8 +26,9 @@
             :alt="product?.name || 'Chè Cốc'"
           />
           <div v-if="product?.badge" class="absolute top-3 left-3">
-            <span class="bg-brand-gold text-brand-dark-green text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
-              {{ product.badge === 'best-seller' ? '⭐ Bán chạy' : product.badge === 'signature' ? '👑 Đặc biệt' : '✨ Món mới' }}
+            <span class="bg-brand-gold text-brand-dark-green text-xs font-bold px-2.5 py-1 rounded-full shadow-sm inline-flex items-center gap-1">
+              <AppIcon :name="BADGE_ICONS[product.badge]" :filled="product.badge === 'best-seller'" />
+              {{ BADGE_LABELS[product.badge] }}
             </span>
           </div>
         </div>
@@ -39,7 +40,7 @@
               <span>{{ product?.categoryName }}</span>
               <span>•</span>
               <span class="flex items-center gap-0.5 text-amber-500">
-                ★ {{ product?.rating || 4.9 }}
+                <AppIcon name="star" filled /> {{ product?.rating || 4.9 }}
               </span>
             </div>
             <h2 class="font-heading text-2xl sm:text-3xl font-bold text-brand-dark-green mb-1.5 leading-snug">

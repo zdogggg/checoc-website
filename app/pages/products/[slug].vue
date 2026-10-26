@@ -30,27 +30,27 @@
               <div v-if="product?.badge" class="absolute top-3.5 left-3.5 z-10">
                 <span 
                   v-if="product?.badge === 'best-seller'" 
-                  class="bg-[#D9A441] text-brand-dark-green text-xs font-bold px-3 py-1 rounded-full shadow-md"
+                  class="bg-[#D9A441] text-brand-dark-green text-xs font-bold px-3 py-1 rounded-full shadow-md inline-flex items-center gap-1"
                 >
-                  ⭐ Món bán chạy nhất
+                  <AppIcon name="star" filled /> Món bán chạy nhất
                 </span>
                 <span 
                   v-else-if="product?.badge === 'signature'" 
-                  class="bg-brand-dark-green text-brand-cream text-xs font-bold px-3 py-1 rounded-full shadow-md"
+                  class="bg-brand-dark-green text-brand-cream text-xs font-bold px-3 py-1 rounded-full shadow-md inline-flex items-center gap-1"
                 >
-                  👑 Món đặc sản quán
+                  <AppIcon name="crown" /> Món đặc sản quán
                 </span>
                 <span 
                   v-else-if="product?.badge === 'sale'" 
-                  class="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md"
+                  class="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md inline-flex items-center gap-1"
                 >
-                  🔥 Ưu đãi đặc biệt
+                  <AppIcon name="flame" /> Ưu đãi đặc biệt
                 </span>
                 <span 
                   v-else 
-                  class="bg-[#F6B99F] text-brand-dark-green text-xs font-bold px-3 py-1 rounded-full shadow-md"
+                  class="bg-[#F6B99F] text-brand-dark-green text-xs font-bold px-3 py-1 rounded-full shadow-md inline-flex items-center gap-1"
                 >
-                  ✨ Món mới ra mắt
+                  <AppIcon name="sparkles" /> Món mới ra mắt
                 </span>
               </div>
             </div>
@@ -71,19 +71,19 @@
             <!-- Quick Prep & Quality Tag -->
             <div class="bg-brand-cream/50 rounded-2xl p-4 flex items-center justify-around text-center text-xs text-brand-dark-green border border-brand-gold/15">
               <div class="flex flex-col items-center">
-                <span class="text-base mb-0.5">⏱️</span>
+                <AppIcon name="timer" class="text-base mb-1 text-brand-gold" />
                 <span class="font-bold">Chuẩn bị</span>
                 <span class="text-gray-500 text-[11px]">{{ product?.prepTime || '5 phút' }}</span>
               </div>
               <div class="w-px h-8 bg-gray-200"></div>
               <div class="flex flex-col items-center">
-                <span class="text-base mb-0.5">🧊</span>
+                <AppIcon name="snowflake" class="text-base mb-1 text-brand-gold" />
                 <span class="font-bold">Bảo quản</span>
                 <span class="text-gray-500 text-[11px]">Đá riêng mát lạnh</span>
               </div>
               <div class="w-px h-8 bg-gray-200"></div>
               <div class="flex flex-col items-center">
-                <span class="text-base mb-0.5">🍃</span>
+                <AppIcon name="leaf" class="text-base mb-1 text-brand-gold" />
                 <span class="font-bold">Nguyên liệu</span>
                 <span class="text-gray-500 text-[11px]">100% Tự nhiên</span>
               </div>
@@ -285,7 +285,7 @@
           <!-- Ingredients -->
           <div>
             <h4 class="font-bold text-sm text-brand-dark-green mb-3 flex items-center gap-2">
-              <span class="text-green-600">🌿</span> Thành phần nguyên liệu
+              <AppIcon name="leaf" class="text-green-600" /> Thành phần nguyên liệu
             </h4>
             <ul class="space-y-2 text-xs text-gray-600">
               <li v-for="(item, idx) in (product?.ingredients || [])" :key="idx" class="flex items-center gap-2">
@@ -298,7 +298,7 @@
           <!-- Nutrition -->
           <div>
             <h4 class="font-bold text-sm text-brand-dark-green mb-3 flex items-center gap-2">
-              <span class="text-amber-500">📊</span> Bảng dinh dưỡng ước tính
+              <AppIcon name="chart" class="text-amber-500" /> Bảng dinh dưỡng ước tính
             </h4>
             <div class="bg-brand-cream/40 rounded-xl p-3.5 space-y-2 text-xs text-gray-600 border border-brand-gold/10">
               <div class="flex justify-between">
@@ -323,13 +323,14 @@
           <!-- Storage guide -->
           <div>
             <h4 class="font-bold text-sm text-brand-dark-green mb-3 flex items-center gap-2">
-              <span class="text-blue-500">❄️</span> Cách thưởng thức & Bảo quản
+              <AppIcon name="snowflake" class="text-blue-500" /> Cách thưởng thức & Bảo quản
             </h4>
             <p class="text-xs text-gray-600 leading-relaxed mb-3">
               Ngon nhất khi dùng ngay sau khi nhận hàng. Nếu chưa ăn liền, vui lòng để chè trong ngăn mát tủ lạnh (dưới 5°C) và không trộn đá trước.
             </p>
-            <div class="text-[11px] text-brand-gold font-semibold bg-amber-50 p-2.5 rounded-lg border border-amber-200">
-              💡 Mẹo nhỏ: Đổ đá vào từ từ và trộn đều để chè đạt độ thanh mát lý tưởng nhất!
+            <div class="text-[11px] text-brand-gold font-semibold bg-amber-50 p-2.5 rounded-lg border border-amber-200 flex gap-1.5">
+              <AppIcon name="lightbulb" class="text-sm mt-px" />
+              Mẹo nhỏ: Đổ đá vào từ từ và trộn đều để chè đạt độ thanh mát lý tưởng nhất!
             </div>
           </div>
         </div>
@@ -348,7 +349,7 @@
           <div class="flex items-center gap-3">
             <div class="font-heading text-4xl font-bold text-brand-gold">{{ product?.rating }}</div>
             <div class="flex flex-col text-xs">
-              <div class="flex text-amber-500">★★★★★</div>
+              <div class="flex text-amber-500"><AppIcon v-for="n in 5" :key="n" name="star" filled /></div>
               <span class="text-gray-400">Dựa trên {{ product?.reviewCount }} lượt mua</span>
             </div>
           </div>
@@ -369,7 +370,7 @@
                     <span class="text-[10px] text-gray-400">{{ rev.date }}</span>
                   </div>
                 </div>
-                <div class="text-amber-500 font-bold">★ {{ rev.rating }}.0</div>
+                <div class="text-amber-500 font-bold inline-flex items-center gap-1"><AppIcon name="star" filled /> {{ rev.rating }}.0</div>
               </div>
               <p class="text-gray-600 leading-relaxed">{{ rev.comment }}</p>
             </div>

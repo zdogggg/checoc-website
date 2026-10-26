@@ -6,7 +6,7 @@
     <!-- Logo -->
     <NuxtLink to="/" class="flex items-center gap-3 cursor-pointer group">
       <div class="w-10 h-10 bg-brand-white rounded-full flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm">
-        <span class="text-brand-dark-green text-xl">🍵</span>
+        <AppIcon name="cup" class="text-brand-dark-green text-xl" />
       </div>
       <div class="flex flex-col">
         <span class="font-heading text-xl sm:text-2xl font-bold leading-none tracking-wide">Chè Cốc</span>

@@ -37,7 +37,8 @@
                 class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                 :class="i < currentStep ? 'bg-brand-dark-green text-brand-cream' : i === currentStep ? 'bg-brand-gold text-brand-dark-green ring-4 ring-brand-gold/20' : 'bg-gray-100 text-gray-400'"
               >
-                {{ i < currentStep ? '✓' : i + 1 }}
+                <AppIcon v-if="i < currentStep" name="check" />
+                <template v-else>{{ i + 1 }}</template>
               </span>
               <span class="flex-1 h-0.5" :class="i === ORDER_FLOW.length - 1 ? 'bg-transparent' : i < currentStep ? 'bg-brand-dark-green' : 'bg-gray-200'" />
             </div>
@@ -108,7 +109,7 @@
           </div>
         </dl>
         <p v-if="order.pointsEarned" class="mt-4 text-sm bg-green-50 text-green-800 rounded-xl px-3 py-2">
-          🎉 Bạn được cộng <strong>{{ order.pointsEarned.toLocaleString('vi-VN') }} điểm</strong> cho đơn này.
+          Bạn được cộng <strong>{{ order.pointsEarned.toLocaleString('vi-VN') }} điểm</strong> cho đơn này.
           <NuxtLink to="/account" class="underline">Xem điểm</NuxtLink>
         </p>
         <p v-else-if="order.status !== 'cancelled' && order.status !== 'completed'" class="mt-4 text-xs text-gray-500">

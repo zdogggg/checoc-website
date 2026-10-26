@@ -146,7 +146,7 @@
         <section class="admin-card p-6 text-sm">
           <h2 class="font-bold mb-2">Địa chỉ đã giao</h2>
           <ul class="space-y-1.5 text-gray-600">
-            <li v-for="a in c.addresses" :key="a.id">📍 {{ a.address }}, {{ a.district }}, {{ a.city }}</li>
+            <li v-for="a in c.addresses" :key="a.id" class="flex gap-1.5"><AppIcon name="pin" class="mt-0.5 text-brand-gold" />{{ a.address }}, {{ a.district }}, {{ a.city }}</li>
             <li v-if="!c.addresses.length" class="text-gray-400">Chưa có.</li>
           </ul>
         </section>

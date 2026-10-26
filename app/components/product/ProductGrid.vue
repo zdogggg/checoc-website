@@ -17,8 +17,8 @@
       v-else 
       class="text-center py-16 px-4 bg-white rounded-3xl border border-gray-100 shadow-sm max-w-lg mx-auto"
     >
-      <div class="w-20 h-20 bg-brand-cream rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-        🔍
+      <div class="w-20 h-20 bg-brand-cream rounded-full flex items-center justify-center mx-auto mb-4 text-3xl text-brand-dark-green">
+        <AppIcon name="search" />
       </div>
       <h3 class="font-heading text-xl font-bold text-brand-dark-green mb-2">Không tìm thấy món chè phù hợp</h3>
       <p class="text-sm text-gray-500 mb-6 max-w-sm mx-auto">

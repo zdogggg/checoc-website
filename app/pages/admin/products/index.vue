@@ -12,7 +12,7 @@
       <input v-model="search" type="search" class="admin-input sm:max-w-xs" placeholder="Tìm theo tên món...">
       <select v-model.number="categoryFilter" class="admin-input sm:max-w-[14rem]">
         <option :value="0">Tất cả danh mục</option>
-        <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.icon }} {{ c.name }}</option>
+        <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
       </select>
       <select v-model="statusFilter" class="admin-input sm:max-w-[12rem]">
         <option value="all">Mọi trạng thái</option>
@@ -54,7 +54,9 @@
               <span v-if="p.originalPrice" class="block text-xs text-gray-400 line-through">{{ formatVnd(p.originalPrice) }}</span>
             </td>
             <td>
-              <span v-if="p.badge" class="text-xs font-semibold px-2 py-1 rounded-full bg-brand-peach/30 whitespace-nowrap">{{ BADGE_LABELS[p.badge] }}</span>
+              <span v-if="p.badge" class="text-xs font-semibold px-2 py-1 rounded-full bg-brand-peach/30 whitespace-nowrap inline-flex items-center gap-1">
+                <AppIcon :name="BADGE_ICONS[p.badge]" :filled="p.badge === 'best-seller'" />{{ BADGE_LABELS[p.badge] }}
+              </span>
             </td>
             <td>
               <AdminToggle

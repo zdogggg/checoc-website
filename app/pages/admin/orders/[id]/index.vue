@@ -14,7 +14,7 @@
         </p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <NuxtLink :to="`/admin/orders/${order.id}/print`" target="_blank" class="admin-btn-secondary">🖨️ In phiếu</NuxtLink>
+        <NuxtLink :to="`/admin/orders/${order.id}/print`" target="_blank" class="admin-btn-secondary"><AppIcon name="printer" /> In phiếu</NuxtLink>
         <button v-if="canCancel" type="button" class="admin-btn-danger" @click="isCancelOpen = true">Huỷ đơn</button>
         <button v-if="forward" type="button" class="admin-btn-primary" :disabled="isBusy" @click="setStatus(forward)">
           {{ FORWARD_ACTION_LABELS[forward] }} →

@@ -71,7 +71,7 @@
         
         <!-- Handwritten Text Overlay -->
         <div class="absolute left-0 lg:-left-8 top-1/2 -translate-y-1/2 z-30 font-handwriting text-4xl lg:text-5xl text-brand-dark-green rotate-[-5deg] text-center leading-[1.3] max-w-[280px]">
-          Chè ngon không chỉ ở vị mà còn ở cảm xúc ♡
+          Chè ngon không chỉ ở vị mà còn ở cảm xúc
         </div>
       </div>
       

@@ -16,7 +16,7 @@
       <div class="bg-white rounded-2xl p-4 sm:p-6 mb-8 border border-gray-100 shadow-sm">
         <div class="flex items-center justify-between max-w-2xl mx-auto text-xs sm:text-sm font-semibold">
           <div class="flex items-center gap-2 text-green-700">
-            <span class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-xs">✓</span>
+            <span class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-xs"><AppIcon name="check" /></span>
             <span class="hidden sm:inline">1. Chọn món</span>
           </div>
           <div class="flex-grow h-0.5 bg-green-200 mx-2 sm:mx-4"></div>
@@ -43,8 +43,8 @@
 
       <!-- STATE 1: Empty Cart -->
       <div v-else-if="cartStore.items.length === 0" class="bg-white rounded-3xl p-10 sm:p-16 text-center max-w-xl mx-auto shadow-sm border border-gray-100">
-        <div class="w-24 h-24 bg-brand-cream rounded-full flex items-center justify-center mx-auto mb-6 text-4xl shadow-inner">
-          🥣
+        <div class="w-24 h-24 bg-brand-cream rounded-full flex items-center justify-center mx-auto mb-6 text-4xl shadow-inner text-brand-dark-green">
+          <AppIcon name="bowl" />
         </div>
         <h2 class="font-heading text-2xl font-bold text-brand-dark-green mb-3">Giỏ hàng của bạn đang trống</h2>
         <p class="text-gray-500 text-sm mb-8 leading-relaxed">
@@ -87,7 +87,7 @@
                     class="px-3 py-1.5 rounded-full border border-brand-gold/40 bg-white hover:border-brand-gold text-left"
                     @click="useAddress(a)"
                   >
-                    📍 {{ a.address }}, {{ a.district }}
+                    <AppIcon name="pin" class="inline -mt-0.5 text-brand-gold" /> {{ a.address }}, {{ a.district }}
                   </button>
                 </div>
               </div>
@@ -214,7 +214,7 @@
                 />
                 <div class="flex-grow">
                   <div class="flex items-center gap-2 font-bold text-sm text-brand-dark-green">
-                    <span>💵</span>
+                    <AppIcon name="banknote" class="text-base text-brand-gold" />
                     <span>Thanh toán tiền mặt khi nhận hàng (COD)</span>
                   </div>
                   <p class="text-xs text-gray-500 mt-1">
@@ -238,7 +238,7 @@
                 <div class="flex-grow">
                   <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2 font-bold text-sm text-brand-dark-green">
-                      <span>🏦</span>
+                      <AppIcon name="bank" class="text-base text-brand-gold" />
                       <span>Chuyển khoản VietQR (Mọi ngân hàng)</span>
                     </div>
                     <span class="text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded-full">
@@ -329,11 +329,11 @@
               <!-- Applied coupon chip -->
               <div v-if="cartStore.appliedCoupon" class="flex items-center justify-between bg-green-50 text-green-800 text-xs px-3 py-1.5 rounded-xl border border-green-200">
                 <div class="flex items-center gap-1.5">
-                  <span>🎟️</span>
+                  <AppIcon name="ticket" class="text-sm" />
                   <strong>{{ cartStore.appliedCoupon.code }}:</strong>
                   <span>{{ cartStore.appliedCoupon.description }}</span>
                 </div>
-                <button class="text-green-700 hover:text-red-600 font-bold ml-2" @click="cartStore.removeCoupon">✕</button>
+                <button class="text-green-700 hover:text-red-600 font-bold ml-2" aria-label="Bỏ mã giảm giá" @click="cartStore.removeCoupon"><AppIcon name="x" /></button>
               </div>
 
               <div v-if="couponMessage" class="text-xs mt-1.5" :class="couponMessageSuccess ? 'text-green-600' : 'text-red-500'">
@@ -409,11 +409,11 @@
 
             <!-- Trust badges -->
             <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-around text-center text-[10px] text-gray-400">
-              <span class="flex items-center gap-1">🔒 Bảo mật thông tin</span>
+              <span class="flex items-center gap-1"><AppIcon name="lock" /> Bảo mật thông tin</span>
               <span>•</span>
-              <span class="flex items-center gap-1">🥣 Chế biến sạch</span>
+              <span class="flex items-center gap-1"><AppIcon name="shield" /> Chế biến sạch</span>
               <span>•</span>
-              <span class="flex items-center gap-1">⚡ Giao nóng/lạnh chuẩn</span>
+              <span class="flex items-center gap-1"><AppIcon name="zap" /> Giao nóng/lạnh chuẩn</span>
             </div>
           </div>
         </div>

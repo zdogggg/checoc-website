@@ -7,7 +7,7 @@
         <div class="col-span-1">
           <div class="flex items-center gap-3 mb-6">
             <div class="w-10 h-10 bg-brand-white rounded-full flex items-center justify-center">
-              <span class="text-brand-dark-green text-xl">🍵</span>
+              <AppIcon name="cup" class="text-brand-dark-green text-xl" />
             </div>
             <div class="flex flex-col">
               <span class="font-heading text-2xl font-bold leading-none">Chè Cốc</span>
@@ -81,7 +81,7 @@
       <div class="border-t border-white/10 pt-6 flex flex-col md:flex-row justify-between items-center text-xs text-brand-white/50">
         <p>© 2026 Chè Cốc. All rights reserved.</p>
         <div class="flex items-center gap-2 mt-4 md:mt-0 font-handwriting text-lg text-brand-white/70">
-          Ngọt lành từ thiên nhiên 🍃
+          Ngọt lành từ thiên nhiên
         </div>
       </div>
     </div>

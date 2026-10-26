@@ -32,13 +32,13 @@ interface SeedOption {
 
 // id 1 was the virtual "all" category in the mock data; the seed skips it
 export const seedCategories = [
-  { id: 1, name: 'Tất cả món', icon: '🥣', slug: 'all' },
-  { id: 2, name: 'Chè truyền thống', icon: '🫘', slug: 'che-truyen-thong' },
-  { id: 3, name: 'Chè trái cây', icon: '🥭', slug: 'che-trai-cay' },
-  { id: 4, name: 'Chè thập cẩm', icon: '🥥', slug: 'che-thap-cam' },
-  { id: 5, name: 'Chè khúc bạch', icon: '🧀', slug: 'che-khuc-bach' },
-  { id: 6, name: 'Chè khoai dẻo', icon: '🍠', slug: 'che-khoai-deo' },
-  { id: 7, name: 'Đồ ăn vặt', icon: '🍢', slug: 'do-an-vat' }
+  { id: 1, name: 'Tất cả món', icon: '', slug: 'all' },
+  { id: 2, name: 'Chè truyền thống', icon: '', slug: 'che-truyen-thong' },
+  { id: 3, name: 'Chè trái cây', icon: '', slug: 'che-trai-cay' },
+  { id: 4, name: 'Chè thập cẩm', icon: '', slug: 'che-thap-cam' },
+  { id: 5, name: 'Chè khúc bạch', icon: '', slug: 'che-khuc-bach' },
+  { id: 6, name: 'Chè khoai dẻo', icon: '', slug: 'che-khoai-deo' },
+  { id: 7, name: 'Đồ ăn vặt', icon: '', slug: 'do-an-vat' }
 ]
 
 export const seedSugar: SeedOption[] = [

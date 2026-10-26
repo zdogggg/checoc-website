@@ -77,7 +77,7 @@ v-motion
                :enter="{ y: [-10, 10, -10], transition: { duration: 4000, repeat: Infinity } }"
           >
             <div class="flex items-center gap-2 md:gap-3">
-              <div class="w-8 h-8 md:w-12 md:h-12 bg-[#F7F1E5] rounded-full flex items-center justify-center text-sm md:text-xl shrink-0">✨</div>
+              <div class="w-8 h-8 md:w-12 md:h-12 bg-[#F7F1E5] rounded-full flex items-center justify-center text-sm md:text-xl shrink-0 text-brand-gold"><AppIcon name="sparkles" /></div>
               <div>
                 <p class="text-[10px] md:text-xs text-gray-500 font-medium whitespace-nowrap">Bán chạy nhất</p>
                 <p class="text-xs md:text-sm font-bold text-[#0D241B] whitespace-nowrap">1,200+ cốc/tháng</p>

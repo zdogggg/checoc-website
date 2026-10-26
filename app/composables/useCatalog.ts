@@ -16,7 +16,7 @@ export function useCategories() {
 export async function useCategoryFilters() {
   const { data } = await useCategories()
   return computed<Category[]>(() => [
-    { id: ALL_CATEGORY_ID, name: 'Tất cả món', icon: '🥣', slug: 'all' },
+    { id: ALL_CATEGORY_ID, name: 'Tất cả món', icon: '', slug: 'all' },
     ...data.value,
   ])
 }

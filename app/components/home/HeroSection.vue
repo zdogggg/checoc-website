@@ -59,7 +59,7 @@
          <img src="https://images.unsplash.com/photo-1589367920969-19611eb2021c?q=80&w=800&auto=format&fit=crop" class="w-[500px] h-[600px] object-cover rounded-full border-[12px] border-brand-dark-green shadow-2xl relative z-10" alt="Chè Cốc" />
          <!-- Decorative handwritten text -->
          <div class="absolute -right-10 top-20 text-brand-peach font-handwriting text-4xl rotate-12 z-20 max-w-[200px] text-center">
-            Một cốc chè là một chút hạnh phúc! ♡
+            Một cốc chè là một chút hạnh phúc!
          </div>
       </div>
     </div>

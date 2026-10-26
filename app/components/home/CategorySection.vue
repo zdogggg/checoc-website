@@ -29,7 +29,7 @@
           <!-- Background -->
           <div class="absolute inset-0">
             <div v-if="cat.id === ALL_CATEGORY_ID" class="w-full h-full bg-brand-dark-green flex items-center justify-center pb-8">
-              <span class="text-4xl">🌿</span>
+              <AppIcon name="leaf" class="text-4xl text-brand-cream" />
             </div>
             <img v-else :src="cat.image || 'https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=300&auto=format&fit=crop'" :alt="cat.name" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
           </div>

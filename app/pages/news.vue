@@ -4,7 +4,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       <div v-for="i in 3" :key="i" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
         <div class="aspect-video bg-gray-100 flex items-center justify-center">
-          <span class="text-4xl opacity-50">📰</span>
+          <AppIcon name="newspaper" class="text-4xl text-gray-400" />
         </div>
         <div class="p-6">
           <p class="text-xs text-brand-gold font-bold uppercase tracking-wider mb-2">Tin tức</p>

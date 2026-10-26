@@ -2,7 +2,7 @@
   <div class="flex gap-3 items-start">
     <div class="w-20 h-20 rounded-xl bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center text-2xl text-gray-300">
       <img v-if="modelValue" :src="modelValue" alt="" class="w-full h-full object-cover">
-      <span v-else aria-hidden="true">🖼️</span>
+      <AppIcon v-else name="image" />
     </div>
     <div class="flex-1 min-w-0 space-y-2">
       <input

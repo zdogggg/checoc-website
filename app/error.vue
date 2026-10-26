@@ -2,8 +2,8 @@
   <NuxtLayout>
     <div class="pt-32 pb-20 px-4">
       <div class="container mx-auto max-w-lg text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100">
-        <div class="w-20 h-20 bg-brand-cream rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-          🥣
+        <div class="w-20 h-20 bg-brand-cream rounded-full flex items-center justify-center mx-auto mb-4 text-3xl text-brand-dark-green">
+          <AppIcon name="bowl" />
         </div>
         <h1 class="font-heading text-2xl font-bold text-brand-dark-green mb-2">
           {{ is404 ? 'Không tìm thấy trang này' : 'Đã có lỗi xảy ra' }}

@@ -30,7 +30,7 @@
           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
           :class="isActive(item.to) ? 'bg-white/10 text-white' : 'text-brand-cream/70 hover:bg-white/5 hover:text-white'"
         >
-          <span class="text-base w-5 text-center" aria-hidden="true">{{ item.icon }}</span>
+          <AppIcon :name="item.icon" :size="18" />
           {{ item.label }}
           <span
             v-if="item.to === '/admin/orders' && pulse?.pending"
@@ -75,14 +75,14 @@ const { user, clear } = useUserSession()
 const isNavOpen = ref(false)
 
 const navItems = [
-  { to: '/admin', label: 'Tổng quan', icon: '📊' },
-  { to: '/admin/orders', label: 'Đơn hàng', icon: '🧾' },
-  { to: '/admin/customers', label: 'Khách hàng', icon: '👥' },
-  { to: '/admin/products', label: 'Món ăn', icon: '🥣' },
-  { to: '/admin/categories', label: 'Danh mục', icon: '🗂️' },
-  { to: '/admin/options', label: 'Đường · Đá · Topping', icon: '🧊' },
-  { to: '/admin/coupons', label: 'Mã giảm giá', icon: '🏷️' },
-]
+  { to: '/admin', label: 'Tổng quan', icon: 'dashboard' },
+  { to: '/admin/orders', label: 'Đơn hàng', icon: 'receipt' },
+  { to: '/admin/customers', label: 'Khách hàng', icon: 'users' },
+  { to: '/admin/products', label: 'Món ăn', icon: 'utensils' },
+  { to: '/admin/categories', label: 'Danh mục', icon: 'folder' },
+  { to: '/admin/options', label: 'Đường · Đá · Topping', icon: 'sliders' },
+  { to: '/admin/coupons', label: 'Mã giảm giá', icon: 'tag' },
+] as const
 
 const isActive = (to: string) => (to === '/admin' ? route.path === '/admin' : route.path.startsWith(to))
 

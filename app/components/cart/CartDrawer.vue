@@ -16,7 +16,7 @@
       <div class="p-5 sm:p-6 flex items-center justify-between border-b border-gray-100 bg-white">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-full bg-brand-cream flex items-center justify-center text-brand-dark-green">
-            🍵
+            <AppIcon name="cup" :size="18" />
           </div>
           <h2 class="font-heading text-xl sm:text-2xl font-bold text-brand-dark-green">Giỏ hàng của bạn</h2>
           <span v-if="cartStore.totalItems > 0" class="text-xs font-bold bg-brand-peach/80 text-brand-dark-green px-2 py-0.5 rounded-full">
@@ -55,8 +55,8 @@
       <!-- Content -->
       <div class="flex-grow overflow-y-auto p-5 sm:p-6 bg-brand-cream/20">
         <div v-if="cartStore.items.length === 0" class="h-full flex flex-col items-center justify-center text-center p-6 text-gray-500">
-          <div class="w-20 h-20 bg-brand-cream rounded-full flex items-center justify-center text-3xl mb-4 shadow-inner">
-            🥣
+          <div class="w-20 h-20 bg-brand-cream rounded-full flex items-center justify-center text-3xl mb-4 shadow-inner text-brand-dark-green">
+            <AppIcon name="bowl" />
           </div>
           <h3 class="font-heading text-lg font-bold text-brand-dark-green mb-1">Giỏ hàng chưa có món nào</h3>
           <p class="text-sm text-gray-500 mb-6 max-w-xs">Hãy khám phá thực đơn chè thanh mát tươi mới của Chè Cốc ngay nhé!</p>

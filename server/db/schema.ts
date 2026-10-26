@@ -50,7 +50,8 @@ export const categories = pgTable('categories', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 120 }).notNull(),
   slug: varchar('slug', { length: 140 }).notNull().unique(),
-  icon: varchar('icon', { length: 16 }).notNull().default('🥣'),
+  // Unused by the UI since emoji were removed; kept for a possible icon key later
+  icon: varchar('icon', { length: 16 }).notNull().default(''),
   image: text('image'),
   sortOrder: integer('sort_order').notNull().default(0),
   isActive: boolean('is_active').notNull().default(true),

@@ -23,7 +23,7 @@
         <tbody>
           <tr v-for="cat in categories" :key="cat.id">
             <td class="tabular-nums text-gray-500">{{ cat.sortOrder }}</td>
-            <td class="font-semibold whitespace-nowrap"><span class="mr-2">{{ cat.icon }}</span>{{ cat.name }}</td>
+            <td class="font-semibold whitespace-nowrap">{{ cat.name }}</td>
             <td class="text-gray-500 font-mono text-xs">{{ cat.slug }}</td>
             <td class="text-right tabular-nums">{{ cat.productCount }}</td>
             <td>
@@ -45,16 +45,10 @@
 
     <AdminModal :open="isFormOpen" :title="editingId ? 'Sửa danh mục' : 'Thêm danh mục'" @close="isFormOpen = false">
       <form class="space-y-4" novalidate @submit.prevent="save">
-        <div class="grid grid-cols-[5rem_1fr] gap-3">
-          <div>
-            <label class="admin-label" for="cat-icon">Icon</label>
-            <input id="cat-icon" v-model="form.icon" class="admin-input text-center text-lg" maxlength="16">
-          </div>
-          <div>
-            <label class="admin-label" for="cat-name">Tên danh mục</label>
-            <input id="cat-name" v-model="form.name" class="admin-input" @input="syncSlug">
-            <p v-if="errors.name" class="admin-error">{{ errors.name }}</p>
-          </div>
+        <div>
+          <label class="admin-label" for="cat-name">Tên danh mục</label>
+          <input id="cat-name" v-model="form.name" class="admin-input" @input="syncSlug">
+          <p v-if="errors.name" class="admin-error">{{ errors.name }}</p>
         </div>
         <div>
           <label class="admin-label" for="cat-slug">Slug (đường dẫn)</label>
@@ -110,7 +104,7 @@ const slugTouched = ref(false)
 const isSaving = ref(false)
 const errors = ref<FieldErrors>({})
 const formError = ref('')
-const blank = () => ({ name: '', slug: '', icon: '🥣', image: '', sortOrder: (categories.value?.length ?? 0) + 1, isActive: true })
+const blank = () => ({ name: '', slug: '', icon: '', image: '', sortOrder: (categories.value?.length ?? 0) + 1, isActive: true })
 const form = reactive(blank())
 
 function openForm(cat?: AdminCategory) {

@@ -15,7 +15,7 @@ const money = z.coerce.number().int('Giá phải là số nguyên').min(0, 'Giá
 export const categoryInput = z.object({
   name: z.string().trim().min(1, 'Vui lòng nhập tên danh mục').max(120),
   slug,
-  icon: z.string().trim().max(16).default('🥣'),
+  icon: z.string().trim().max(16).default(''),
   image: z.string().trim().nullish(),
   sortOrder: z.coerce.number().int().default(0),
   isActive: z.boolean().default(true),

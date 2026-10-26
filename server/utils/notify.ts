@@ -9,7 +9,7 @@ export async function notifyNewOrder(order: Order, itemCount: number) {
   if (!telegramBotToken || !telegramChatId) return
 
   const text = [
-    `🥣 Đơn mới ${order.code}`,
+    `Đơn mới ${order.code}`,
     `${order.customerName} · ${order.customerPhone}`,
     `${order.address}, ${order.district}, ${order.city}`,
     `${itemCount} món · ${order.total.toLocaleString('vi-VN')}đ · ${PAYMENT_METHOD_LABELS[order.paymentMethod]}`,

@@ -18,25 +18,25 @@
           v-if="product.badge === 'best-seller'" 
           class="bg-[#D9A441] text-brand-dark-green text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1"
         >
-          <span>⭐</span> Bán chạy
+          <AppIcon name="star" filled /> Bán chạy
         </span>
         <span 
           v-else-if="product.badge === 'new'" 
           class="bg-[#F6B99F] text-brand-dark-green text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1"
         >
-          <span>✨</span> Món mới
+          <AppIcon name="sparkles" /> Món mới
         </span>
         <span 
           v-else-if="product.badge === 'signature'" 
           class="bg-brand-dark-green text-brand-cream text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1"
         >
-          <span>👑</span> Đặc biệt
+          <AppIcon name="crown" /> Đặc biệt
         </span>
         <span 
           v-else-if="product.badge === 'sale'" 
           class="bg-red-500 text-white text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1"
         >
-          <span>🔥</span> Giảm giá
+          <AppIcon name="flame" /> Giảm giá
         </span>
       </div>
 

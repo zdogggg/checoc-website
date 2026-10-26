@@ -22,7 +22,7 @@
       </select>
       <label class="inline-flex items-center gap-2 text-sm px-3">
         <input v-model="birthdayMonth" type="checkbox" class="w-4 h-4 accent-brand-dark-green">
-        🎂 Sinh nhật tháng này
+        <AppIcon name="cake" class="text-brand-gold" /> Sinh nhật tháng này
       </label>
     </div>
 

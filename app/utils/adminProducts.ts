@@ -4,11 +4,18 @@ import type { ProductInput } from '#shared/schemas/catalog'
 export type { Product, ProductInput }
 
 export const BADGE_LABELS: Record<ProductBadge, string> = {
-  'best-seller': '⭐ Bán chạy',
-  signature: '👑 Đặc biệt',
-  sale: '🔥 Giảm giá',
-  new: '✨ Món mới',
+  'best-seller': 'Bán chạy',
+  signature: 'Đặc biệt',
+  sale: 'Giảm giá',
+  new: 'Món mới',
 }
+
+export const BADGE_ICONS = {
+  'best-seller': 'star',
+  signature: 'crown',
+  sale: 'flame',
+  new: 'sparkles',
+} as const satisfies Record<ProductBadge, string>
 
 // API product -> body accepted by PUT /api/admin/products/:id
 export function toProductInput(p: Product & { sortOrder?: number }): ProductInput {
