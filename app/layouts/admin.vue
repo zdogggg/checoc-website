@@ -85,6 +85,7 @@ const navSections = [
       { to: '/admin', label: 'Tổng quan', icon: 'dashboard' },
       { to: '/admin/orders', label: 'Đơn hàng', icon: 'receipt' },
       { to: '/admin/customers', label: 'Khách hàng', icon: 'users' },
+      { to: '/admin/reports', label: 'Báo cáo', icon: 'chart' },
     ],
   },
   {

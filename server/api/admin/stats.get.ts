@@ -1,6 +1,7 @@
 import { and, count, desc, eq, gte, inArray, isNull, lte, ne, sql, sum } from 'drizzle-orm'
 
-// Revenue counts every order that was not cancelled, on the day it was placed (shop time)
+// Live view: revenue counts every order not cancelled (including ones still in progress), on the
+// day it was placed (shop time). Goods only, shipping excluded, same as the reports and the P&L.
 export default defineEventHandler(async (event) => {
   await requireStaff(event)
   const db = useDb()
@@ -11,6 +12,7 @@ export default defineEventHandler(async (event) => {
   const isToday = sql`(${orders.createdAt} at time zone 'Asia/Ho_Chi_Minh')::date = ${today}`
   const weekStart = sql`((${today} - 6)::timestamp at time zone 'Asia/Ho_Chi_Minh')`
   const notCancelled = ne(orders.status, 'cancelled')
+  const goods = sql`${orders.subtotal} - ${orders.discount} - ${orders.pointsDiscount}`
 
   const [[catalog], [unavailable], [cats], [activeCoupons], [todayRow], [active], [pending], daily, top, [lowStock]] =
     await Promise.all([
@@ -25,7 +27,7 @@ export default defineEventHandler(async (event) => {
       .from(coupons)
       .where(and(eq(coupons.isActive, true), isNull(coupons.customerId))),
       db
-        .select({ orders: count(), revenue: sum(orders.total).mapWith(Number) })
+        .select({ orders: count(), revenue: sum(goods).mapWith(Number) })
         .from(orders)
         .where(and(isToday, notCancelled)),
       db
@@ -34,7 +36,7 @@ export default defineEventHandler(async (event) => {
         .where(inArray(orders.status, ['pending', 'confirmed', 'preparing', 'shipping'])),
       db.select({ n: count() }).from(orders).where(eq(orders.status, 'pending')),
       db
-        .select({ day: shopDay, orders: count(), revenue: sum(orders.total).mapWith(Number) })
+        .select({ day: shopDay, orders: count(), revenue: sum(goods).mapWith(Number) })
         .from(orders)
         .where(and(gte(orders.createdAt, weekStart), notCancelled))
         .groupBy(shopDay)

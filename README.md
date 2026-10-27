@@ -100,6 +100,17 @@ npm run dev
 - **Chi phí & lãi lỗ** (`/admin/expenses`): chi phí vận hành theo tháng; doanh thu, giá vốn, lãi gộp, lợi nhuận ròng
   tính trên đơn hoàn tất. Logic tính toán thuần nằm ở `shared/utils/inventory.ts`.
 
+## Báo cáo (`/admin/reports`)
+
+- Chọn khoảng ngày (hôm nay, 7/30/90 ngày, tháng này, tháng trước hoặc tự chọn, tối đa 366 ngày); mọi số liệu so với
+  kỳ trước cùng độ dài.
+- Doanh thu, số đơn, giá trị trung bình/đơn, lãi gộp, tỉ lệ huỷ, khách mới / quay lại; biểu đồ doanh thu theo ngày và
+  số đơn theo giờ (có chế độ xem bảng); món bán chạy, theo danh mục, phương thức thanh toán, khách mua nhiều nhất.
+- Xuất CSV theo đơn hàng hoặc theo món (mở được bằng Excel).
+- Quy ước chung cho báo cáo, lãi lỗ tháng và Tổng quan: doanh thu = tiền món sau giảm giá, **không gồm phí ship**,
+  theo ngày đặt (giờ Việt Nam). Báo cáo và lãi lỗ chỉ tính đơn đã hoàn tất; Tổng quan là số "đang chạy" nên tính cả
+  đơn chưa hoàn tất (trừ đơn huỷ).
+
 ## Production
 
 ```bash
