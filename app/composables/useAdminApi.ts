@@ -33,3 +33,9 @@ export function useCanEditCatalog() {
   const { user } = useUserSession()
   return computed(() => user.value?.role === 'owner' || user.value?.role === 'manager')
 }
+
+// Mirrors OWNERS on the server: staff accounts and the activity log
+export function useIsOwner() {
+  const { user } = useUserSession()
+  return computed(() => user.value?.role === 'owner')
+}

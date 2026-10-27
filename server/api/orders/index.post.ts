@@ -5,6 +5,14 @@ export default defineEventHandler(async (event): Promise<PlacedOrder> => {
   // Generous: many customers share one IP (mobile carrier NAT, office Wi-Fi); this only stops floods
   rateLimit(event, 'orders', 20, 10 * 60 * 1000)
   const input = await readValidated(event, orderInput)
+  // Checkout hides VietQR until the bank account is set; enforce it here too
+  if (input.paymentMethod === 'vietqr' && !isBankConfigured(useRuntimeConfig(event).public.bank)) {
+    throw createError({
+      statusCode: 422,
+      statusMessage: 'Unprocessable Entity',
+      message: 'Quán chưa nhận chuyển khoản, vui lòng chọn thanh toán khi nhận hàng',
+    })
+  }
   const session = await getUserSession(event)
   const { order, itemCount } = await createOrder(input, session.customer)
 

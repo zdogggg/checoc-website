@@ -111,11 +111,20 @@ npm run dev
   theo ngày đặt (giờ Việt Nam). Báo cáo và lãi lỗ chỉ tính đơn đã hoàn tất; Tổng quan là số "đang chạy" nên tính cả
   đơn chưa hoàn tất (trừ đơn huỷ).
 
+## Tài khoản & nhật ký (chủ quán)
+
+- `/admin/users`: thêm nhân viên / quản lý, đổi vai trò, khoá tài khoản (có hiệu lực ngay, kể cả phiên đang mở),
+  đặt lại mật khẩu. Không tự khoá chính mình; luôn còn ít nhất một chủ quán.
+- `/admin/audit`: mọi thao tác ghi dữ liệu trong trang quản trị và các lần đăng nhập (kể cả thất bại), kèm IP.
+
+## SEO
+
+- `robots.txt` và `sitemap.xml` sinh động (`server/routes/`), sitemap gồm các trang chính và mọi món đang bán.
+- Canonical, Open Graph cho mọi trang; JSON-LD `Restaurant` ở trang chủ và `Product` ở trang món
+  (thông tin quán trong `shared/utils/site.ts`). Trang riêng tư (admin, thanh toán, theo dõi đơn) có `noindex`.
+- `NUXT_PUBLIC_INDEXABLE=false` cho bản staging để chặn công cụ tìm kiếm.
+
 ## Production
 
-```bash
-docker build --target prod -t checoc .
-docker run -p 3000:3000 --env-file .env -v checoc_uploads:/app/.data checoc
-```
-
-Ảnh tải lên lưu trong `/app/.data/uploads` — cần mount volume để không mất ảnh khi deploy lại.
+Deploy lên VPS bằng `docker-compose.prod.yml` (Caddy HTTPS, PostgreSQL, backup hằng ngày): xem
+[docs/deploy.md](docs/deploy.md). Kiểm tra sống: `GET /api/health`.

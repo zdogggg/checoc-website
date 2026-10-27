@@ -471,6 +471,22 @@ export const expenses = pgTable('expenses', {
 }, (t) => [index('expenses_spent_on_idx').on(t.spentOn)])
 
 // ---------------------------------------------------------------------------
+// Audit log: every write made through the admin API, plus sign-ins
+// ---------------------------------------------------------------------------
+
+export const auditLogs = pgTable('audit_logs', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+  // Kept as text so the entry still reads correctly after the account is renamed or removed
+  userEmail: varchar('user_email', { length: 255 }).notNull().default(''),
+  method: varchar('method', { length: 10 }).notNull(),
+  path: varchar('path', { length: 255 }).notNull(),
+  status: integer('status').notNull(),
+  ip: varchar('ip', { length: 64 }).notNull().default(''),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index('audit_logs_created_at_idx').on(t.createdAt), index('audit_logs_user_idx').on(t.userId)])
+
+// ---------------------------------------------------------------------------
 // Relations
 // ---------------------------------------------------------------------------
 

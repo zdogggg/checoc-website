@@ -23,7 +23,7 @@
       </div>
 
       <nav class="flex-1 px-3 py-4 overflow-y-auto">
-        <div v-for="section in navSections" :key="section.title" class="mb-4">
+        <div v-for="section in visibleSections" :key="section.title" class="mb-4">
           <p class="px-3 mb-1 text-[10px] uppercase tracking-widest font-semibold text-brand-cream/40">{{ section.title }}</p>
           <NuxtLink
             v-for="item in section.items"
@@ -77,6 +77,7 @@ import AppToast from '~/components/common/AppToast.vue'
 const route = useRoute()
 const { user, clear } = useUserSession()
 const isNavOpen = ref(false)
+useHead({ meta: [{ name: 'robots', content: 'noindex' }] })
 
 const navSections = [
   {
@@ -107,6 +108,17 @@ const navSections = [
     ],
   },
 ] as const
+
+// Owner-only section; the API enforces it, this only hides the links
+const isOwner = useIsOwner()
+const ownerSection = {
+  title: 'Hệ thống',
+  items: [
+    { to: '/admin/users', label: 'Tài khoản', icon: 'key' },
+    { to: '/admin/audit', label: 'Nhật ký thao tác', icon: 'history' },
+  ],
+} as const
+const visibleSections = computed(() => (isOwner.value ? [...navSections, ownerSection] : navSections))
 
 const badgeFor = (to: string) =>
   to === '/admin/orders' ? pulse.value?.pending : to === '/admin/inventory' ? pulse.value?.lowStock : 0

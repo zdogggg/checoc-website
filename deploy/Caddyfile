@@ -1,0 +1,19 @@
+# Caddy gets and renews the HTTPS certificate for $DOMAIN automatically
+# (DNS A record must point at this server and ports 80/443 must be open).
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Caddy replaces any X-Forwarded-For sent by the client, so the app's rate limits
+	# see the real visitor IP and cannot be bypassed with a forged header.
+	reverse_proxy app:3000
+
+	# Request bodies above this are refused before reaching the app (uploads are images)
+	request_body {
+		max_size 10MB
+	}
+}
+
+# Redirect www to the bare domain
+www.{$DOMAIN} {
+	redir https://{$DOMAIN}{uri} permanent
+}

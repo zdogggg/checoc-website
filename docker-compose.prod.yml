@@ -1,0 +1,76 @@
+# Production stack for one VPS: Caddy (HTTPS) -> Nuxt app -> PostgreSQL, plus daily backups.
+#   docker compose -f docker-compose.prod.yml up -d --build
+# Full guide: docs/deploy.md
+
+services:
+  app:
+    build:
+      context: .
+      target: prod
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://checoc:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/checoc
+    volumes:
+      - uploads:/app/.data
+    depends_on:
+      db:
+        condition: service_healthy
+    # Not published: only Caddy reaches the app
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: checoc
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: checoc
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U checoc -d checoc"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Dumps the database once a day into ./backups, keeps BACKUP_KEEP_DAYS days
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGUSER: checoc
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: checoc
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - ./backups:/backups
+      - ./deploy/backup.sh:/backup.sh:ro
+    entrypoint: ["sh", "/backup.sh"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  db_data:
+  uploads:
+  caddy_data:
+  caddy_config:

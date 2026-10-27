@@ -45,7 +45,7 @@
 import { loginInput } from '#shared/schemas/catalog'
 
 definePageMeta({ layout: false })
-useHead({ title: 'Đăng nhập quản trị — Chè Cốc' })
+useHead({ title: 'Đăng nhập quản trị — Chè Cốc', meta: [{ name: 'robots', content: 'noindex' }] })
 
 const route = useRoute()
 const { loggedIn, fetch: refreshSession } = useUserSession()

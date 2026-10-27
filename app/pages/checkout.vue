@@ -433,7 +433,8 @@ import type { CustomerAddressView } from '#shared/types/customers'
 useHead({
   title: 'Thanh Toán Đơn Hàng — Chè Cốc',
   meta: [
-    { name: 'description', content: 'Xác nhận thông tin giao hàng và thanh toán nhanh chóng, an toàn tại Chè Cốc.' }
+    { name: 'description', content: 'Xác nhận thông tin giao hàng và thanh toán nhanh chóng, an toàn tại Chè Cốc.' },
+    { name: 'robots', content: 'noindex' }
   ]
 })
 

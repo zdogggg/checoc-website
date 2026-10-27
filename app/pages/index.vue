@@ -52,6 +52,38 @@ const activeCategoryId = ref(ALL_CATEGORY_ID)
 
 const bestSeller = computed(() => products.value.find(p => p.badge === 'best-seller') ?? products.value[0])
 
+const origin = useSiteOrigin()
+useSeoMeta({
+  title: 'Chè Cốc — Chè Truyền Thống & Đồ Ăn Vặt Giao Tận Nơi',
+  ogTitle: 'Chè Cốc — Chè Truyền Thống & Đồ Ăn Vặt',
+  ogDescription: SHOP.description,
+  ogImage: () => (bestSeller.value?.image ? absoluteUrl(origin, bestSeller.value.image) : undefined),
+})
+useJsonLd({
+  '@context': 'https://schema.org',
+  '@type': 'Restaurant',
+  name: SHOP.name,
+  description: SHOP.description,
+  url: origin,
+  telephone: SHOP.phone,
+  servesCuisine: ['Chè', 'Đồ ăn vặt', 'Món tráng miệng Việt Nam'],
+  priceRange: '₫',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: SHOP.address.street,
+    addressLocality: SHOP.address.ward,
+    addressRegion: SHOP.address.city,
+    addressCountry: SHOP.address.country,
+  },
+  openingHoursSpecification: {
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    opens: SHOP.opens,
+    closes: SHOP.closes,
+  },
+  hasMenu: absoluteUrl(origin, '/products'),
+})
+
 const filteredProducts = computed(() => {
   if (activeCategoryId.value === ALL_CATEGORY_ID) return products.value
   return products.value.filter(p => p.categoryId === activeCategoryId.value)

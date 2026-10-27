@@ -490,16 +490,43 @@ watch(product, (newP) => {
   }
 }, { immediate: true })
 
-// Reactive Head metadata
-useHead({
-  title: computed(() => product.value ? `${product.value.name} — Chè Cốc` : 'Món ăn không tồn tại — Chè Cốc'),
-  meta: [
-    { name: 'description', content: computed(() => product.value?.shortDescription || product.value?.description || '') },
-    { property: 'og:title', content: computed(() => product.value?.name || '') },
-    { property: 'og:description', content: computed(() => product.value?.shortDescription || '') },
-    { property: 'og:image', content: computed(() => product.value?.image || '') }
-  ]
+// SEO: meta + schema.org Product. Ratings are left out on purpose: they are not
+// collected from real buyers yet, and search engines penalise unverifiable reviews.
+const origin = useSiteOrigin()
+const seoDescription = computed(() => product.value?.shortDescription || product.value?.description || SHOP.description)
+const productImages = computed(() =>
+  product.value
+    ? [...new Set([product.value.image, ...product.value.galleryImages])].filter(Boolean).map(src => absoluteUrl(origin, src))
+    : [],
+)
+useSeoMeta({
+  title: () => (product.value ? `${product.value.name} — Chè Cốc` : 'Món ăn không tồn tại — Chè Cốc'),
+  description: seoDescription,
+  ogTitle: () => product.value?.name,
+  ogDescription: seoDescription,
+  ogImage: () => productImages.value[0],
 })
+useJsonLd(() =>
+  product.value
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: product.value.name,
+        description: seoDescription.value,
+        image: productImages.value,
+        category: product.value.categoryName,
+        brand: { '@type': 'Brand', name: SHOP.name },
+        offers: {
+          '@type': 'Offer',
+          url: absoluteUrl(origin, `/products/${product.value.slug}`),
+          price: product.value.price,
+          priceCurrency: 'VND',
+          availability: product.value.isAvailable ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          seller: { '@type': 'Organization', name: SHOP.name },
+        },
+      }
+    : null,
+)
 
 const isToppingSelected = (name: string) => {
   return selectedToppings.value.some(t => t.name === name)

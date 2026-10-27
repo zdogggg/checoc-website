@@ -20,6 +20,8 @@ export default defineNuxtConfig({
     smsProvider: '',
     public: {
       siteUrl: '',
+      // false on staging / preview: robots.txt then blocks every crawler
+      indexable: true,
       // VietQR transfers; the option is hidden at checkout until all three are set
       bank: {
         bankId: '',
