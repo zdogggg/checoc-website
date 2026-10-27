@@ -29,6 +29,13 @@
       "when": 1793026386681,
       "tag": "0003_clear_category_icons",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793070431751,
+      "tag": "0004_erp",
+      "breakpoints": true
     }
   ]
 }

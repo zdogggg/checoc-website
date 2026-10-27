@@ -211,6 +211,8 @@ export async function changeOrderStatus(id: number, to: OrderStatus, note: strin
     if (to === 'completed') {
       patch.completedAt = now
       patch.pointsEarned = await applyOrderCompletion(tx, order)
+      // Ingredients leave the stock when the order is done; their cost becomes the order's COGS
+      patch.cogs = await consumeOrderStock(tx, id, userId)
       // Cash is collected on delivery
       if (order.paymentMethod === 'cod' && order.paymentStatus === 'unpaid') {
         patch.paymentStatus = 'paid'

@@ -77,7 +77,13 @@ const cards = computed(() => {
       hint: s?.unavailableProducts ? `${s.unavailableProducts} món đang tạm hết` : 'Tất cả đang bán',
       hintClass: s?.unavailableProducts ? 'text-amber-600' : 'text-emerald-600',
     },
-    { label: 'Mã giảm giá đang bật', value: s?.activeCoupons ?? 0, to: '/admin/coupons' },
+    {
+      label: 'Nguyên liệu sắp hết',
+      value: s?.lowStockIngredients ?? 0,
+      to: '/admin/inventory?low=1',
+      hint: s?.lowStockIngredients ? 'Cần nhập thêm hàng' : 'Kho đủ dùng',
+      hintClass: s?.lowStockIngredients ? 'text-red-600 font-semibold' : 'text-emerald-600',
+    },
   ]
 })
 

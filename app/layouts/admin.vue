@@ -22,23 +22,27 @@
         <span class="ml-2 text-[10px] uppercase tracking-widest text-brand-gold font-semibold">Admin</span>
       </div>
 
-      <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        <NuxtLink
-          v-for="item in navItems"
-          :key="item.to"
-          :to="item.to"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
-          :class="isActive(item.to) ? 'bg-white/10 text-white' : 'text-brand-cream/70 hover:bg-white/5 hover:text-white'"
-        >
-          <AppIcon :name="item.icon" :size="18" />
-          {{ item.label }}
-          <span
-            v-if="item.to === '/admin/orders' && pulse?.pending"
-            class="ml-auto min-w-[1.5rem] text-center text-xs font-bold px-1.5 py-0.5 rounded-full bg-brand-gold text-brand-dark-green tabular-nums"
+      <nav class="flex-1 px-3 py-4 overflow-y-auto">
+        <div v-for="section in navSections" :key="section.title" class="mb-4">
+          <p class="px-3 mb-1 text-[10px] uppercase tracking-widest font-semibold text-brand-cream/40">{{ section.title }}</p>
+          <NuxtLink
+            v-for="item in section.items"
+            :key="item.to"
+            :to="item.to"
+            class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors"
+            :class="isActive(item.to) ? 'bg-white/10 text-white' : 'text-brand-cream/70 hover:bg-white/5 hover:text-white'"
           >
-            {{ pulse.pending }}
-          </span>
-        </NuxtLink>
+            <AppIcon :name="item.icon" :size="18" />
+            {{ item.label }}
+            <span
+              v-if="badgeFor(item.to)"
+              class="ml-auto min-w-[1.5rem] text-center text-xs font-bold px-1.5 py-0.5 rounded-full tabular-nums"
+              :class="item.to === '/admin/inventory' ? 'bg-red-500 text-white' : 'bg-brand-gold text-brand-dark-green'"
+            >
+              {{ badgeFor(item.to) }}
+            </span>
+          </NuxtLink>
+        </div>
       </nav>
 
       <div class="p-4 border-t border-white/10 text-sm">
@@ -74,15 +78,37 @@ const route = useRoute()
 const { user, clear } = useUserSession()
 const isNavOpen = ref(false)
 
-const navItems = [
-  { to: '/admin', label: 'Tổng quan', icon: 'dashboard' },
-  { to: '/admin/orders', label: 'Đơn hàng', icon: 'receipt' },
-  { to: '/admin/customers', label: 'Khách hàng', icon: 'users' },
-  { to: '/admin/products', label: 'Món ăn', icon: 'utensils' },
-  { to: '/admin/categories', label: 'Danh mục', icon: 'folder' },
-  { to: '/admin/options', label: 'Đường · Đá · Topping', icon: 'sliders' },
-  { to: '/admin/coupons', label: 'Mã giảm giá', icon: 'tag' },
+const navSections = [
+  {
+    title: 'Bán hàng',
+    items: [
+      { to: '/admin', label: 'Tổng quan', icon: 'dashboard' },
+      { to: '/admin/orders', label: 'Đơn hàng', icon: 'receipt' },
+      { to: '/admin/customers', label: 'Khách hàng', icon: 'users' },
+    ],
+  },
+  {
+    title: 'Thực đơn',
+    items: [
+      { to: '/admin/products', label: 'Món ăn', icon: 'utensils' },
+      { to: '/admin/categories', label: 'Danh mục', icon: 'folder' },
+      { to: '/admin/options', label: 'Đường · Đá · Topping', icon: 'sliders' },
+      { to: '/admin/coupons', label: 'Mã giảm giá', icon: 'tag' },
+    ],
+  },
+  {
+    title: 'Kho & chi phí',
+    items: [
+      { to: '/admin/inventory', label: 'Kho nguyên liệu', icon: 'package' },
+      { to: '/admin/purchases', label: 'Nhập hàng', icon: 'truck' },
+      { to: '/admin/suppliers', label: 'Nhà cung cấp', icon: 'store' },
+      { to: '/admin/expenses', label: 'Chi phí & lãi lỗ', icon: 'wallet' },
+    ],
+  },
 ] as const
+
+const badgeFor = (to: string) =>
+  to === '/admin/orders' ? pulse.value?.pending : to === '/admin/inventory' ? pulse.value?.lowStock : 0
 
 const isActive = (to: string) => (to === '/admin' ? route.path === '/admin' : route.path.startsWith(to))
 
@@ -96,7 +122,7 @@ async function logout() {
 
 // New-order watch: badge with the pending count, plus a chime and a toast when an order arrives
 const uiStore = useUiStore()
-const { data: pulse, refresh: refreshPulse } = await useFetch<{ pending: number; latestId: number }>('/api/admin/orders/pulse', {
+const { data: pulse, refresh: refreshPulse } = await useFetch<{ pending: number; latestId: number; lowStock: number }>('/api/admin/orders/pulse', {
   key: 'admin:pulse',
 })
 useIntervalFn(refreshPulse, 20_000)

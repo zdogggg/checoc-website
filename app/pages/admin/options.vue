@@ -36,6 +36,7 @@
                 </td>
                 <td>{{ opt.isActive ? 'Có' : 'Ẩn' }}</td>
                 <td v-if="canEdit" class="whitespace-nowrap text-right">
+                  <button type="button" class="text-sm font-semibold hover:underline mr-4" @click="recipeFor = { opt, group }">Định mức</button>
                   <button type="button" class="text-sm font-semibold hover:underline mr-4" @click="openForm(group, opt)">Sửa</button>
                   <button type="button" class="text-sm font-semibold text-red-600 hover:underline" @click="remove(opt)">Xoá</button>
                 </td>
@@ -83,11 +84,27 @@
         </div>
       </form>
     </AdminModal>
+
+    <AdminModal :open="!!recipeFor" :title="`Định mức: ${recipeFor?.opt.label ?? ''}`" @close="recipeFor = null">
+      <p class="text-xs text-gray-500 mb-4">
+        Nguyên liệu dùng thêm mỗi khi khách chọn tuỳ chọn này (VD: topping trân châu 20g, "Đá riêng" 150g đá).
+        Bỏ trống nếu không cần theo dõi kho.
+      </p>
+      <RecipeEditor
+        v-if="recipeFor"
+        :key="recipeFor.opt.id"
+        kind="option"
+        :owner-id="recipeFor.opt.id"
+        :price="recipeFor.group.code === 'topping' ? recipeFor.opt.price : null"
+        @saved="recipeFor = null"
+      />
+    </AdminModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { optionInput } from '#shared/schemas/catalog'
+import RecipeEditor from '~/components/admin/RecipeEditor.vue'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 useHead({ title: 'Tuỳ chọn món' })
@@ -116,6 +133,7 @@ const uiStore = useUiStore()
 const { data: groups, refresh } = await useFetch<AdminGroup[]>('/api/admin/options', { default: () => [] })
 
 const formGroup = ref<AdminGroup | null>(null)
+const recipeFor = ref<{ opt: AdminOption; group: AdminGroup } | null>(null)
 const editingId = ref<number | null>(null)
 const isTopping = computed(() => formGroup.value?.code === 'topping')
 const blank = () => ({ label: '', shortLabel: '', price: 0, isDefault: false, isActive: true, sortOrder: 0 })

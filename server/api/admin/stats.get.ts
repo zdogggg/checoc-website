@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, inArray, isNull, ne, sql, sum } from 'drizzle-orm'
+import { and, count, desc, eq, gte, inArray, isNull, lte, ne, sql, sum } from 'drizzle-orm'
 
 // Revenue counts every order that was not cancelled, on the day it was placed (shop time)
 export default defineEventHandler(async (event) => {
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   const weekStart = sql`((${today} - 6)::timestamp at time zone 'Asia/Ho_Chi_Minh')`
   const notCancelled = ne(orders.status, 'cancelled')
 
-  const [[catalog], [unavailable], [cats], [activeCoupons], [todayRow], [active], [pending], daily, top] =
+  const [[catalog], [unavailable], [cats], [activeCoupons], [todayRow], [active], [pending], daily, top, [lowStock]] =
     await Promise.all([
       db.select({ n: count() }).from(products).where(isNull(products.deletedAt)),
       db
@@ -47,6 +47,10 @@ export default defineEventHandler(async (event) => {
         .groupBy(orderItems.productName)
         .orderBy(desc(sum(orderItems.quantity)))
         .limit(5),
+      db
+        .select({ n: count() })
+        .from(schema.ingredients)
+        .where(and(eq(schema.ingredients.isActive, true), lte(schema.ingredients.stock, schema.ingredients.minStock))),
     ])
 
   return {
@@ -54,6 +58,7 @@ export default defineEventHandler(async (event) => {
     unavailableProducts: unavailable!.n,
     categories: cats!.n,
     activeCoupons: activeCoupons!.n,
+    lowStockIngredients: lowStock!.n,
     todayOrders: todayRow!.orders,
     todayRevenue: todayRow!.revenue ?? 0,
     activeOrders: active!.n,

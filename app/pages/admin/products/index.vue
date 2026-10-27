@@ -28,6 +28,7 @@
             <th>Món</th>
             <th>Danh mục</th>
             <th class="text-right">Giá</th>
+            <th class="text-right">Giá vốn · lãi gộp</th>
             <th>Nhãn</th>
             <th>Còn hàng</th>
             <th v-if="canEdit" class="w-px" />
@@ -53,6 +54,13 @@
               {{ formatVnd(p.price) }}
               <span v-if="p.originalPrice" class="block text-xs text-gray-400 line-through">{{ formatVnd(p.originalPrice) }}</span>
             </td>
+            <td class="text-right tabular-nums whitespace-nowrap text-sm">
+              <template v-if="p.recipeCost != null">
+                {{ formatVnd(p.recipeCost) }}
+                <span class="block text-xs" :class="(marginRate(p.price, p.recipeCost) ?? 0) < 0.5 ? 'text-amber-700' : 'text-emerald-700'">{{ marginLabel(p) }}</span>
+              </template>
+              <NuxtLink v-else :to="`/admin/products/${p.id}`" class="text-xs text-gray-400 underline">chưa có định mức</NuxtLink>
+            </td>
             <td>
               <span v-if="p.badge" class="text-xs font-semibold px-2 py-1 rounded-full bg-brand-peach/30 whitespace-nowrap inline-flex items-center gap-1">
                 <AppIcon :name="BADGE_ICONS[p.badge]" :filled="p.badge === 'best-seller'" />{{ BADGE_LABELS[p.badge] }}
@@ -64,6 +72,7 @@
                 :disabled="!canEdit || pendingId === p.id"
                 @update:model-value="toggleAvailable(p, $event)"
               />
+              <span v-if="p.autoDisabled" class="block text-[11px] text-red-600 mt-1 whitespace-nowrap">Tự tắt: thiếu nguyên liệu</span>
             </td>
             <td v-if="canEdit" class="whitespace-nowrap text-right">
               <NuxtLink :to="`/admin/products/${p.id}`" class="text-sm font-semibold hover:underline mr-4">Sửa</NuxtLink>
@@ -71,7 +80,7 @@
             </td>
           </tr>
           <tr v-if="!filtered.length">
-            <td colspan="6" class="text-center text-gray-500 py-10">Không có món nào phù hợp.</td>
+            <td colspan="7" class="text-center text-gray-500 py-10">Không có món nào phù hợp.</td>
           </tr>
         </tbody>
       </table>
@@ -85,7 +94,12 @@ import type { Product, ProductInput } from '~/utils/adminProducts'
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 useHead({ title: 'Món ăn' })
 
-type AdminProduct = Product & { sortOrder: number; categoryActive: boolean }
+type AdminProduct = Product & { sortOrder: number; categoryActive: boolean; autoDisabled: boolean; recipeCost: number | null }
+
+const marginLabel = (p: AdminProduct) => {
+  const m = p.recipeCost == null ? null : marginRate(p.price, p.recipeCost)
+  return m == null ? '' : `${Math.round(m * 100)}%`
+}
 
 const adminFetch = useAdminApi()
 const canEdit = useCanEditCatalog()

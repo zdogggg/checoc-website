@@ -86,6 +86,16 @@
             <input id="p-prep" v-model="form.prepTime" class="admin-input" placeholder="5-7 phút" :disabled="!canEdit">
           </div>
         </section>
+
+        <section v-if="!isNew" class="admin-card p-6 space-y-3">
+          <h2 class="font-bold">Định mức nguyên liệu cho 1 phần</h2>
+          <p class="text-xs text-gray-500">
+            Kho tự trừ theo định mức khi đơn hoàn tất. Khi một nguyên liệu không đủ cho 1 phần, món tự chuyển "tạm hết"
+            và tự mở bán lại khi nhập hàng. Topping, đường, đá khai báo riêng ở trang "Đường · Đá · Topping".
+          </p>
+          <RecipeEditor kind="product" :owner-id="Number(route.params.id)" :price="Number(form.price) || null" />
+        </section>
+        <p v-else class="text-sm text-gray-500">Lưu món trước, sau đó khai báo định mức nguyên liệu ở trang này.</p>
       </div>
 
       <div class="space-y-6 lg:sticky lg:top-6">
@@ -133,6 +143,7 @@
 
 <script setup lang="ts">
 import { productInput } from '#shared/schemas/catalog'
+import RecipeEditor from '~/components/admin/RecipeEditor.vue'
 import type { Product, ProductBadge } from '#shared/types/catalog'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })

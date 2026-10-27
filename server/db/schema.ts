@@ -4,7 +4,9 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgEnum,
+  primaryKey,
   pgSequence,
   pgTable,
   real,
@@ -16,7 +18,12 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core'
 
-// Money is stored as integer VND everywhere.
+// Money is stored as integer VND everywhere, except per-unit ingredient costs
+// (e.g. 12,5đ per gram), which use numeric.
+
+// numeric columns read back as JS numbers
+const qty = (name: string) => numeric(name, { precision: 14, scale: 3, mode: 'number' })
+const unitCost = (name: string) => numeric(name, { precision: 14, scale: 4, mode: 'number' })
 
 const timestamps = {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -89,6 +96,9 @@ export const products = pgTable('products', {
   nutrition: jsonb('nutrition').$type<Nutrition>(),
   prepTime: varchar('prep_time', { length: 40 }).notNull().default(''),
   isAvailable: boolean('is_available').notNull().default(true),
+  // Set when the system switched the product off for lack of ingredients;
+  // only those are switched back on automatically after restocking
+  autoDisabled: boolean('auto_disabled').notNull().default(false),
   isFeatured: boolean('is_featured').notNull().default(false),
   sortOrder: integer('sort_order').notNull().default(0),
   // Soft delete: products will be referenced by order items later on
@@ -283,6 +293,8 @@ export const orders = pgTable('orders', {
   pointsUsed: integer('points_used').notNull().default(0),
   pointsDiscount: integer('points_discount').notNull().default(0),
   pointsEarned: integer('points_earned').notNull().default(0),
+  // Ingredient cost of the order, fixed when it is completed (stock is taken out then)
+  cogs: integer('cogs').notNull().default(0),
   cancelReason: varchar('cancel_reason', { length: 255 }),
   paidAt: timestamp('paid_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
@@ -308,6 +320,8 @@ export const orderItems = pgTable('order_items', {
   unitPrice: integer('unit_price').notNull(),
   quantity: integer('quantity').notNull(),
   lineTotal: integer('line_total').notNull(),
+  // Ingredient cost of this line, filled in on completion
+  costTotal: integer('cost_total').notNull().default(0),
   sugar: varchar('sugar', { length: 60 }).notNull().default(''),
   ice: varchar('ice', { length: 60 }).notNull().default(''),
   toppings: jsonb('toppings').$type<OrderItemTopping[]>().notNull().default([]),
@@ -326,6 +340,135 @@ export const orderStatusLogs = pgTable('order_status_logs', {
   note: varchar('note', { length: 255 }).notNull().default(''),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index('order_status_logs_order_id_idx').on(t.orderId)])
+
+// ---------------------------------------------------------------------------
+// ERP: ingredients, recipes, suppliers, purchasing, stock, expenses
+// ---------------------------------------------------------------------------
+
+export const ingredients = pgTable('ingredients', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 120 }).notNull().unique(),
+  // g, ml, cái, ... (recipes use the same unit)
+  unit: varchar('unit', { length: 16 }).notNull(),
+  // Running balance; every change is in stock_movements. May go negative when an
+  // order is completed without enough recorded stock (the food is already out).
+  stock: qty('stock').notNull().default(0),
+  minStock: qty('min_stock').notNull().default(0),
+  // Weighted average purchase cost per unit
+  avgCost: unitCost('avg_cost').notNull().default(0),
+  isActive: boolean('is_active').notNull().default(true),
+  note: varchar('note', { length: 255 }).notNull().default(''),
+  ...timestamps,
+})
+
+// Ingredients used by one serving of a product
+export const productIngredients = pgTable('product_ingredients', {
+  productId: integer('product_id')
+    .notNull()
+    .references(() => products.id, { onDelete: 'cascade' }),
+  ingredientId: integer('ingredient_id')
+    .notNull()
+    .references(() => ingredients.id, { onDelete: 'restrict' }),
+  quantity: qty('quantity').notNull(),
+}, (t) => [primaryKey({ columns: [t.productId, t.ingredientId] })])
+
+// Ingredients used each time an option is chosen (toppings, extra sugar, ice...)
+export const optionIngredients = pgTable('option_ingredients', {
+  optionId: integer('option_id')
+    .notNull()
+    .references(() => options.id, { onDelete: 'cascade' }),
+  ingredientId: integer('ingredient_id')
+    .notNull()
+    .references(() => ingredients.id, { onDelete: 'restrict' }),
+  quantity: qty('quantity').notNull(),
+}, (t) => [primaryKey({ columns: [t.optionId, t.ingredientId] })])
+
+export const suppliers = pgTable('suppliers', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 160 }).notNull(),
+  phone: varchar('phone', { length: 20 }).notNull().default(''),
+  address: varchar('address', { length: 255 }).notNull().default(''),
+  note: varchar('note', { length: 500 }).notNull().default(''),
+  isActive: boolean('is_active').notNull().default(true),
+  ...timestamps,
+})
+
+export const purchaseStatus = pgEnum('purchase_status', ['draft', 'received', 'cancelled'])
+
+// Purchase receipts: PN1001, PN1002, ...
+export const purchaseCodeSeq = pgSequence('purchase_code_seq', { startWith: 1001 })
+
+export const purchaseOrders = pgTable('purchase_orders', {
+  id: serial('id').primaryKey(),
+  code: varchar('code', { length: 20 })
+    .notNull()
+    .unique()
+    .default(sql`'PN' || nextval('purchase_code_seq')`),
+  supplierId: integer('supplier_id').references(() => suppliers.id, { onDelete: 'set null' }),
+  status: purchaseStatus('status').notNull().default('draft'),
+  total: integer('total').notNull().default(0),
+  note: varchar('note', { length: 500 }).notNull().default(''),
+  receivedAt: timestamp('received_at', { withTimezone: true }),
+  createdBy: integer('created_by').references(() => users.id, { onDelete: 'set null' }),
+  ...timestamps,
+}, (t) => [index('purchase_orders_status_idx').on(t.status)])
+
+export const purchaseItems = pgTable('purchase_items', {
+  id: serial('id').primaryKey(),
+  purchaseId: integer('purchase_id')
+    .notNull()
+    .references(() => purchaseOrders.id, { onDelete: 'cascade' }),
+  ingredientId: integer('ingredient_id')
+    .notNull()
+    .references(() => ingredients.id, { onDelete: 'restrict' }),
+  quantity: qty('quantity').notNull(),
+  unitCost: unitCost('unit_cost').notNull(),
+  lineTotal: integer('line_total').notNull(),
+}, (t) => [index('purchase_items_purchase_idx').on(t.purchaseId)])
+
+// in = goods received, out = used by a completed order, adjust = stock count, waste = spoiled/broken
+export const stockMovementType = pgEnum('stock_movement_type', ['in', 'out', 'adjust', 'waste'])
+
+export const stockMovements = pgTable('stock_movements', {
+  id: serial('id').primaryKey(),
+  ingredientId: integer('ingredient_id')
+    .notNull()
+    .references(() => ingredients.id, { onDelete: 'cascade' }),
+  type: stockMovementType('type').notNull(),
+  // Signed: positive adds stock, negative removes it
+  quantity: qty('quantity').notNull(),
+  balanceAfter: qty('balance_after').notNull(),
+  // Cost per unit used for this movement (purchase price for in, average cost otherwise)
+  unitCost: unitCost('unit_cost').notNull().default(0),
+  purchaseId: integer('purchase_id').references(() => purchaseOrders.id, { onDelete: 'set null' }),
+  orderId: integer('order_id').references(() => orders.id, { onDelete: 'set null' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+  note: varchar('note', { length: 255 }).notNull().default(''),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [
+  index('stock_movements_ingredient_idx').on(t.ingredientId),
+  index('stock_movements_created_at_idx').on(t.createdAt),
+])
+
+export const expenseCategory = pgEnum('expense_category', [
+  'rent',
+  'utilities',
+  'salary',
+  'marketing',
+  'packaging',
+  'equipment',
+  'other',
+])
+
+export const expenses = pgTable('expenses', {
+  id: serial('id').primaryKey(),
+  category: expenseCategory('category').notNull(),
+  amount: integer('amount').notNull(),
+  spentOn: date('spent_on').notNull(),
+  note: varchar('note', { length: 255 }).notNull().default(''),
+  createdBy: integer('created_by').references(() => users.id, { onDelete: 'set null' }),
+  ...timestamps,
+}, (t) => [index('expenses_spent_on_idx').on(t.spentOn)])
 
 // ---------------------------------------------------------------------------
 // Relations
@@ -387,4 +530,46 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
 export const orderStatusLogsRelations = relations(orderStatusLogs, ({ one }) => ({
   order: one(orders, { fields: [orderStatusLogs.orderId], references: [orders.id] }),
   user: one(users, { fields: [orderStatusLogs.userId], references: [users.id] }),
+}))
+
+export const ingredientsRelations = relations(ingredients, ({ many }) => ({
+  movements: many(stockMovements),
+  productLinks: many(productIngredients),
+  optionLinks: many(optionIngredients),
+}))
+
+export const productIngredientsRelations = relations(productIngredients, ({ one }) => ({
+  product: one(products, { fields: [productIngredients.productId], references: [products.id] }),
+  ingredient: one(ingredients, { fields: [productIngredients.ingredientId], references: [ingredients.id] }),
+}))
+
+export const optionIngredientsRelations = relations(optionIngredients, ({ one }) => ({
+  option: one(options, { fields: [optionIngredients.optionId], references: [options.id] }),
+  ingredient: one(ingredients, { fields: [optionIngredients.ingredientId], references: [ingredients.id] }),
+}))
+
+export const suppliersRelations = relations(suppliers, ({ many }) => ({
+  purchases: many(purchaseOrders),
+}))
+
+export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many }) => ({
+  supplier: one(suppliers, { fields: [purchaseOrders.supplierId], references: [suppliers.id] }),
+  creator: one(users, { fields: [purchaseOrders.createdBy], references: [users.id] }),
+  items: many(purchaseItems),
+}))
+
+export const purchaseItemsRelations = relations(purchaseItems, ({ one }) => ({
+  purchase: one(purchaseOrders, { fields: [purchaseItems.purchaseId], references: [purchaseOrders.id] }),
+  ingredient: one(ingredients, { fields: [purchaseItems.ingredientId], references: [ingredients.id] }),
+}))
+
+export const stockMovementsRelations = relations(stockMovements, ({ one }) => ({
+  ingredient: one(ingredients, { fields: [stockMovements.ingredientId], references: [ingredients.id] }),
+  purchase: one(purchaseOrders, { fields: [stockMovements.purchaseId], references: [purchaseOrders.id] }),
+  order: one(orders, { fields: [stockMovements.orderId], references: [orders.id] }),
+  user: one(users, { fields: [stockMovements.userId], references: [users.id] }),
+}))
+
+export const expensesRelations = relations(expenses, ({ one }) => ({
+  creator: one(users, { fields: [expenses.createdBy], references: [users.id] }),
 }))

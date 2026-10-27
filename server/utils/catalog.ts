@@ -47,6 +47,7 @@ export function toAdminProductDto(row: ProductRow) {
     galleryImages: [...row.images].sort((a, b) => a.sortOrder - b.sortOrder).map((i) => i.url),
     sortOrder: row.sortOrder,
     categoryActive: row.category.isActive,
+    autoDisabled: row.autoDisabled,
   }
 }
 
@@ -118,6 +119,8 @@ export async function saveProduct(id: number | null, input: ProductInput): Promi
     originalPrice: fields.originalPrice ?? null,
     badge: fields.badge ?? null,
     nutrition: fields.nutrition ?? null,
+    // Turning a product on by hand ends any automatic out-of-stock state
+    ...(fields.isAvailable ? { autoDisabled: false } : {}),
   }
   return useDb().transaction(async (tx) => {
     let productId = id

@@ -42,3 +42,15 @@ export function timeAgo(iso: string, now = Date.now()): string {
   if (hours < 24) return `${hours} giờ trước`
   return formatDateTime(iso)
 }
+
+export const PURCHASE_LABELS = {
+  draft: 'Chờ nhận hàng',
+  received: 'Đã nhận hàng',
+  cancelled: 'Đã huỷ',
+} as const
+
+export const PURCHASE_BADGE = {
+  draft: 'bg-amber-50 text-amber-700',
+  received: 'bg-emerald-50 text-emerald-700',
+  cancelled: 'bg-gray-100 text-gray-500',
+} as const

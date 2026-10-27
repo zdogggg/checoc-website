@@ -87,6 +87,19 @@ npm run dev
   hạng và sinh nhật trong tháng, xuất CSV; hồ sơ khách có đơn hàng, lịch sử điểm, điều chỉnh điểm có lý do,
   ghi chú chăm sóc, nhãn và tặng mã giảm giá riêng (chỉ dùng được với SĐT của khách đó).
 
+## Kho, giá vốn & chi phí (ERP)
+
+- **Nguyên liệu** (`/admin/inventory`): tồn kho, mức tối thiểu, giá vốn bình quân gia quyền (cập nhật mỗi lần nhận
+  hàng). Mọi thay đổi tồn được ghi vào `stock_movements` (nhập hàng, dùng cho đơn, kiểm kho, hao hụt).
+- **Định mức**: khai báo nguyên liệu cho 1 phần trong trang sửa món, và cho từng tuỳ chọn (topping, đường, đá) ở trang
+  "Đường · Đá · Topping". Khi đơn **hoàn tất**, kho tự trừ theo định mức và giá vốn được lưu vào đơn (`orders.cogs`).
+  Kho được phép âm (món đã giao) và hiện đỏ để kiểm lại.
+- **Tự tắt món**: khi một nguyên liệu không đủ cho 1 phần, món tự chuyển "tạm hết"; khi nhập hàng / kiểm kho đủ lại thì
+  tự mở bán. Món do người tắt tay không bị tự bật lại.
+- **Nhập hàng** (`/admin/purchases`): lập phiếu (chờ nhận hàng) → "Đã nhận hàng" để cộng kho; phiếu đã nhận không sửa được.
+- **Chi phí & lãi lỗ** (`/admin/expenses`): chi phí vận hành theo tháng; doanh thu, giá vốn, lãi gộp, lợi nhuận ròng
+  tính trên đơn hoàn tất. Logic tính toán thuần nằm ở `shared/utils/inventory.ts`.
+
 ## Production
 
 ```bash
