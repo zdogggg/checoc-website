@@ -9,10 +9,6 @@ export function isSmsConfigured(): boolean {
   return !!useRuntimeConfig().smsProvider
 }
 
-export function canSendLoginCodes(): boolean {
-  return isSmsConfigured() || import.meta.dev
-}
-
 export async function sendSms(phone: string, text: string): Promise<void> {
   const { smsProvider } = useRuntimeConfig()
   if (!smsProvider) {

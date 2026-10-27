@@ -91,9 +91,9 @@
                   </button>
                 </div>
               </div>
-              <p v-else-if="smsReady" class="text-xs text-gray-600 bg-brand-cream/50 rounded-2xl p-3.5">
+              <p v-else-if="loginReady" class="text-xs text-gray-600 bg-brand-cream/50 rounded-2xl p-3.5">
                 Đã có tài khoản?
-                <NuxtLink to="/account?redirect=/checkout" class="font-bold underline text-brand-dark-green">Đăng nhập bằng số điện thoại</NuxtLink>
+                <NuxtLink to="/account?redirect=/checkout" class="font-bold underline text-brand-dark-green">Đăng nhập</NuxtLink>
                 để điền nhanh địa chỉ và dùng điểm thưởng. Không đăng nhập bạn vẫn được tích điểm theo số điện thoại.
               </p>
 
@@ -123,6 +123,24 @@
                   />
                   <span v-if="errors.phone" class="text-xs text-red-500 mt-1 block">{{ errors.phone }}</span>
                 </div>
+              </div>
+
+              <div>
+                <label for="checkout-email" class="block text-xs font-bold uppercase tracking-wider text-brand-dark-green mb-1.5">
+                  Email <span class="normal-case font-normal text-gray-500">(không bắt buộc)</span>
+                </label>
+                <input
+                  id="checkout-email"
+                  v-model="form.email"
+                  type="email"
+                  autocomplete="email"
+                  placeholder="VD: ban@gmail.com"
+                  class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-brand-dark-green focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold transition-all"
+                />
+                <span v-if="errors.email" class="text-xs text-red-500 mt-1 block">{{ errors.email }}</span>
+                <span v-else-if="!account?.email" class="text-xs text-gray-500 mt-1 block">
+                  Sau khi nhận đơn, bạn đăng nhập bằng email này để xem đơn hàng và dùng điểm thưởng.
+                </span>
               </div>
 
               <!-- City and District -->
@@ -446,11 +464,12 @@ const bankReady = isBankConfigured(config.public.bank)
 
 const { data: accountData } = await useCustomerAccount()
 const account = computed(() => accountData.value.account)
-const smsReady = computed(() => accountData.value.smsReady)
+const loginReady = computed(() => accountData.value.login.email || accountData.value.login.sms)
 
 const form = reactive({
   fullName: '',
   phone: '',
+  email: '',
   city: 'Hà Nội',
   district: 'Cầu Giấy',
   address: '',
@@ -466,6 +485,7 @@ watch(
     if (!a) return
     if (!form.fullName) form.fullName = a.name
     if (!form.phone) form.phone = a.phone
+    if (!form.email && a.email) form.email = a.email
     if (!form.address && a.addresses[0]) useAddress(a.addresses[0])
   },
   { immediate: true }
@@ -484,6 +504,7 @@ const grandTotal = computed(() => Math.max(0, cartStore.orderTotal - pointsDisco
 const errors = reactive({
   fullName: '',
   phone: '',
+  email: '',
   address: ''
 })
 
@@ -528,6 +549,7 @@ const buildOrder = () => ({
 const showFieldErrors = (fieldErrors: FieldErrors) => {
   errors.fullName = fieldErrors.fullName ?? ''
   errors.phone = fieldErrors.phone ?? ''
+  errors.email = fieldErrors.email ?? ''
   errors.address = fieldErrors.address ?? ''
 }
 

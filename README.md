@@ -80,9 +80,13 @@ npm run dev
 - Quy tắc điểm và hạng nằm trong `shared/utils/loyalty.ts`: 1.000đ tiền món = 1 điểm (Bạc ×1,2, Vàng ×1,5),
   cộng khi đơn hoàn tất; 1 điểm = 50đ khi đổi, từ 100 điểm, tối đa 50% tiền món; huỷ đơn hoàn lại điểm đã dùng.
   Mọi thay đổi điểm được ghi vào `loyalty_ledger`.
-- Khách đăng nhập bằng mã OTP qua SMS (`/account`) để xem đơn, điểm và **dùng điểm** khi thanh toán.
-  Chưa tích hợp nhà cung cấp SMS: ở môi trường dev mã hiện ngay trên màn hình; ở production đăng nhập bị tắt
-  cho tới khi cấu hình `NUXT_SMS_PROVIDER` và bổ sung code gửi tin trong `server/utils/sms.ts`.
+- Khách đăng nhập bằng mã OTP (`/account`) để xem đơn, điểm và **dùng điểm** khi thanh toán:
+  - **Email qua Resend** (`server/utils/mail.ts`, cấu hình `NUXT_RESEND_API_KEY` + `NUXT_MAIL_FROM`). Khách nhập email
+    (không bắt buộc) lúc đặt hàng; email chỉ được **gắn vào khách khi đơn đó hoàn tất** (quán đã giao tới đúng chủ SĐT),
+    không ghi đè email đã có, và mỗi email chỉ thuộc một khách. Email chưa gắn nhận câu trả lời giống hệt nhưng không
+    có mã, để form không lộ ai là khách của quán.
+  - **SMS** (tuỳ chọn, để sau): cấu hình `NUXT_SMS_PROVIDER` và bổ sung code gửi tin trong `server/utils/sms.ts`.
+  - Ở môi trường dev, kênh chưa cấu hình hiện mã ngay trên màn hình. Ở production, kênh chưa cấu hình bị ẩn.
 - Admin `/admin/customers`: phân khúc (khách mới, thân thiết, thường xuyên, sắp rời bỏ, đã lâu không mua), lọc theo
   hạng và sinh nhật trong tháng, xuất CSV; hồ sơ khách có đơn hàng, lịch sử điểm, điều chỉnh điểm có lý do,
   ghi chú chăm sóc, nhãn và tặng mã giảm giá riêng (chỉ dùng được với SĐT của khách đó).

@@ -8,15 +8,24 @@ export const phoneField = z
   .transform(normalizePhone)
   .refine((p) => VN_MOBILE_REGEX.test(p), 'Số điện thoại chưa đúng định dạng (VD: 0988123456)')
 
-export const otpRequestInput = z.object({ phone: phoneField })
+export const emailField = z.string().trim().toLowerCase().email('Email không hợp lệ').max(255)
 
-export const otpVerifyInput = z.object({
-  phone: phoneField,
-  code: z
-    .string()
-    .trim()
-    .regex(/^\d{6}$/, 'Mã gồm 6 chữ số'),
-})
+// Optional email (forms send '' for an empty field)
+export const optionalEmail = emailField.nullish().or(z.literal('').transform(() => null))
+
+// Customers sign in with a code sent to their email, or by SMS to their phone.
+// Separate schemas (picked by which field is sent) keep the validation messages specific.
+export const emailOtpRequestInput = z.object({ email: emailField })
+export const phoneOtpRequestInput = z.object({ phone: phoneField })
+export type LoginTarget = z.infer<typeof emailOtpRequestInput> | z.infer<typeof phoneOtpRequestInput>
+
+const codeField = z
+  .string()
+  .trim()
+  .regex(/^\d{6}$/, 'Mã gồm 6 chữ số')
+
+export const emailOtpVerifyInput = emailOtpRequestInput.extend({ code: codeField })
+export const phoneOtpVerifyInput = phoneOtpRequestInput.extend({ code: codeField })
 
 const optionalDate = z
   .string()
@@ -28,7 +37,7 @@ const optionalDate = z
 // What a customer may edit about themselves
 export const accountProfileInput = z.object({
   name: z.string().trim().min(1, 'Vui lòng nhập tên').max(120),
-  email: z.string().trim().toLowerCase().email('Email không hợp lệ').max(255).nullish().or(z.literal('').transform(() => null)),
+  email: optionalEmail,
   birthday: optionalDate,
 })
 

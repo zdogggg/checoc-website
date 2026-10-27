@@ -62,6 +62,7 @@ export function toAdminOrder(order: OrderRow & { items: ItemRow[]; logs: LogRow[
     trackingToken: order.trackingToken,
     customerId: order.customerId,
     customerPhone: order.customerPhone,
+    customerEmail: order.customerEmail,
     paidAt: order.paidAt?.toISOString() ?? null,
     completedAt: order.completedAt?.toISOString() ?? null,
     cancelledAt: order.cancelledAt?.toISOString() ?? null,
@@ -166,6 +167,7 @@ export async function createOrder(input: OrderInput, sessionCustomer?: { id: num
         paymentMethod: input.paymentMethod,
         customerName: input.fullName,
         customerPhone: input.phone,
+        customerEmail: input.email ?? null,
         city: input.city,
         district: input.district,
         address: input.address,
@@ -195,7 +197,7 @@ export async function createOrder(input: OrderInput, sessionCustomer?: { id: num
 // Move an order to a new status. Row-locked so two staff clicking at once cannot
 // both apply a transition; the second one gets a 409 from canTransition.
 export async function changeOrderStatus(id: number, to: OrderStatus, note: string, userId: number) {
-  await useDb().transaction(async (tx) => {
+  const order = await useDb().transaction(async (tx) => {
     const [order] = await tx.select().from(orders).where(eq(orders.id, id)).for('update')
     if (!order) throw createError({ statusCode: 404, statusMessage: 'Order not found' })
     if (!canTransition(order.status, to)) {
@@ -230,7 +232,27 @@ export async function changeOrderStatus(id: number, to: OrderStatus, note: strin
 
     await tx.update(orders).set(patch).where(eq(orders.id, id))
     await tx.insert(orderStatusLogs).values({ orderId: id, fromStatus: order.status, toStatus: to, userId, note })
+    return order
   })
+  if (to === 'completed') await linkCustomerEmail(order)
+}
+
+// The email typed at checkout becomes the customer's sign-in email only once the order is
+// completed: the shop has then delivered to, and usually called, the owner of that phone.
+// Never overwrites an email the customer already has, never takes one used by another customer.
+async function linkCustomerEmail(order: typeof orders.$inferSelect) {
+  if (!order.customerEmail || !order.customerId) return
+  const { customers } = schema
+  try {
+    await useDb()
+      .update(customers)
+      .set({ email: order.customerEmail })
+      .where(and(eq(customers.id, order.customerId), isNull(customers.email)))
+  } catch (error) {
+    // unique_violation: the email already belongs to another customer, leave both as they are.
+    // Anything else is logged only: the status change itself is already saved.
+    if ((error as { cause?: { code?: string } })?.cause?.code !== '23505') console.error('[orders] linking email failed', error)
+  }
 }
 
 const PAYMENT_TRANSITIONS: Record<PaymentStatus, PaymentStatus[]> = {

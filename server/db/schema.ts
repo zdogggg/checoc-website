@@ -189,7 +189,11 @@ export const customers = pgTable('customers', {
   note: text('note').notNull().default(''),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   ...timestamps,
-}, (t) => [index('customers_last_order_at_idx').on(t.lastOrderAt)])
+}, (t) => [
+  index('customers_last_order_at_idx').on(t.lastOrderAt),
+  // Email is a sign-in identity, so one email belongs to one customer (stored lowercase)
+  uniqueIndex('customers_email_idx').on(t.email),
+])
 
 export const customerAddresses = pgTable('customer_addresses', {
   id: serial('id').primaryKey(),
@@ -229,16 +233,17 @@ export const customerNotes = pgTable('customer_notes', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [index('customer_notes_customer_idx').on(t.customerId)])
 
-// One-time login codes sent by SMS; only a hash is stored
+// One-time login codes, sent by email or SMS (exactly one of phone / email is set); only a hash is stored
 export const otpCodes = pgTable('otp_codes', {
   id: serial('id').primaryKey(),
-  phone: varchar('phone', { length: 20 }).notNull(),
+  phone: varchar('phone', { length: 20 }),
+  email: varchar('email', { length: 255 }),
   codeHash: varchar('code_hash', { length: 64 }).notNull(),
   attempts: integer('attempts').notNull().default(0),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   consumedAt: timestamp('consumed_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-}, (t) => [index('otp_codes_phone_idx').on(t.phone)])
+}, (t) => [index('otp_codes_phone_idx').on(t.phone), index('otp_codes_email_idx').on(t.email)])
 
 // ---------------------------------------------------------------------------
 // Orders
@@ -278,6 +283,8 @@ export const orders = pgTable('orders', {
   // Delivery details are a snapshot taken at checkout
   customerName: varchar('customer_name', { length: 120 }).notNull(),
   customerPhone: varchar('customer_phone', { length: 20 }).notNull(),
+  // Optional; becomes the customer's sign-in email once this order is completed
+  customerEmail: varchar('customer_email', { length: 255 }),
   city: varchar('city', { length: 80 }).notNull(),
   district: varchar('district', { length: 80 }).notNull(),
   address: varchar('address', { length: 255 }).notNull(),

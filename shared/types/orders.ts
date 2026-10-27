@@ -55,6 +55,7 @@ export interface AdminOrder extends Omit<PublicOrder, 'timeline'> {
   id: number
   trackingToken: string
   customerId: number | null
+  customerEmail: string | null
   paidAt: string | null
   completedAt: string | null
   cancelledAt: string | null

@@ -5,9 +5,9 @@
       <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100">
         <h1 class="font-heading text-2xl font-bold text-brand-dark-green mb-1">Tài khoản Chè Cốc</h1>
         <p class="text-sm text-gray-500 mb-6">Xem đơn đã đặt, điểm thưởng và hạng thành viên.</p>
-        <AccountLogin v-if="smsReady" @signed-in="onSignedIn" />
+        <AccountLogin v-if="login.email || login.sms" :channels="login" @signed-in="onSignedIn" />
         <p v-else class="text-sm text-gray-600 bg-brand-cream/60 rounded-2xl p-4">
-          Đăng nhập bằng SMS sẽ sớm có. Bạn vẫn được tích điểm tự động theo số điện thoại mỗi khi đặt hàng,
+          Đăng nhập tài khoản sẽ sớm có. Bạn vẫn được tích điểm tự động theo số điện thoại mỗi khi đặt hàng,
           và có thể <NuxtLink to="/orders" class="underline font-semibold">tra cứu đơn hàng</NuxtLink> bằng mã đơn.
         </p>
       </div>
@@ -138,7 +138,7 @@ const route = useRoute()
 const uiStore = useUiStore()
 const { data, refresh } = await useCustomerAccount()
 const account = computed(() => data.value.account)
-const smsReady = computed(() => data.value.smsReady)
+const login = computed(() => data.value.login)
 
 const TIER_BADGE: Record<CustomerTier, string> = {
   member: 'bg-white/15 text-brand-cream',

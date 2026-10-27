@@ -17,6 +17,7 @@ export default defineEventHandler(async (event) => {
     })
     .where(eq(schema.customers.id, id))
     .returning({ id: schema.customers.id })
+    .catch((error) => rethrowUnique(error, 'Email này đã gắn với một khách hàng khác'))
   if (!row) throw createError({ statusCode: 404, statusMessage: 'Customer not found' })
   return { ok: true }
 })

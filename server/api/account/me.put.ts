@@ -8,5 +8,6 @@ export default defineEventHandler(async (event) => {
     .update(schema.customers)
     .set({ name: input.name, email: input.email ?? null, birthday: input.birthday ?? null })
     .where(eq(schema.customers.id, id))
+    .catch((error) => rethrowUnique(error, 'Email này đã gắn với một khách hàng khác'))
   return loadAccount(id)
 })

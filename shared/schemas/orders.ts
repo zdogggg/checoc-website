@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { normalizePhone, VN_MOBILE_REGEX } from '../utils/orders'
+import { optionalEmail } from './customers'
 
 export const orderItemInput = z.object({
   productId: z.coerce.number().int().positive(),
@@ -20,6 +21,8 @@ export const orderInput = z.object({
     .min(1, 'Vui lòng nhập số điện thoại nhận hàng')
     .transform(normalizePhone)
     .refine((p) => VN_MOBILE_REGEX.test(p), 'Số điện thoại chưa đúng định dạng (VD: 0988123456)'),
+  // Optional; linked to the customer as their sign-in email when the order is completed
+  email: optionalEmail,
   city: z.string().trim().min(1).max(80),
   district: z.string().trim().min(1, 'Vui lòng chọn quận / huyện').max(80),
   address: z.string().trim().min(1, 'Vui lòng cung cấp địa chỉ số nhà/tòa nhà chi tiết').max(255),

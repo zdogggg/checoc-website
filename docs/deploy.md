@@ -43,6 +43,17 @@ Sửa `.env` cho production:
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | tài khoản chủ quán đầu tiên, chỉ được tạo khi chưa có tài khoản nào |
 | `NUXT_PUBLIC_BANK_*` | tài khoản nhận chuyển khoản VietQR (bỏ trống để tắt) |
 | `NUXT_TELEGRAM_*` | nhận tin đơn mới **và cảnh báo lỗi máy chủ** |
+| `NUXT_RESEND_API_KEY`, `NUXT_MAIL_FROM` | gửi mã đăng nhập cho khách qua email (xem mục Email bên dưới) |
+
+### Email đăng nhập (Resend)
+
+1. Tạo tài khoản ở resend.com → **Domains** → thêm tên miền (ví dụ `checoc.vn`) và thêm các bản ghi DNS
+   (SPF, DKIM) Resend đưa ra vào nơi quản lý tên miền. Đợi trạng thái **Verified**.
+2. **API Keys** → tạo key quyền "Sending access" → đặt vào `NUXT_RESEND_API_KEY`.
+3. `NUXT_MAIL_FROM="Chè Cốc <no-reply@checoc.vn>"` (địa chỉ phải thuộc tên miền đã xác thực).
+
+Gói miễn phí: 3.000 email/tháng, 100 email/ngày. Nếu Resend báo lỗi (key sai, tên miền chưa xác thực),
+khách thấy "Không gửi được email lúc này" và chi tiết lỗi nằm trong log của app.
 
 Tạo chuỗi ngẫu nhiên:
 

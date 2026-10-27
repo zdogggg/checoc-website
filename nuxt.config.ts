@@ -16,6 +16,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     telegramBotToken: '',
     telegramChatId: '',
+    // Email for customer login codes via Resend (server/utils/mail.ts); empty key = not set up
+    resendApiKey: '',
+    mailFrom: 'Chè Cốc <no-reply@example.com>',
     // SMS provider for customer login codes (see server/utils/sms.ts); empty = not set up
     smsProvider: '',
     public: {

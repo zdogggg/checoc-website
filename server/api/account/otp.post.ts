@@ -1,8 +1,10 @@
-import { otpRequestInput } from '#shared/schemas/customers'
+import { emailOtpRequestInput, phoneOtpRequestInput } from '#shared/schemas/customers'
 
 export default defineEventHandler(async (event) => {
   rateLimit(event, 'otp', 10, 15 * 60 * 1000)
-  const { phone } = await readValidated(event, otpRequestInput)
-  const result = await requestLoginCode(phone)
+  const target = (await sendsEmail(event))
+    ? await readValidated(event, emailOtpRequestInput)
+    : await readValidated(event, phoneOtpRequestInput)
+  const result = await requestLoginCode(target)
   return { ok: true, ...result }
 })

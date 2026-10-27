@@ -34,6 +34,12 @@ export interface CustomerOrderSummary {
 }
 
 // /api/account/me
+// Sign-in channels that can deliver a login code right now
+export interface LoginChannels {
+  email: boolean
+  sms: boolean
+}
+
 export interface CustomerAccount {
   phone: string
   name: string

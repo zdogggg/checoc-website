@@ -83,6 +83,10 @@
             <NuxtLink v-if="order.customerId" :to="`/admin/customers/${order.customerId}`" class="text-xs font-normal underline ml-1">Hồ sơ khách →</NuxtLink>
           </p>
           <a :href="`tel:${order.customerPhone}`" class="text-brand-dark-green font-mono underline">{{ order.customerPhone }}</a>
+          <p v-if="order.customerEmail" class="text-gray-600">
+            {{ order.customerEmail }}
+            <span class="text-xs text-gray-500">· gắn vào tài khoản khách khi đơn hoàn tất</span>
+          </p>
           <p class="text-gray-600">{{ order.address }}, {{ order.district }}, {{ order.city }}</p>
           <p v-if="order.note" class="bg-amber-50 text-amber-800 rounded-xl px-3 py-2">"{{ order.note }}"</p>
           <p v-if="order.cancelReason" class="bg-red-50 text-red-700 rounded-xl px-3 py-2">Lý do huỷ: {{ order.cancelReason }}</p>
