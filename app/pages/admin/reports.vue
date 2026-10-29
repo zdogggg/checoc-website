@@ -137,6 +137,28 @@
             <p v-else class="text-sm text-gray-500">Chưa có dữ liệu.</p>
           </section>
 
+          <!-- What each channel really leaves: revenue minus ingredients minus app commission -->
+          <section class="admin-card p-5">
+            <h3 class="font-bold mb-3">Theo kênh bán</h3>
+            <div v-if="report.channels.length" class="space-y-4 text-sm">
+              <div v-for="ch in report.channels" :key="ch.channel">
+                <div class="flex justify-between gap-2 font-semibold">
+                  <span>{{ CHANNEL_LABELS[ch.channel] }}</span>
+                  <span class="tabular-nums">{{ ch.orders }} đơn · {{ formatVnd(ch.revenue) }}</span>
+                </div>
+                <dl class="mt-1 space-y-0.5 text-gray-600">
+                  <div class="flex justify-between"><dt>Giá vốn</dt><dd class="tabular-nums">−{{ formatVnd(ch.cogs) }}</dd></div>
+                  <div v-if="ch.fees" class="flex justify-between"><dt>Phí nền tảng</dt><dd class="tabular-nums">−{{ formatVnd(ch.fees) }}</dd></div>
+                  <div class="flex justify-between text-brand-dark-green font-semibold">
+                    <dt>Còn lại</dt>
+                    <dd class="tabular-nums">{{ formatVnd(ch.revenue - ch.cogs - ch.fees) }} <span class="text-gray-400 font-normal text-xs">· {{ share(ch.revenue - ch.cogs - ch.fees, ch.revenue) }}</span></dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+            <p v-else class="text-sm text-gray-500">Chưa có dữ liệu.</p>
+          </section>
+
           <section class="admin-card p-5">
             <h3 class="font-bold mb-3">Thanh toán</h3>
             <ul v-if="report.payments.length" class="space-y-1.5 text-sm">
@@ -149,6 +171,7 @@
             <dl class="mt-4 pt-3 border-t border-gray-100 space-y-1.5 text-sm text-gray-600">
               <div class="flex justify-between"><dt>Giảm giá (mã + điểm)</dt><dd class="tabular-nums">{{ formatVnd(k.discounts) }}</dd></div>
               <div class="flex justify-between"><dt>Phí ship đã thu</dt><dd class="tabular-nums">{{ formatVnd(k.shippingCollected) }}</dd></div>
+              <div v-if="k.platformFees" class="flex justify-between"><dt>Phí ShopeeFood</dt><dd class="tabular-nums">{{ formatVnd(k.platformFees) }}</dd></div>
             </dl>
           </section>
 
@@ -226,7 +249,7 @@ watch(error, (e) => (rangeError.value = e ? apiErrorMessage(e, 'Không tải đ�
 
 const emptyKpis: ReportKpis = {
   revenue: 0, completedOrders: 0, placedOrders: 0, cancelledOrders: 0, avgOrderValue: 0, cogs: 0,
-  grossProfit: 0, discounts: 0, shippingCollected: 0, newCustomers: 0, returningCustomers: 0, ordersWithoutCost: 0,
+  grossProfit: 0, platformFees: 0, discounts: 0, shippingCollected: 0, newCustomers: 0, returningCustomers: 0, ordersWithoutCost: 0,
 }
 const k = computed(() => report.value?.kpis ?? emptyKpis)
 const p = computed(() => report.value?.previous ?? emptyKpis)

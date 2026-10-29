@@ -77,6 +77,17 @@ npm run dev
   `NUXT_TELEGRAM_*`.
 - Giờ hiển thị luôn theo múi giờ của quán (Asia/Ho_Chi_Minh).
 
+## Đơn ShopeeFood (nhập tay)
+
+- ShopeeFood không mở API cho từng quán, nên đơn được nhập lại sau khi giao xong: **Đơn hàng → Đơn ShopeeFood**
+  (`/admin/orders/shopeefood`). Bấm món để thêm, chọn topping, nhập mã đơn trên app; tiền món mặc định theo giá web,
+  hoặc nhập tiền món hiển thị trên ShopeeFood (chia lại theo tỉ lệ cho từng món). Phí ShopeeFood (%) được nhớ trên máy.
+- Đơn vào thẳng trạng thái "Hoàn tất": kho tự trừ theo định mức, lưu giá vốn và phí nền tảng (`orders.platform_fee`).
+  Không tạo khách, không tích điểm (app không chia sẻ thông tin người mua). Mỗi mã đơn ShopeeFood chỉ nhập được một lần.
+- Nhập nhầm: quản lý / chủ quán bấm "Huỷ đơn nhập nhầm" ở trang đơn, nguyên liệu được trả lại kho.
+- Báo cáo có mục "Theo kênh bán" (doanh thu, giá vốn, phí, còn lại); lãi lỗ tháng trừ phí ShopeeFood trước lợi nhuận ròng.
+- Món tạm hết trên web vẫn nhập được (đã bán trên app); nhớ tắt món đó cả trong app Shopee Partner.
+
 ## Khách hàng & tích điểm (CRM)
 
 - Mỗi số điện thoại là một khách hàng, tự tạo khi đặt đơn (không bắt buộc đăng ký); địa chỉ giao được lưu lại.

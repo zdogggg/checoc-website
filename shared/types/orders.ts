@@ -1,4 +1,4 @@
-import type { OrderStatus, PaymentMethod, PaymentStatus } from '../utils/orders'
+import type { OrderChannel, OrderStatus, PaymentMethod, PaymentStatus } from '../utils/orders'
 
 export interface OrderItemView {
   id: number
@@ -56,6 +56,10 @@ export interface AdminOrder extends Omit<PublicOrder, 'timeline'> {
   trackingToken: string
   customerId: number | null
   customerEmail: string | null
+  channel: OrderChannel
+  externalCode: string | null
+  platformFee: number
+  cogs: number
   paidAt: string | null
   completedAt: string | null
   cancelledAt: string | null
@@ -68,6 +72,8 @@ export interface AdminOrderListItem {
   status: OrderStatus
   paymentStatus: PaymentStatus
   paymentMethod: PaymentMethod
+  channel: OrderChannel
+  externalCode: string | null
   customerName: string
   customerPhone: string
   district: string

@@ -12,7 +12,11 @@ export async function monthlyPnl(month: string): Promise<MonthlyPnl> {
 
   const [[sales], [noCost], byCategory] = await Promise.all([
     db
-      .select({ revenue: sum(goods).mapWith(Number), cogs: sum(orders.cogs).mapWith(Number) })
+      .select({
+        revenue: sum(goods).mapWith(Number),
+        cogs: sum(orders.cogs).mapWith(Number),
+        fees: sum(orders.platformFee).mapWith(Number),
+      })
       .from(orders)
       .where(and(eq(orders.status, 'completed'), sql`${orderMonth} = ${month}`)),
     db
@@ -28,14 +32,16 @@ export async function monthlyPnl(month: string): Promise<MonthlyPnl> {
 
   const revenue = sales?.revenue ?? 0
   const cogs = sales?.cogs ?? 0
+  const platformFees = sales?.fees ?? 0
   const expenseTotal = byCategory.reduce((s, r) => s + (r.total ?? 0), 0)
   return {
     month,
     revenue,
     cogs,
     grossProfit: revenue - cogs,
+    platformFees,
     expenses: expenseTotal,
-    netProfit: revenue - cogs - expenseTotal,
+    netProfit: revenue - cogs - platformFees - expenseTotal,
     expensesByCategory: Object.fromEntries(byCategory.map((r) => [r.category, r.total ?? 0])) as Partial<
       Record<ExpenseCategory, number>
     >,

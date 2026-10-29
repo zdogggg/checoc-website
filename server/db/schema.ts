@@ -259,7 +259,10 @@ export const orderStatus = pgEnum('order_status', [
   'cancelled',
 ])
 export const paymentStatus = pgEnum('payment_status', ['unpaid', 'paid', 'refunded'])
-export const paymentMethod = pgEnum('payment_method', ['cod', 'vietqr'])
+// platform: paid to the delivery app (ShopeeFood), which settles with the shop
+export const paymentMethod = pgEnum('payment_method', ['cod', 'vietqr', 'platform'])
+// Where the order came from: this website, or entered by staff from a delivery app
+export const orderChannel = pgEnum('order_channel', ['website', 'shopeefood'])
 
 // Human-friendly order codes: CC1001, CC1002, ...
 export const orderCodeSeq = pgSequence('order_code_seq', { startWith: 1001 })
@@ -278,6 +281,9 @@ export const orders = pgTable('orders', {
   // Unguessable id for the customer's tracking link (the code is sequential)
   trackingToken: varchar('tracking_token', { length: 32 }).notNull().unique(),
   status: orderStatus('status').notNull().default('pending'),
+  channel: orderChannel('channel').notNull().default('website'),
+  // The order's code in the delivery app, so the same order cannot be entered twice
+  externalCode: varchar('external_code', { length: 40 }),
   paymentStatus: paymentStatus('payment_status').notNull().default('unpaid'),
   paymentMethod: paymentMethod('payment_method').notNull(),
   // Delivery details are a snapshot taken at checkout
@@ -302,6 +308,8 @@ export const orders = pgTable('orders', {
   pointsEarned: integer('points_earned').notNull().default(0),
   // Ingredient cost of the order, fixed when it is completed (stock is taken out then)
   cogs: integer('cogs').notNull().default(0),
+  // Commission kept by the delivery app on this order (0 for website orders)
+  platformFee: integer('platform_fee').notNull().default(0),
   cancelReason: varchar('cancel_reason', { length: 255 }),
   paidAt: timestamp('paid_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
@@ -312,6 +320,7 @@ export const orders = pgTable('orders', {
   index('orders_created_at_idx').on(t.createdAt),
   index('orders_customer_phone_idx').on(t.customerPhone),
   index('orders_customer_id_idx').on(t.customerId),
+  uniqueIndex('orders_channel_external_code_idx').on(t.channel, t.externalCode),
 ])
 
 export const orderItems = pgTable('order_items', {

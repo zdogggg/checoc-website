@@ -114,3 +114,24 @@ export function totalsFor(lines: PricedLine[], coupon: AppliedCoupon | null, poi
     total: Math.max(0, subtotal - discount - points + shippingFee),
   }
 }
+
+// Delivery apps often list higher prices than the website. When staff enter the goods amount
+// shown on the app, spread it over the lines in proportion to their menu value so the line
+// totals still add up to it exactly (rounding goes to the last line).
+export function repriceLines(lines: PricedLine[], targetSubtotal: number): PricedLine[] {
+  const current = lines.reduce((sum, l) => sum + l.lineTotal, 0)
+  if (!lines.length || current === targetSubtotal) return lines
+  let assigned = 0
+  return lines.map((line, index) => {
+    const last = index === lines.length - 1
+    const share = current > 0 ? line.lineTotal / current : index === 0 ? 1 : 0
+    const lineTotal = last ? targetSubtotal - assigned : Math.round(targetSubtotal * share)
+    assigned += lineTotal
+    return { ...line, lineTotal, unitPrice: Math.round(lineTotal / line.quantity) }
+  })
+}
+
+// Commission the delivery app keeps, on the goods after the shop's own discount
+export function platformFeeFor(goods: number, percent: number): number {
+  return Math.max(0, Math.round((goods * percent) / 100))
+}

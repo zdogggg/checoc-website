@@ -85,6 +85,8 @@ export interface MonthlyPnl {
   revenue: number
   cogs: number
   grossProfit: number
+  // Delivery app commission (ShopeeFood), counted as a selling cost
+  platformFees: number
   expenses: number
   netProfit: number
   expensesByCategory: Partial<Record<ExpenseCategory, number>>

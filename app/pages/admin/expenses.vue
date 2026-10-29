@@ -114,7 +114,6 @@ useHead({ title: 'Chi phí & lãi lỗ' })
 const adminFetch = useAdminApi()
 const uiStore = useUiStore()
 
-const shopToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: SHOP_TIME_ZONE }).format(new Date())
 const month = ref(shopToday().slice(0, 7))
 
 const { data, refresh } = await useFetch<{ items: ExpenseView[]; pnl: MonthlyPnl }>('/api/admin/expenses', {
@@ -131,7 +130,13 @@ const cards = computed(() => {
     { label: 'Doanh thu', value: p.revenue, hint: 'Tiền món, không gồm phí ship', cls: '' },
     { label: 'Giá vốn nguyên liệu', value: p.cogs, hint: share(p.cogs), cls: '' },
     { label: 'Lãi gộp', value: p.grossProfit, hint: share(p.grossProfit), cls: tone(p.grossProfit) },
-    { label: 'Chi phí vận hành', value: p.expenses, hint: share(p.expenses), cls: '' },
+    // Delivery app commission and operating costs together, so five tiles still fit one row
+    {
+      label: 'Chi phí',
+      value: p.expenses + p.platformFees,
+      hint: p.platformFees ? `Vận hành ${formatVnd(p.expenses)} · ShopeeFood ${formatVnd(p.platformFees)}` : share(p.expenses),
+      cls: '',
+    },
     { label: 'Lợi nhuận ròng', value: p.netProfit, hint: share(p.netProfit), cls: tone(p.netProfit) },
   ]
 })

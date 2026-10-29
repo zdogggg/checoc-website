@@ -33,6 +33,9 @@ const timeFmt = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-d
 export const formatDateTime = (iso: string) => dateTimeFmt.format(new Date(iso))
 export const formatTime = (iso: string) => timeFmt.format(new Date(iso))
 
+// Today's date in the shop, "YYYY-MM-DD"
+export const shopToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: SHOP_TIME_ZONE }).format(new Date())
+
 // "3 phút trước", falls back to the date after a day
 export function timeAgo(iso: string, now = Date.now()): string {
   const minutes = Math.floor((now - new Date(iso).getTime()) / 60000)

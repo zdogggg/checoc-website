@@ -16,6 +16,7 @@
       <div class="flex flex-wrap gap-2">
         <NuxtLink :to="`/admin/orders/${order.id}/print`" target="_blank" class="admin-btn-secondary"><AppIcon name="printer" /> In phiếu</NuxtLink>
         <button v-if="canCancel" type="button" class="admin-btn-danger" @click="isCancelOpen = true">Huỷ đơn</button>
+        <button v-if="canVoid" type="button" class="admin-btn-danger" @click="isCancelOpen = true">Huỷ đơn nhập nhầm</button>
         <button v-if="forward" type="button" class="admin-btn-primary" :disabled="isBusy" @click="setStatus(forward)">
           {{ FORWARD_ACTION_LABELS[forward] }} →
         </button>
@@ -76,7 +77,21 @@
       </div>
 
       <div class="space-y-6">
-        <section class="admin-card p-6 text-sm space-y-2">
+        <!-- Entered from a delivery app: no customer details, but the app's own code and its cut -->
+        <section v-if="isPlatform" class="admin-card p-6 text-sm space-y-2">
+          <h2 class="font-bold mb-2">{{ CHANNEL_LABELS[order.channel] }}</h2>
+          <p>Mã đơn trên app: <strong class="font-mono">{{ order.externalCode }}</strong></p>
+          <dl class="space-y-1 pt-2 border-t border-gray-100">
+            <div class="flex justify-between"><dt>Tiền món</dt><dd class="tabular-nums">{{ formatVnd(order.total) }}</dd></div>
+            <div class="flex justify-between text-gray-600"><dt>Phí {{ CHANNEL_LABELS[order.channel] }}</dt><dd class="tabular-nums">−{{ formatVnd(order.platformFee) }}</dd></div>
+            <div class="flex justify-between text-gray-600"><dt>Giá vốn nguyên liệu</dt><dd class="tabular-nums">−{{ formatVnd(order.cogs) }}</dd></div>
+            <div class="flex justify-between font-bold"><dt>Còn lại</dt><dd class="tabular-nums">{{ formatVnd(order.total - order.platformFee - order.cogs) }}</dd></div>
+          </dl>
+          <p v-if="order.note" class="bg-amber-50 text-amber-800 rounded-xl px-3 py-2">"{{ order.note }}"</p>
+          <p v-if="order.cancelReason" class="bg-red-50 text-red-700 rounded-xl px-3 py-2">Đã huỷ: {{ order.cancelReason }}</p>
+        </section>
+
+        <section v-else class="admin-card p-6 text-sm space-y-2">
           <h2 class="font-bold mb-2">Khách hàng</h2>
           <p class="font-semibold">
             {{ order.customerName }}
@@ -92,7 +107,7 @@
           <p v-if="order.cancelReason" class="bg-red-50 text-red-700 rounded-xl px-3 py-2">Lý do huỷ: {{ order.cancelReason }}</p>
         </section>
 
-        <section class="admin-card p-6 text-sm space-y-3">
+        <section v-if="!isPlatform" class="admin-card p-6 text-sm space-y-3">
           <h2 class="font-bold">Thanh toán</h2>
           <p class="text-gray-600">{{ PAYMENT_METHOD_LABELS[order.paymentMethod] }}</p>
           <p v-if="order.pointsEarned" class="text-xs text-green-700">Khách đã được cộng {{ order.pointsEarned.toLocaleString('vi-VN') }} điểm.</p>
@@ -113,7 +128,7 @@
           </div>
         </section>
 
-        <section class="admin-card p-6 text-sm space-y-2">
+        <section v-if="!isPlatform" class="admin-card p-6 text-sm space-y-2">
           <h2 class="font-bold">Link theo dõi của khách</h2>
           <p class="text-gray-500 text-xs">Gửi cho khách nếu họ cần xem lại đơn.</p>
           <div class="flex gap-2">
@@ -124,14 +139,17 @@
       </div>
     </div>
 
-    <AdminModal :open="isCancelOpen" title="Huỷ đơn hàng" @close="isCancelOpen = false">
+    <AdminModal :open="isCancelOpen" :title="isPlatform ? 'Huỷ đơn nhập nhầm' : 'Huỷ đơn hàng'" @close="isCancelOpen = false">
       <form class="space-y-4" @submit.prevent="cancelOrder">
-        <p class="text-sm text-gray-600">
+        <p v-if="isPlatform" class="text-sm text-gray-600">
+          Nguyên liệu của đơn được trả lại kho, đơn không còn tính vào doanh thu và lãi lỗ.
+        </p>
+        <p v-else class="text-sm text-gray-600">
           Khách sẽ thấy lý do này trên trang theo dõi đơn.
           <span v-if="order.couponCode">Lượt dùng mã {{ order.couponCode }} sẽ được trả lại.</span>
           <span v-if="order.pointsUsed">{{ order.pointsUsed.toLocaleString('vi-VN') }} điểm khách đã dùng sẽ được hoàn lại.</span>
         </p>
-        <div class="flex flex-wrap gap-2">
+        <div v-if="!isPlatform" class="flex flex-wrap gap-2">
           <button v-for="r in cancelPresets" :key="r" type="button" class="text-xs px-3 py-1.5 rounded-full border border-gray-200 hover:border-brand-gold" @click="cancelReason = r">{{ r }}</button>
         </div>
         <div>
@@ -168,6 +186,9 @@ useHead({ title: () => `Đơn ${order.value?.code ?? ''}` })
 
 const forward = computed(() => (order.value ? nextForwardStatus(order.value.status) : null))
 const canCancel = computed(() => !!order.value && canTransition(order.value.status, 'cancelled'))
+const isPlatform = computed(() => !!order.value && order.value.channel !== 'website')
+// Undoing an app order changes stock and revenue: managers and owners only (as on the server)
+const canVoid = computed(() => isPlatform.value && order.value?.status === 'completed' && canEditMoney.value)
 const trackingUrl = computed(() => `${requestUrl.origin}/orders/${order.value?.trackingToken}`)
 
 // Someone else may be working on the same order
@@ -214,7 +235,13 @@ const cancelPresets = ['Khách yêu cầu huỷ', 'Không liên lạc được k
 async function cancelOrder() {
   cancelError.value = cancelReason.value.trim() ? '' : 'Vui lòng ghi lý do huỷ đơn'
   if (cancelError.value) return
-  if (await setStatus('cancelled', cancelReason.value.trim())) {
+  const done = isPlatform.value
+    ? await run(
+        () => adminFetch<AdminOrder>(`/api/admin/orders/${route.params.id}/void`, { method: 'POST', body: { reason: cancelReason.value.trim() } }),
+        'Đã huỷ đơn và trả nguyên liệu về kho',
+      )
+    : await setStatus('cancelled', cancelReason.value.trim())
+  if (done) {
     isCancelOpen.value = false
     cancelReason.value = ''
   }

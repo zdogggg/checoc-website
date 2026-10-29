@@ -22,6 +22,7 @@ async function kpis(from: string, to: string): Promise<ReportKpis> {
         revenue: sum(goods).mapWith(Number),
         orders: count(),
         cogs: sum(orders.cogs).mapWith(Number),
+        fees: sum(orders.platformFee).mapWith(Number),
         discounts: sum(sql`${orders.discount} + ${orders.pointsDiscount}`).mapWith(Number),
         shipping: sum(orders.shippingFee).mapWith(Number),
       })
@@ -61,6 +62,7 @@ async function kpis(from: string, to: string): Promise<ReportKpis> {
     avgOrderValue: completedOrders ? Math.round(revenue / completedOrders) : 0,
     cogs,
     grossProfit: revenue - cogs,
+    platformFees: money?.fees ?? 0,
     discounts: money?.discounts ?? 0,
     shippingCollected: money?.shipping ?? 0,
     newCustomers: custRow.new_customers ?? 0,
@@ -76,7 +78,7 @@ export async function salesReport(from: string, to: string): Promise<SalesReport
   const hour = sql<number>`extract(hour from ${orders.createdAt} at time zone 'Asia/Ho_Chi_Minh')::int`
   const dayStr = sql<string>`to_char(${shopDay}, 'YYYY-MM-DD')`
 
-  const [current, previous, dailyRows, hourlyRows, topProducts, cats, payments, topCustomers] = await Promise.all([
+  const [current, previous, dailyRows, hourlyRows, topProducts, cats, payments, topCustomers, channels] = await Promise.all([
     kpis(from, to),
     kpis(prev.from, prev.to),
     db
@@ -134,6 +136,18 @@ export async function salesReport(from: string, to: string): Promise<SalesReport
       .groupBy(customers.id)
       .orderBy(desc(sum(goods)))
       .limit(5),
+    db
+      .select({
+        channel: orders.channel,
+        orders: count(),
+        revenue: sum(goods).mapWith(Number),
+        cogs: sum(orders.cogs).mapWith(Number),
+        fees: sum(orders.platformFee).mapWith(Number),
+      })
+      .from(orders)
+      .where(range)
+      .groupBy(orders.channel)
+      .orderBy(desc(sum(goods))),
   ])
 
   // Fill days and hours without orders so charts have a continuous axis
@@ -150,6 +164,7 @@ export async function salesReport(from: string, to: string): Promise<SalesReport
     categories: cats,
     payments,
     topCustomers,
+    channels,
   }
 }
 

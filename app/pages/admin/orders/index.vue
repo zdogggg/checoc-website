@@ -5,9 +5,15 @@
         <h1 class="font-heading text-3xl font-bold">Đơn hàng</h1>
         <p class="text-gray-500 text-sm">Tự cập nhật mỗi 15 giây.</p>
       </div>
-      <div class="flex gap-2">
-        <input v-model="search" type="search" class="admin-input w-48 sm:w-64" placeholder="Mã đơn, tên, SĐT...">
+      <div class="flex flex-wrap gap-2">
+        <input v-model="search" type="search" class="admin-input w-48 sm:w-64" placeholder="Mã đơn, tên, SĐT, mã ShopeeFood...">
         <input v-model="day" type="date" class="admin-input w-40" aria-label="Lọc theo ngày">
+        <select v-model="channel" class="admin-input w-auto" aria-label="Lọc theo kênh">
+          <option value="all">Mọi kênh</option>
+          <option value="website">{{ CHANNEL_LABELS.website }}</option>
+          <option value="shopeefood">{{ CHANNEL_LABELS.shopeefood }}</option>
+        </select>
+        <NuxtLink to="/admin/orders/shopeefood" class="admin-btn-primary"><AppIcon name="plus" /> Đơn ShopeeFood</NuxtLink>
       </div>
     </div>
 
@@ -36,14 +42,17 @@
           <div class="flex flex-wrap items-center gap-2 mb-1">
             <span class="font-mono font-bold group-hover:underline">{{ o.code }}</span>
             <span class="text-xs font-semibold px-2 py-0.5 rounded-full" :class="ORDER_STATUS_BADGE[o.status]">{{ ORDER_STATUS_LABELS[o.status] }}</span>
-            <span class="text-xs font-semibold px-2 py-0.5 rounded-full" :class="PAYMENT_STATUS_BADGE[o.paymentStatus]">
+            <span v-if="o.channel !== 'website'" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
+              {{ CHANNEL_LABELS[o.channel] }} · {{ o.externalCode }}
+            </span>
+            <span v-else class="text-xs font-semibold px-2 py-0.5 rounded-full" :class="PAYMENT_STATUS_BADGE[o.paymentStatus]">
               {{ o.paymentMethod === 'cod' ? 'COD' : 'CK' }} · {{ PAYMENT_STATUS_LABELS[o.paymentStatus] }}
             </span>
             <span class="text-xs text-gray-400" :title="formatDateTime(o.createdAt)">
               <ClientOnly :fallback="formatTime(o.createdAt)">{{ timeAgo(o.createdAt, now) }}</ClientOnly>
             </span>
           </div>
-          <p class="text-sm"><strong>{{ o.customerName }}</strong> · {{ o.customerPhone }} · {{ o.district }}</p>
+          <p v-if="o.channel === 'website'" class="text-sm"><strong>{{ o.customerName }}</strong> · {{ o.customerPhone }} · {{ o.district }}</p>
           <p class="text-sm text-gray-500 truncate">{{ o.itemSummary }}</p>
         </NuxtLink>
         <div class="flex sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0">
@@ -75,7 +84,7 @@
 
 <script setup lang="ts">
 import type { AdminOrderListItem } from '#shared/types/orders'
-import type { OrderStatus } from '#shared/utils/orders'
+import type { OrderChannel, OrderStatus } from '#shared/utils/orders'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 useHead({ title: 'Đơn hàng' })
@@ -92,15 +101,17 @@ const status = ref<Tab>((route.query.status as Tab) || 'active')
 const search = ref(String(route.query.q ?? ''))
 const debouncedSearch = refDebounced(search, 300)
 const day = ref(String(route.query.day ?? ''))
+const channel = ref<'all' | OrderChannel>((route.query.channel as OrderChannel) || 'all')
 const page = ref(Number(route.query.page ?? 1) || 1)
 
-watch([status, debouncedSearch, day], () => (page.value = 1))
-watch([status, debouncedSearch, day, page], () => {
+watch([status, debouncedSearch, day, channel], () => (page.value = 1))
+watch([status, debouncedSearch, day, channel, page], () => {
   router.replace({
     query: {
       status: status.value === 'active' ? undefined : status.value,
       q: debouncedSearch.value || undefined,
       day: day.value || undefined,
+      channel: channel.value === 'all' ? undefined : channel.value,
       page: page.value > 1 ? page.value : undefined,
     },
   })
@@ -117,6 +128,7 @@ const { data, refresh } = await useFetch<{
     status: status.value,
     q: debouncedSearch.value || undefined,
     day: day.value || undefined,
+    channel: channel.value,
     page: page.value,
   })),
 })

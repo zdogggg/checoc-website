@@ -2,7 +2,8 @@
 
 export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'shipping' | 'completed' | 'cancelled'
 export type PaymentStatus = 'unpaid' | 'paid' | 'refunded'
-export type PaymentMethod = 'cod' | 'vietqr'
+export type PaymentMethod = 'cod' | 'vietqr' | 'platform'
+export type OrderChannel = 'website' | 'shopeefood'
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   pending: 'Chờ xác nhận',
@@ -22,6 +23,12 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   cod: 'Tiền mặt khi nhận hàng (COD)',
   vietqr: 'Chuyển khoản VietQR',
+  platform: 'Thanh toán qua ShopeeFood',
+}
+
+export const CHANNEL_LABELS: Record<OrderChannel, string> = {
+  website: 'Website',
+  shopeefood: 'ShopeeFood',
 }
 
 // The happy path, in order; used for progress bars

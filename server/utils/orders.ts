@@ -63,6 +63,10 @@ export function toAdminOrder(order: OrderRow & { items: ItemRow[]; logs: LogRow[
     customerId: order.customerId,
     customerPhone: order.customerPhone,
     customerEmail: order.customerEmail,
+    channel: order.channel,
+    externalCode: order.externalCode,
+    platformFee: order.platformFee,
+    cogs: order.cogs,
     paidAt: order.paidAt?.toISOString() ?? null,
     completedAt: order.completedAt?.toISOString() ?? null,
     cancelledAt: order.cancelledAt?.toISOString() ?? null,
@@ -86,7 +90,7 @@ export async function findAdminOrder(id: number) {
 }
 
 // Current menu data needed to price an order
-async function loadPricingInputs(productIds: number[]) {
+export async function loadPricingInputs(productIds: number[]) {
   const rows = await useDb().query.products.findMany({
     where: and(inArray(products.id, productIds), isNull(products.deletedAt)),
     with: { category: { columns: { isActive: true } } },

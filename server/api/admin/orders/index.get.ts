@@ -13,6 +13,7 @@ const query = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
+  channel: z.enum(['all', 'website', 'shopeefood']).default('all'),
   page: z.coerce.number().int().min(1).default(1),
 })
 
@@ -28,9 +29,12 @@ export default defineEventHandler(async (event) => {
   const base: SQL[] = []
   if (params.q) {
     const like = `%${params.q}%`
-    base.push(or(ilike(orders.code, like), ilike(orders.customerPhone, like), ilike(orders.customerName, like))!)
+    base.push(
+      or(ilike(orders.code, like), ilike(orders.customerPhone, like), ilike(orders.customerName, like), ilike(orders.externalCode, like))!,
+    )
   }
   if (params.day) base.push(sql`${shopDay} = ${params.day}::date`)
+  if (params.channel !== 'all') base.push(eq(orders.channel, params.channel))
 
   const where = [...base]
   if (params.status === 'active') where.push(inArray(orders.status, ACTIVE))
@@ -68,6 +72,8 @@ export default defineEventHandler(async (event) => {
       status: o.status,
       paymentStatus: o.paymentStatus,
       paymentMethod: o.paymentMethod,
+      channel: o.channel,
+      externalCode: o.externalCode,
       customerName: o.customerName,
       customerPhone: o.customerPhone,
       district: o.district,
