@@ -478,6 +478,22 @@ export const expenses = pgTable('expenses', {
 }, (t) => [index('expenses_spent_on_idx').on(t.spentOn)])
 
 // ---------------------------------------------------------------------------
+// Web push: a browser that asked to be told when one order changes status.
+// Tied to the order (no account needed); removed once the order is done.
+// ---------------------------------------------------------------------------
+
+export const pushSubscriptions = pgTable('push_subscriptions', {
+  id: serial('id').primaryKey(),
+  orderId: integer('order_id')
+    .notNull()
+    .references(() => orders.id, { onDelete: 'cascade' }),
+  endpoint: text('endpoint').notNull(),
+  p256dh: varchar('p256dh', { length: 255 }).notNull(),
+  auth: varchar('auth', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex('push_subscriptions_order_endpoint_idx').on(t.orderId, t.endpoint)])
+
+// ---------------------------------------------------------------------------
 // Audit log: every write made through the admin API, plus sign-ins
 // ---------------------------------------------------------------------------
 

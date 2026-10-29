@@ -54,6 +54,20 @@ export function isFinalStatus(status: OrderStatus): boolean {
   return TRANSITIONS[status].length === 0
 }
 
+// Push notification sent to the customer when their order moves (none for "pending":
+// that is the state they just created themselves)
+export function orderStatusMessage(code: string, status: OrderStatus, cancelReason?: string | null) {
+  const body: Record<Exclude<OrderStatus, 'pending'>, string> = {
+    confirmed: 'Quán đã nhận đơn của bạn và sắp bắt đầu làm món.',
+    preparing: 'Quán đang chuẩn bị món cho bạn.',
+    shipping: 'Đơn đang trên đường giao tới bạn.',
+    completed: 'Đơn đã giao xong. Cảm ơn bạn đã ủng hộ Chè Cốc!',
+    cancelled: cancelReason ? `Đơn đã bị huỷ: ${cancelReason}` : 'Đơn đã bị huỷ.',
+  }
+  if (status === 'pending') return null
+  return { title: `Đơn ${code} · ${ORDER_STATUS_LABELS[status]}`, body: body[status] }
+}
+
 // "+84988123456" / "84 988 123 456" -> "0988123456"
 export function normalizePhone(input: string): string {
   const digits = input.replace(/[^\d+]/g, '')

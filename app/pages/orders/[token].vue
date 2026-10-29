@@ -27,7 +27,7 @@
 
         <div v-if="order.status === 'cancelled'" class="bg-red-50 border border-red-100 text-red-700 rounded-2xl p-4 text-sm">
           Đơn hàng đã bị huỷ<span v-if="order.cancelReason">: {{ order.cancelReason }}</span>.
-          Nếu cần hỗ trợ, vui lòng gọi hotline <strong>1900 8888</strong>.
+          Nếu cần hỗ trợ, vui lòng gọi <a :href="`tel:${SHOP.phone}`" class="font-bold underline">{{ SHOP.phone }}</a>.
         </div>
         <ol v-else class="grid grid-cols-5 gap-1 text-center">
           <li v-for="(step, i) in ORDER_FLOW" :key="step" class="flex flex-col items-center">
@@ -49,6 +49,10 @@
           </li>
         </ol>
       </section>
+
+      <ClientOnly>
+        <OrderPushToggle :token="token" :final="isFinalStatus(order.status)" />
+      </ClientOnly>
 
       <!-- Payment -->
       <section class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100">
@@ -126,7 +130,7 @@
       </section>
 
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
-        <span>Cần hỗ trợ? Gọi hotline <strong class="text-brand-dark-green text-sm">1900 8888</strong> (08:00 - 22:30)</span>
+        <span>Cần hỗ trợ? Gọi <a :href="`tel:${SHOP.phone}`" class="font-bold text-brand-dark-green text-sm underline">{{ SHOP.phone }}</a> ({{ SHOP.opens }} – {{ SHOP.closes }})</span>
         <NuxtLink to="/products" class="bg-brand-dark-green text-brand-cream font-bold px-6 py-3 rounded-full hover:bg-[#1a4132] transition-colors text-sm">
           Tiếp tục chọn món
         </NuxtLink>

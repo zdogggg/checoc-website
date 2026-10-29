@@ -124,6 +124,19 @@ npm run dev
   đặt lại mật khẩu. Không tự khoá chính mình; luôn còn ít nhất một chủ quán.
 - `/admin/audit`: mọi thao tác ghi dữ liệu trong trang quản trị và các lần đăng nhập (kể cả thất bại), kèm IP.
 
+## Web app cài lên điện thoại (PWA)
+
+- `public/manifest.webmanifest` + icon trong `public/icons/`: khách bấm "Thêm vào Màn hình chính" (iPhone: nút Chia sẻ
+  trong Safari) là có biểu tượng Chè Cốc, mở toàn màn hình.
+- Service worker `public/sw.js` (chỉ đăng ký ở production): lưu sẵn file build và ảnh món để mở nhanh; trang luôn lấy
+  từ mạng (giá, tình trạng món, tài khoản luôn mới); mất mạng thì hiện `public/offline.html`. Đổi `VERSION` trong
+  `sw.js` khi sửa cách cache.
+- **Thông báo đẩy** theo từng đơn: trang theo dõi đơn có nút "Bật thông báo"; mỗi lần quán đổi trạng thái, khách nhận
+  thông báo kể cả khi đã đóng trang. Trên iPhone chỉ hoạt động khi mở từ màn hình chính (iOS 16.4 trở lên).
+  Cấu hình `NUXT_PUBLIC_VAPID_PUBLIC_KEY`, `NUXT_VAPID_PRIVATE_KEY`, `NUXT_VAPID_SUBJECT`
+  (`npx web-push generate-vapid-keys`, tạo một lần và giữ nguyên). Đăng ký bị xoá khi đơn hoàn tất hoặc huỷ; server
+  chỉ gửi tới dịch vụ push của trình duyệt (Google, Apple, Mozilla, Microsoft).
+
 ## SEO
 
 - `robots.txt` và `sitemap.xml` sinh động (`server/routes/`), sitemap gồm các trang chính và mọi món đang bán.

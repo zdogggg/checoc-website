@@ -44,6 +44,7 @@ Sửa `.env` cho production:
 | `NUXT_PUBLIC_BANK_*` | tài khoản nhận chuyển khoản VietQR (bỏ trống để tắt) |
 | `NUXT_TELEGRAM_*` | nhận tin đơn mới **và cảnh báo lỗi máy chủ** |
 | `NUXT_RESEND_API_KEY`, `NUXT_MAIL_FROM` | gửi mã đăng nhập cho khách qua email (xem mục Email bên dưới) |
+| `NUXT_PUBLIC_VAPID_PUBLIC_KEY`, `NUXT_VAPID_PRIVATE_KEY`, `NUXT_VAPID_SUBJECT` | thông báo đẩy trạng thái đơn; tạo bằng `npx web-push generate-vapid-keys`, **không đổi** sau khi chạy thật (đổi là mọi khách đã bật thông báo mất đăng ký). `NUXT_VAPID_SUBJECT` phải là `mailto:` một email thật, nếu không thông báo tới iPhone bị Apple từ chối |
 
 ### Email đăng nhập (Resend)
 

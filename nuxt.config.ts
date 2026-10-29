@@ -12,6 +12,11 @@ export default defineNuxtConfig({
     'nuxt-auth-utils'
   ],
   css: ['~/assets/css/tailwind.css'],
+  routeRules: {
+    // Browsers must pick up a new service worker on the next visit
+    '/sw.js': { headers: { 'cache-control': 'no-cache' } },
+    '/manifest.webmanifest': { headers: { 'cache-control': 'public, max-age=3600' } },
+  },
   // Overridden by NUXT_* env vars, e.g. NUXT_TELEGRAM_BOT_TOKEN, NUXT_PUBLIC_BANK_ACCOUNT_NO
   runtimeConfig: {
     telegramBotToken: '',
@@ -21,10 +26,15 @@ export default defineNuxtConfig({
     mailFrom: 'Chè Cốc <no-reply@example.com>',
     // SMS provider for customer login codes (see server/utils/sms.ts); empty = not set up
     smsProvider: '',
+    // Web push (order status notifications); generate with `npx web-push generate-vapid-keys`
+    vapidPrivateKey: '',
+    vapidSubject: 'mailto:admin@example.com',
     public: {
       siteUrl: '',
       // false on staging / preview: robots.txt then blocks every crawler
       indexable: true,
+      // Web push public key (pairs with vapidPrivateKey); empty hides the notification button
+      vapidPublicKey: '',
       // VietQR transfers; the option is hidden at checkout until all three are set
       bank: {
         bankId: '',

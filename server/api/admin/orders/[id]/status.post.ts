@@ -6,5 +6,8 @@ export default defineEventHandler(async (event) => {
   const id = readId(event)
   const { status, note } = await readValidated(event, orderStatusInput)
   await changeOrderStatus(id, status, note, user.id)
-  return findAdminOrder(id)
+  const order = await findAdminOrder(id)
+  // Fire and forget: the staff screen does not wait for the customer's notification
+  if (order) event.waitUntil(notifyOrderStatus(order))
+  return order
 })
