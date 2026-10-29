@@ -49,7 +49,7 @@
           </div>
           <div class="flex items-center sm:items-start gap-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-brand-peach shrink-0"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-            <p class="text-xs text-white/80 leading-tight">Giao hàng nhanh<br/><span class="font-bold text-white">trong 30 phút</span></p>
+            <p class="text-xs text-white/80 leading-tight">Giao tận nơi<br/><span class="font-bold text-white">nội thành TP.HCM</span></p>
           </div>
         </div>
       </div>

@@ -38,10 +38,6 @@
           <div class="mb-4 pb-4 border-b border-gray-100">
             <div class="flex items-center gap-2 text-xs text-brand-gold font-bold mb-1">
               <span>{{ product?.categoryName }}</span>
-              <span>•</span>
-              <span class="flex items-center gap-0.5 text-amber-500">
-                <AppIcon name="star" filled /> {{ product?.rating || 4.9 }}
-              </span>
             </div>
             <h2 class="font-heading text-2xl sm:text-3xl font-bold text-brand-dark-green mb-1.5 leading-snug">
               {{ product?.name }}

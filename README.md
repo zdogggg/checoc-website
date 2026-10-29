@@ -66,6 +66,9 @@ npm run dev
 ## Đơn hàng
 
 - Server tự tính lại toàn bộ giá từ thực đơn hiện tại; client không gửi giá.
+- Khu vực giao hàng (TP.HCM, danh sách quận) nằm ở `shared/utils/delivery.ts`; thanh toán chỉ cho chọn các khu vực này
+  và API đặt hàng từ chối mọi khu vực khác. Thông tin quán (SĐT, địa chỉ, giờ mở cửa, link mạng xã hội) ở
+  `shared/utils/site.ts`.
 - Mã đơn tuần tự (`CC1001`, ...) để đọc qua điện thoại; khách theo dõi đơn qua link có token ngẫu nhiên.
 - Trạng thái: chờ xác nhận → đã xác nhận → đang chuẩn bị → đang giao → hoàn tất (huỷ được ở mọi bước trước hoàn tất,
   bắt buộc ghi lý do; huỷ đơn trả lại lượt dùng mã giảm giá). Đơn COD tự chuyển "đã thanh toán" khi hoàn tất.

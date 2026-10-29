@@ -10,4 +10,4 @@ export function siteOrigin(event: H3Event): string {
 }
 
 // Indexable storefront pages. Private pages (checkout, account, order tracking, admin) are excluded.
-export const STATIC_PAGES = ['/', '/products', '/about', '/news', '/contact']
+export const STATIC_PAGES = ['/', '/products', '/about', '/contact']

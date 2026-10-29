@@ -76,8 +76,8 @@ describe('order input', () => {
   const base = {
     fullName: 'Lan',
     phone: '+84 988 123 456',
-    city: 'Hà Nội',
-    district: 'Cầu Giấy',
+    city: 'TP. Hồ Chí Minh',
+    district: 'Quận 10',
     address: '1 Xuân Thuỷ',
     paymentMethod: 'cod',
     items: [{ productId: 1, quantity: 1 }],

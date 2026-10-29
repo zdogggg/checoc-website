@@ -5,8 +5,8 @@ import { orderInput } from '#shared/schemas/orders'
 const baseOrder = {
   fullName: 'Lan',
   phone: '0988123456',
-  city: 'HCM',
-  district: 'Q1',
+  city: 'TP. Hồ Chí Minh',
+  district: 'Quận 1',
   address: '1 Lê Lợi',
   paymentMethod: 'cod',
   items: [{ productId: 1, quantity: 1 }],
@@ -29,5 +29,14 @@ describe('order email', () => {
     expect(orderInput.parse(baseOrder).email).toBeUndefined()
     expect(orderInput.parse({ ...baseOrder, email: 'Lan@Gmail.com' }).email).toBe('lan@gmail.com')
     expect(orderInput.safeParse({ ...baseOrder, email: 'lan@' }).success).toBe(false)
+  })
+})
+
+describe('delivery area', () => {
+  it('only accepts the shop city and listed areas', () => {
+    expect(orderInput.safeParse(baseOrder).success).toBe(true)
+    expect(orderInput.safeParse({ ...baseOrder, city: 'Hà Nội' }).success).toBe(false)
+    expect(orderInput.safeParse({ ...baseOrder, district: 'Cầu Giấy' }).success).toBe(false)
+    expect(orderInput.safeParse({ ...baseOrder, district: '' }).success).toBe(false)
   })
 })

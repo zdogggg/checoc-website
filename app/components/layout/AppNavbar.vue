@@ -38,13 +38,6 @@
         Về chúng tôi
       </NuxtLink>
       <NuxtLink 
-        to="/news" 
-        class="transition-colors pb-1 border-b-2"
-        :class="route.path === '/news' ? 'text-brand-peach border-brand-peach font-semibold' : 'text-white/80 hover:text-white border-transparent'"
-      >
-        Tin tức
-      </NuxtLink>
-      <NuxtLink 
         to="/contact" 
         class="transition-colors pb-1 border-b-2"
         :class="route.path === '/contact' ? 'text-brand-peach border-brand-peach font-semibold' : 'text-white/80 hover:text-white border-transparent'"

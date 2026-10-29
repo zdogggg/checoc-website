@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { normalizePhone, VN_MOBILE_REGEX } from '../utils/orders'
+import { DELIVERY_CITY, isDeliveryArea } from '../utils/delivery'
 import { optionalEmail } from './customers'
 
 export const orderItemInput = z.object({
@@ -23,8 +24,8 @@ export const orderInput = z.object({
     .refine((p) => VN_MOBILE_REGEX.test(p), 'Số điện thoại chưa đúng định dạng (VD: 0988123456)'),
   // Optional; linked to the customer as their sign-in email when the order is completed
   email: optionalEmail,
-  city: z.string().trim().min(1).max(80),
-  district: z.string().trim().min(1, 'Vui lòng chọn quận / huyện').max(80),
+  city: z.literal(DELIVERY_CITY, { error: `Quán hiện chỉ giao trong ${DELIVERY_CITY}` }),
+  district: z.string().trim().min(1, 'Vui lòng chọn khu vực giao hàng').refine(isDeliveryArea, 'Khu vực này quán chưa giao tới, vui lòng chọn khu vực trong danh sách'),
   address: z.string().trim().min(1, 'Vui lòng cung cấp địa chỉ số nhà/tòa nhà chi tiết').max(255),
   note: z.string().trim().max(500).default(''),
   paymentMethod: z.enum(['cod', 'vietqr']),

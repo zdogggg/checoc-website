@@ -143,44 +143,36 @@
                 </span>
               </div>
 
-              <!-- City and District -->
+              <!-- Delivery area: the shop only delivers inside HCMC (shared/utils/delivery.ts) -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider text-brand-dark-green mb-1.5">
+                  <span class="block text-xs font-bold uppercase tracking-wider text-brand-dark-green mb-1.5">
                     Tỉnh / Thành phố
-                  </label>
-                  <select 
-                    v-model="form.city" 
-                    class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-brand-dark-green focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold cursor-pointer"
-                  >
-                    <option value="Hà Nội">Hà Nội</option>
-                    <option value="TP. Hồ Chí Minh">TP. Hồ Chí Minh</option>
-                    <option value="Đà Nẵng">Đà Nẵng</option>
-                  </select>
+                  </span>
+                  <p class="w-full bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-sm text-brand-dark-green">
+                    {{ DELIVERY_CITY }}
+                  </p>
                 </div>
 
                 <div>
-                  <label class="block text-xs font-bold uppercase tracking-wider text-brand-dark-green mb-1.5">
-                    Quận / Huyện <span class="text-red-500">*</span>
+                  <label for="checkout-district" class="block text-xs font-bold uppercase tracking-wider text-brand-dark-green mb-1.5">
+                    Khu vực <span class="text-red-500">*</span>
                   </label>
-                  <select 
-                    v-model="form.district" 
+                  <select
+                    id="checkout-district"
+                    v-model="form.district"
                     class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm text-brand-dark-green focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold cursor-pointer"
                   >
-                    <option value="Hoàn Kiếm">Quận Hoàn Kiếm</option>
-                    <option value="Đống Đa">Quận Đống Đa</option>
-                    <option value="Ba Đình">Quận Ba Đình</option>
-                    <option value="Hai Bà Trưng">Quận Hai Bà Trưng</option>
-                    <option value="Cầu Giấy">Quận Cầu Giấy</option>
-                    <option value="Tây Hồ">Quận Tây Hồ</option>
-                    <option value="Thanh Xuân">Quận Thanh Xuân</option>
-                    <option value="Nam Từ Liêm">Quận Nam Từ Liêm</option>
-                    <option value="Quận 1">Quận 1 (TP.HCM)</option>
-                    <option value="Quận 3">Quận 3 (TP.HCM)</option>
-                    <option value="Bình Thạnh">Quận Bình Thạnh (TP.HCM)</option>
+                    <option value="" disabled>Chọn khu vực</option>
+                    <option v-for="area in DELIVERY_AREAS" :key="area" :value="area">{{ area }}</option>
                   </select>
+                  <span v-if="errors.district" class="text-xs text-red-500 mt-1 block">{{ errors.district }}</span>
                 </div>
               </div>
+              <p class="text-xs text-gray-500 -mt-2">
+                Quán hiện giao trong các khu vực trên của TP.HCM. Ở xa hơn, gọi
+                <a :href="`tel:${SHOP.phone}`" class="underline font-semibold">{{ SHOP.phone }}</a> để quán sắp xếp.
+              </p>
 
               <!-- Address -->
               <div>
@@ -470,15 +462,17 @@ const form = reactive({
   fullName: '',
   phone: '',
   email: '',
-  city: 'Hà Nội',
-  district: 'Cầu Giấy',
+  city: DELIVERY_CITY,
+  district: '',
   address: '',
   note: '',
   paymentMethod: (bankReady ? 'vietqr' : 'cod') as 'cod' | 'vietqr'
 })
 
 // Prefill from the signed-in account (most recently used address first)
-const useAddress = (a: CustomerAddressView) => Object.assign(form, { city: a.city, district: a.district, address: a.address })
+// A saved address outside today's delivery areas keeps the street but asks for the area again
+const useAddress = (a: CustomerAddressView) =>
+  Object.assign(form, { district: isDeliveryArea(a.district) ? a.district : '', address: a.address })
 watch(
   account,
   (a) => {
@@ -505,6 +499,7 @@ const errors = reactive({
   fullName: '',
   phone: '',
   email: '',
+  district: '',
   address: ''
 })
 
@@ -550,6 +545,7 @@ const showFieldErrors = (fieldErrors: FieldErrors) => {
   errors.fullName = fieldErrors.fullName ?? ''
   errors.phone = fieldErrors.phone ?? ''
   errors.email = fieldErrors.email ?? ''
+  errors.district = fieldErrors.district ?? ''
   errors.address = fieldErrors.address ?? ''
 }
 

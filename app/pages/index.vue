@@ -22,7 +22,6 @@
     
     <GallerySection />
     
-    <ReviewSection />
     
     <OrderCTA @order="uiStore.toggleCartDrawer" />
   </div>
@@ -37,7 +36,6 @@ import FeaturedProducts from '~/components/home/FeaturedProducts.vue'
 import BrandStory from '~/components/home/BrandStory.vue'
 import WhyChooseUs from '~/components/home/WhyChooseUs.vue'
 import GallerySection from '~/components/home/GallerySection.vue'
-import ReviewSection from '~/components/home/ReviewSection.vue'
 import OrderCTA from '~/components/home/OrderCTA.vue'
 import { ALL_CATEGORY_ID, type Product } from '#shared/types/catalog'
 import { useCartStore } from '~/stores/cart'

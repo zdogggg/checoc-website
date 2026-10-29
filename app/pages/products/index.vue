@@ -87,7 +87,6 @@
               <option value="popular">Phổ biến nhất</option>
               <option value="price-asc">Giá: Thấp đến cao</option>
               <option value="price-desc">Giá: Cao đến thấp</option>
-              <option value="rating">Đánh giá cao</option>
             </select>
           </div>
         </div>
@@ -139,7 +138,7 @@ import ProductGrid from '~/components/product/ProductGrid.vue'
 useHead({
   title: 'Thực Đơn Chè Cốc — Món Ngon Truyền Thống Tươi Mới',
   meta: [
-    { name: 'description', content: 'Khám phá hơn 12 món chè truyền thống, chè Thái sầu riêng, chè khúc bạch và đồ ăn vặt tươi ngon tại Chè Cốc. Giao hàng nhanh 30 phút.' }
+    { name: 'description', content: 'Khám phá hơn 12 món chè truyền thống, chè Thái sầu riêng, chè khúc bạch và đồ ăn vặt tươi ngon tại Chè Cốc. Đặt online, giao tận nơi trong nội thành TP.HCM.' }
   ]
 })
 
@@ -199,8 +198,6 @@ const filteredProducts = computed(() => {
     list.sort((a, b) => a.price - b.price)
   } else if (selectedSort.value === 'price-desc') {
     list.sort((a, b) => b.price - a.price)
-  } else if (selectedSort.value === 'rating') {
-    list.sort((a, b) => (b.rating || 0) - (a.rating || 0))
   } else if (selectedSort.value === 'popular') {
     // Sort best-sellers and signatures first
     list.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0))

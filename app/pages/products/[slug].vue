@@ -96,12 +96,6 @@
             <div class="border-b border-gray-100 pb-5 mb-5">
               <div class="flex items-center gap-2 text-xs font-semibold text-brand-gold mb-2">
                 <span>{{ product?.categoryName }}</span>
-                <span>•</span>
-                <div class="flex items-center gap-1 text-amber-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                  <span class="font-bold text-brand-dark-green">{{ product?.rating }}</span>
-                  <span class="text-gray-400 font-normal">({{ product?.reviewCount }} đánh giá)</span>
-                </div>
               </div>
 
               <h1 class="font-heading text-2xl sm:text-4xl font-bold text-brand-dark-green mb-3 leading-tight">
@@ -336,52 +330,6 @@
         </div>
       </div>
 
-      <!-- Customer Reviews Section -->
-      <div class="bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-gray-100/80 mb-12">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-gray-100">
-          <div>
-            <h3 class="font-heading text-2xl font-bold text-brand-dark-green mb-1">
-              Khách hàng đánh giá
-            </h3>
-            <p class="text-xs text-gray-500">Nhận xét thực tế từ khách hàng đã thưởng thức {{ product?.name }}</p>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <div class="font-heading text-4xl font-bold text-brand-gold">{{ product?.rating }}</div>
-            <div class="flex flex-col text-xs">
-              <div class="flex text-amber-500"><AppIcon v-for="n in 5" :key="n" name="star" filled /></div>
-              <span class="text-gray-400">Dựa trên {{ product?.reviewCount }} lượt mua</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div 
-            v-for="rev in currentReviews" 
-            :key="rev.id"
-            class="p-4 rounded-2xl bg-brand-cream/30 border border-gray-100 text-xs flex flex-col justify-between"
-          >
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-2.5">
-                  <img :src="rev.avatar" class="w-8 h-8 rounded-full object-cover shadow-sm" :alt="rev.author" />
-                  <div>
-                    <h5 class="font-bold text-brand-dark-green">{{ rev.author }}</h5>
-                    <span class="text-[10px] text-gray-400">{{ rev.date }}</span>
-                  </div>
-                </div>
-                <div class="text-amber-500 font-bold inline-flex items-center gap-1"><AppIcon name="star" filled /> {{ rev.rating }}.0</div>
-              </div>
-              <p class="text-gray-600 leading-relaxed">{{ rev.comment }}</p>
-            </div>
-            <div class="mt-3 pt-2 border-t border-gray-200/50 flex items-center gap-1.5 text-[10px] text-green-700 font-medium">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
-              <span>Đã mua tại Chè Cốc</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Related Products -->
       <div v-if="relatedProducts.length > 0">
         <div class="flex items-center justify-between mb-6">
@@ -437,7 +385,6 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { CustomOption, ToppingOption } from '#shared/types/catalog'
-import { sampleReviews } from '~/utils/sampleReviews'
 import { useCartStore } from '~/stores/cart'
 import { useUiStore } from '~/stores/ui'
 import ProductCard from '~/components/product/ProductCard.vue'
@@ -536,30 +483,6 @@ const unitPrice = computed(() => {
   if (!product.value) return 0
   const toppingsTotal = selectedToppings.value.reduce((sum, t) => sum + (t.price || 0), 0)
   return (product.value.price || 0) + toppingsTotal
-})
-
-const currentReviews = computed(() => {
-  if (!product.value) return []
-  const reviews = sampleReviews[product.value.slug]
-  if (reviews?.length) return reviews
-  return [
-    {
-      id: 991,
-      author: 'Mai Lan Phương',
-      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150&auto=format&fit=crop',
-      rating: 5,
-      date: '2 ngày trước',
-      comment: 'Chè rất ngon, độ ngọt vừa phải hợp khẩu vị gia đình mình. Đóng gói rất chu đáo và sạch sẽ!'
-    },
-    {
-      id: 992,
-      author: 'Đặng Tuấn Anh',
-      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=150&auto=format&fit=crop',
-      rating: 5,
-      date: '5 ngày trước',
-      comment: 'Giao nhanh, túi giữ nhiệt bảo quản đá riêng không bị chảy nước. Sẽ ủng hộ quán dài lâu!'
-    }
-  ]
 })
 
 const relatedProducts = computed(() => {
