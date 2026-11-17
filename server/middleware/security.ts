@@ -38,6 +38,13 @@ export default defineEventHandler((event) => {
     }
   }
 
+  // A NUL character (%00) in the path or query is never legitimate and PostgreSQL refuses it
+  // in any text value: answer 400 here instead of a 500 (and an alert) from the query
+  const rawUrl = event.node.req.originalUrl ?? event.node.req.url ?? event.path
+  if (/%00/i.test(rawUrl) || /%00/i.test(event.path) || event.path.includes(String.fromCharCode(0))) {
+    throw createError({ statusCode: 400, statusMessage: 'Bad Request', message: 'Đường dẫn không hợp lệ' })
+  }
+
   // CSRF: session cookies are SameSite=Lax already; additionally refuse any browser request
   // that writes through the API from another site. Non-browser clients send neither header.
   if (SAFE_METHODS.has(event.method) || !event.path.startsWith('/api/')) return

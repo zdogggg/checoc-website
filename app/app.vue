@@ -1,4 +1,6 @@
 <template>
+  <!-- Thin bar at the top while the next page loads (brand gold); nothing on fast loads -->
+  <NuxtLoadingIndicator color="#D9A441" :height="3" :throttle="150" />
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>

@@ -24,7 +24,7 @@
           :visibleOnce="{ opacity: 1, scale: 1, transition: { duration: 600, delay: index * 100 } }"
         >
         <NuxtLink :to="`/products/${image.slug}`" class="block relative group overflow-hidden rounded-2xl">
-          <img loading="lazy" decoding="async" :src="image.url" :alt="image.title" class="w-full object-cover transform transition-transform duration-700 group-hover:scale-110" />
+          <img loading="lazy" decoding="async" :src="imageAt(image.url, 400)" :srcset="imageSrcset(image.url, [400, 800])" sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" :alt="image.title" class="w-full object-cover transform transition-transform duration-700 group-hover:scale-110" />
           
           <!-- Overlay -->
           <div class="absolute inset-0 bg-gradient-to-t from-[#0D241B]/90 via-[#0D241B]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">

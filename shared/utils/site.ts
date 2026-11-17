@@ -22,6 +22,12 @@ export const SHOP = {
   },
 } as const
 
+// How long a sign-in lasts. The session cookie is sealed without its own expiry, so these are
+// also checked on the server (server/utils/auth.ts, server/utils/account.ts). Staff accounts can
+// change orders and money, hence the shorter limit; the cookie lives as long as the longest one.
+export const STAFF_SESSION_DAYS = 14
+export const CUSTOMER_SESSION_DAYS = 60
+
 // Shown for a dish or category without a photo (served by the site itself, no third-party image)
 export const PLACEHOLDER_IMAGE = '/images/placeholder.svg'
 

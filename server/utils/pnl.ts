@@ -7,10 +7,8 @@ import type { ExpenseCategory } from '#shared/utils/inventory'
 export async function monthlyPnl(month: string): Promise<MonthlyPnl> {
   const db = useDb()
   const { orders, expenses, stockMovements } = schema
-  const orderMonth = sql`to_char(${orders.createdAt} at time zone 'Asia/Ho_Chi_Minh', 'YYYY-MM')`
   const goods = sql`${orders.subtotal} - ${orders.discount} - ${orders.pointsDiscount}`
 
-  const movementMonth = sql`to_char(${stockMovements.createdAt} at time zone 'Asia/Ho_Chi_Minh', 'YYYY-MM')`
 
   const [[sales], [noCost], byCategory, [stock]] = await Promise.all([
     db
@@ -20,11 +18,11 @@ export async function monthlyPnl(month: string): Promise<MonthlyPnl> {
         fees: sum(orders.platformFee).mapWith(Number),
       })
       .from(orders)
-      .where(and(eq(orders.status, 'completed'), sql`${orderMonth} = ${month}`)),
+      .where(and(eq(orders.status, 'completed'), createdInMonth(orders.createdAt, month))),
     db
       .select({ n: count() })
       .from(orders)
-      .where(and(eq(orders.status, 'completed'), eq(orders.cogs, 0), sql`${orderMonth} = ${month}`)),
+      .where(and(eq(orders.status, 'completed'), eq(orders.cogs, 0), createdInMonth(orders.createdAt, month))),
     db
       .select({ category: expenses.category, total: sum(expenses.amount).mapWith(Number) })
       .from(expenses)
@@ -38,7 +36,7 @@ export async function monthlyPnl(month: string): Promise<MonthlyPnl> {
       .from(stockMovements)
       .where(
         and(
-          sql`${movementMonth} = ${month}`,
+          createdInMonth(stockMovements.createdAt, month),
           or(
             eq(stockMovements.type, 'waste'),
             and(eq(stockMovements.type, 'adjust'), isNull(stockMovements.orderId), isNull(stockMovements.purchaseId))

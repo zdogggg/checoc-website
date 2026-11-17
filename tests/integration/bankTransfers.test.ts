@@ -88,6 +88,31 @@ describe.skipIf(!KEY)('SePay webhook', () => {
     expect((await sql`select status from bank_transactions where provider_id = ${id}`)[0]!.status).toBe('amount_mismatch')
   })
 
+  it('keeps money for a cancelled order against it, to be sent back', async () => {
+    const o = await transferOrder()
+    await owner(`/api/admin/orders/${o.id}/status`, { method: 'POST', body: { status: 'cancelled', note: 'Khách huỷ' } })
+    const id = `itest-${randomUUID()}`
+    await sepay({ id, transferAmount: o.total, content: o.code })
+    expect((await sql`select status, order_id from bank_transactions where provider_id = ${id}`)[0]).toMatchObject({ status: 'order_cancelled', order_id: o.id })
+    expect(await paymentOf(o.id)).toBe('unpaid')
+  })
+
+  it('settles an order paid more than its total (the difference is flagged to staff)', async () => {
+    const o = await transferOrder()
+    const id = `itest-${randomUUID()}`
+    await sepay({ id, transferAmount: o.total + 5000, content: o.code })
+    expect(await paymentOf(o.id)).toBe('paid')
+  })
+
+  it('settles a cash-on-delivery order the customer paid by transfer anyway', async () => {
+    const placed = await shopper('/api/orders', { method: 'POST', body: orderBody(productId, phone()) })
+    const oid = await orderIdOf(placed.data.code)
+    const id = `itest-${randomUUID()}`
+    await sepay({ id, transferAmount: placed.data.total, content: `CK ${placed.data.code}` })
+    expect(await paymentOf(oid)).toBe('paid')
+    expect((await sql`select status from bank_transactions where provider_id = ${id}`)[0]!.status).toBe('matched')
+  })
+
   it('records transfers that match no order', async () => {
     const id = `itest-${randomUUID()}`
     await sepay({ id, transferAmount: 50000, content: 'chuyen tien an trua' })

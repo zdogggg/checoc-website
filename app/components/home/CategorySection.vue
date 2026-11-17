@@ -31,7 +31,7 @@
             <div v-if="cat.id === ALL_CATEGORY_ID" class="w-full h-full bg-brand-dark-green flex items-center justify-center pb-8">
               <AppIcon name="leaf" class="text-4xl text-brand-cream" />
             </div>
-            <img v-else loading="lazy" decoding="async" :src="cat.image || PLACEHOLDER_IMAGE" :alt="cat.name" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+            <img v-else loading="lazy" decoding="async" :src="imageAt(cat.image, 200) || PLACEHOLDER_IMAGE" :alt="cat.name" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
           </div>
           
           <!-- Gradient Overlay -->

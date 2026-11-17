@@ -53,17 +53,17 @@
       <div v-if="photos.length" v-motion-fade-visible-once class="relative min-h-[500px] hidden lg:block">
         <!-- Circular Main Image -->
         <div class="absolute right-10 top-0 w-[450px] h-[450px] rounded-full overflow-hidden shadow-2xl">
-          <img loading="lazy" decoding="async" :src="photos[0]!.url" class="w-full h-full object-cover" :alt="photos[0]!.title" />
+          <img loading="lazy" decoding="async" :src="imageAt(photos[0]!.url, 800)" class="w-full h-full object-cover" :alt="photos[0]!.title" />
         </div>
         
         <!-- Polaroid 1 -->
         <div v-if="photos[1]" class="absolute right-[320px] top-10 w-48 bg-white p-3 pb-8 rounded-sm shadow-2xl rotate-[-12deg] hover:rotate-0 transition-transform duration-300 z-20">
-          <img loading="lazy" decoding="async" :src="photos[1].url" class="w-full h-32 object-cover bg-gray-100" :alt="photos[1].title" />
+          <img loading="lazy" decoding="async" :src="imageAt(photos[1].url, 400)" class="w-full h-32 object-cover bg-gray-100" :alt="photos[1].title" />
         </div>
         
         <!-- Polaroid 2 -->
         <div v-if="photos[2]" class="absolute right-20 bottom-0 w-56 bg-white p-3 pb-8 rounded-sm shadow-2xl rotate-[8deg] hover:rotate-0 transition-transform duration-300 z-20">
-          <img loading="lazy" decoding="async" :src="photos[2].url" class="w-full h-40 object-cover bg-gray-100" :alt="photos[2].title" />
+          <img loading="lazy" decoding="async" :src="imageAt(photos[2].url, 400)" class="w-full h-40 object-cover bg-gray-100" :alt="photos[2].title" />
           <div class="mt-2 font-handwriting text-center text-gray-500 text-lg">{{ photos[2].title }}</div>
         </div>
         

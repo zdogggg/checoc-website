@@ -295,6 +295,9 @@ export const orders = pgTable('orders', {
   externalCode: varchar('external_code', { length: 40 }),
   // Checkout attempt id sent by the browser, so a retried request cannot place the order twice
   requestId: uuid('request_id').unique(),
+  // sha256 of the device cookie of the browser that placed the order (server/utils/orderDevice.ts):
+  // only that browser sees the full address and may add a sign-in email from the tracking page
+  deviceHash: varchar('device_hash', { length: 64 }),
   paymentStatus: paymentStatus('payment_status').notNull().default('unpaid'),
   paymentMethod: paymentMethod('payment_method').notNull(),
   // Delivery details are a snapshot taken at checkout
@@ -654,7 +657,7 @@ export const rateLimits = pgTable('rate_limits', {
 // the ones that did not match.
 // ---------------------------------------------------------------------------
 
-export const bankTransactionStatus = pgEnum('bank_transaction_status', ['matched', 'unmatched', 'amount_mismatch', 'already_paid'])
+export const bankTransactionStatus = pgEnum('bank_transaction_status', ['matched', 'unmatched', 'amount_mismatch', 'already_paid', 'order_cancelled'])
 
 export const bankTransactions = pgTable('bank_transactions', {
   id: serial('id').primaryKey(),

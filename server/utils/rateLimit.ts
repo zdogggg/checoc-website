@@ -51,8 +51,9 @@ export async function assertNotLocked(key: string, max: number, windowMs: number
   }
 }
 
-export async function recordFailure(key: string, windowMs = 15 * 60 * 1000) {
-  await hit(`fail:${key}`, windowMs)
+// Returns the failures counted in the current window
+export async function recordFailure(key: string, windowMs = 15 * 60 * 1000): Promise<number> {
+  return (await hit(`fail:${key}`, windowMs)).hits
 }
 
 export async function clearFailures(key: string) {

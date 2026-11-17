@@ -1,5 +1,7 @@
 import { z } from 'zod'
+import { DB_INT_MAX } from '../utils/limits'
 import { normalizePhone, VN_MOBILE_REGEX } from '../utils/orders'
+import { isIsoDay } from '../utils/reports'
 
 export const phoneField = z
   .string()
@@ -30,7 +32,8 @@ export const phoneOtpVerifyInput = phoneOtpRequestInput.extend({ code: codeField
 const optionalDate = z
   .string()
   .trim()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày không hợp lệ')
+  // A real calendar day: "2000-02-31" would pass a pattern and then fail in the database
+  .refine(isIsoDay, 'Ngày không hợp lệ')
   .nullish()
   .or(z.literal('').transform(() => null))
 
@@ -68,9 +71,9 @@ export const customerNoteInput = z.object({
 export const personalCouponInput = z
   .object({
     type: z.enum(['percent', 'fixed', 'free_shipping']),
-    value: z.coerce.number().int().min(0).default(0),
+    value: z.coerce.number().int().max(DB_INT_MAX).min(0).default(0),
     description: z.string().trim().max(200).default(''),
-    minOrder: z.coerce.number().int().min(0).default(0),
+    minOrder: z.coerce.number().int().max(DB_INT_MAX).min(0).default(0),
     // Days the coupon stays valid
     validDays: z.coerce.number().int().min(1).max(365).default(30),
   })

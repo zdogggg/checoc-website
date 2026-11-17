@@ -117,7 +117,7 @@
               <tr v-if="!report.topProducts.length"><td colspan="4" class="text-center text-gray-500 py-8">Chưa có đơn hoàn tất trong khoảng này.</td></tr>
             </tbody>
           </table>
-          <p class="text-xs text-gray-400 px-5 py-3">Doanh thu theo món tính trước giảm giá của đơn.</p>
+          <p class="text-xs text-gray-400 px-5 py-3">Doanh thu theo món đã trừ mã giảm giá và điểm của đơn, chia theo giá từng món.</p>
         </section>
 
         <div class="xl:col-span-2 space-y-6">

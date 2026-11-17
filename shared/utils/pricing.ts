@@ -3,10 +3,17 @@ import type { AppliedCoupon } from '../types/catalog'
 export const FREESHIP_THRESHOLD = 100000
 export const BASE_SHIPPING_FEE = 15000
 
+// What counts toward free shipping: the goods after the coupon. A 100.000đ cart with a 50% code
+// pays 50.000đ for food, so it is a 50.000đ order for shipping too. Loyalty points do not
+// lower it (they are a reward, applied after shipping is settled).
+export function freeshipBase(subtotal: number, coupon: AppliedCoupon | null): number {
+  return Math.max(0, subtotal - couponDiscount(coupon, subtotal))
+}
+
 export function shippingFeeFor(subtotal: number, coupon: AppliedCoupon | null): number {
   if (subtotal <= 0) return 0
   if (coupon?.type === 'free_shipping') return 0
-  return subtotal >= FREESHIP_THRESHOLD ? 0 : BASE_SHIPPING_FEE
+  return freeshipBase(subtotal, coupon) >= FREESHIP_THRESHOLD ? 0 : BASE_SHIPPING_FEE
 }
 
 // Discount on the item subtotal (free-shipping coupons act through shippingFeeFor instead)

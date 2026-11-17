@@ -12,10 +12,19 @@ export default defineNuxtConfig({
     'nuxt-auth-utils'
   ],
   css: ['~/assets/css/tailwind.css'],
+  app: {
+    // Short fade between pages (styles in assets/css/tailwind.css, off for reduced motion)
+    pageTransition: { name: 'page', mode: 'out-in' },
+  },
   routeRules: {
     // Browsers must pick up a new service worker on the next visit
     '/sw.js': { headers: { 'cache-control': 'no-cache' } },
     '/manifest.webmanifest': { headers: { 'cache-control': 'public, max-age=3600' } },
+    // Self-hosted fonts and site images keep their file names across deploys (not hashed like
+    // /_nuxt), so they are cached for a while rather than forever
+    '/fonts/**': { headers: { 'cache-control': 'public, max-age=2592000' } },
+    '/icons/**': { headers: { 'cache-control': 'public, max-age=604800' } },
+    '/images/**': { headers: { 'cache-control': 'public, max-age=604800' } },
   },
   // Overridden by NUXT_* env vars, e.g. NUXT_TELEGRAM_BOT_TOKEN, NUXT_PUBLIC_BANK_ACCOUNT_NO
   runtimeConfig: {
@@ -33,6 +42,13 @@ export default defineNuxtConfig({
     sepayWebhookKey: '',
     // Accept orders at any hour (automated tests, staging); never set on the real shop
     ignoreOpeningHours: false,
+    // nuxt-auth-utils session cookie: kept 60 days (CUSTOMER_SESSION_DAYS); staff sessions are
+    // refused on the server after STAFF_SESSION_DAYS. The password comes from NUXT_SESSION_PASSWORD.
+    session: {
+      // Filled at runtime from NUXT_SESSION_PASSWORD (the app refuses to start without it)
+      password: '',
+      maxAge: 60 * 60 * 24 * 60,
+    },
     public: {
       siteUrl: '',
       // false on staging / preview: robots.txt then blocks every crawler

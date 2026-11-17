@@ -64,7 +64,7 @@ v-motion
           
           <img
 loading="lazy" decoding="async" 
-            :src="product.image || PLACEHOLDER_IMAGE"
+            :src="imageAt(product.image, 800) || PLACEHOLDER_IMAGE"
             :alt="product.name"
             class="relative z-10 w-full max-w-lg mx-auto rounded-3xl shadow-2xl object-cover aspect-[4/5] transform hover:scale-[1.02] transition-transform duration-700"
           />

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import type { AppliedCoupon, Product, ProductOptions } from '#shared/types/catalog'
-import { couponDiscount, FREESHIP_THRESHOLD, shippingFeeFor } from '#shared/utils/pricing'
+import { couponDiscount, FREESHIP_THRESHOLD, freeshipBase, shippingFeeFor } from '#shared/utils/pricing'
 import { cartKeyFor, cartSyncMessage, defaultChoice, reconcileCart } from '~/utils/cartSync'
 
 export type { AppliedCoupon }
@@ -105,8 +105,11 @@ export const useCartStore = defineStore('cart', () => {
     return Math.max(0, subtotal.value + shippingFee.value - discountAmount.value)
   })
 
+  // Goods after the coupon, the amount free shipping is measured on (see shared/utils/pricing.ts)
+  const freeshipProgress = computed(() => freeshipBase(subtotal.value, appliedCoupon.value))
+
   const amountNeededForFreeship = computed(() => {
-    return Math.max(0, freeshipThreshold - subtotal.value)
+    return Math.max(0, freeshipThreshold - freeshipProgress.value)
   })
 
   // '' when the menu options are not loaded yet: the server then picks the shop default,
@@ -251,6 +254,7 @@ export const useCartStore = defineStore('cart', () => {
     orderTotal,
     amountNeededForFreeship,
     freeshipThreshold,
+    freeshipProgress,
     appliedCoupon,
     isHydrated,
     hydrate,

@@ -22,7 +22,9 @@
             <div class="aspect-square rounded-2xl overflow-hidden bg-brand-cream relative group shadow-inner border border-gray-100">
               <img
 decoding="async" fetchpriority="high" 
-                :src="activeImage || product?.image" 
+                :src="imageAt(activeImage || product?.image, 800)"
+                :srcset="imageSrcset(activeImage || product?.image, [400, 800])"
+                sizes="(min-width: 1024px) 40vw, 100vw" 
                 :alt="product?.name || 'Chè Cốc'" 
                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
               />
@@ -65,7 +67,7 @@ decoding="async" fetchpriority="high"
                 :class="activeImage === img ? 'border-brand-gold ring-2 ring-brand-gold/30 scale-[1.02]' : 'border-gray-200 opacity-70 hover:opacity-100'"
                 @click="activeImage = img"
               >
-                <img loading="lazy" decoding="async" :src="img" :alt="`${product?.name || 'Chè'} ${idx + 1}`" class="w-full h-full object-cover" />
+                <img loading="lazy" decoding="async" :src="imageAt(img, 200)" :alt="`${product?.name || 'Chè'} ${idx + 1}`" class="w-full h-full object-cover" />
               </button>
             </div>
 
@@ -352,6 +354,22 @@ decoding="async" fetchpriority="high"
       </div>
     </div>
 
+    <!-- Opening a dish from inside the site: the page shows at once, the content follows -->
+    <div v-else-if="isLoading" class="container mx-auto max-w-6xl px-4 sm:px-6" aria-busy="true" aria-label="Đang tải món">
+      <div class="bg-white rounded-3xl p-5 sm:p-10 shadow-sm border border-gray-100/80 mb-12 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+        <div class="lg:col-span-5 aspect-square rounded-2xl skeleton"></div>
+        <div class="lg:col-span-7 space-y-4">
+          <div class="h-8 w-3/4 rounded-lg skeleton"></div>
+          <div class="h-6 w-1/3 rounded-lg skeleton"></div>
+          <div class="h-4 w-full rounded skeleton"></div>
+          <div class="h-4 w-11/12 rounded skeleton"></div>
+          <div class="h-4 w-2/3 rounded skeleton"></div>
+          <div class="h-24 w-full rounded-2xl skeleton mt-6"></div>
+          <div class="h-12 w-full rounded-full skeleton"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Mobile Sticky Floating Order Bar -->
     <div 
       v-if="product" 
@@ -396,13 +414,29 @@ const cartStore = useCartStore()
 const uiStore = useUiStore()
 
 const slug = computed(() => route.params.slug as string)
-const [{ data: detail, error }, { data: productOptions }] = await Promise.all([
-  useProductDetail(slug),
+// The first visit is rendered on the server with the dish in it (search engines, link
+// previews). Moving between pages in the browser shows the page right away with a skeleton.
+const lazy = import.meta.client && !useNuxtApp().isHydrating
+const [{ data: detail, error, status }, { data: productOptions }] = await Promise.all([
+  useProductDetail(slug, { lazy }),
   useProductOptions()
 ])
+const isLoading = computed(() => !detail.value && (status.value === 'pending' || status.value === 'idle'))
 
-if (error.value || !detail.value) {
+if (!lazy && (error.value || !detail.value)) {
   throw createError({ statusCode: error.value?.statusCode ?? 404, fatal: true })
+}
+if (lazy) {
+  // Same "not found" page as a first visit, once the answer is in
+  watch(
+    status,
+    (s) => {
+      if (s === 'error' || (s === 'success' && !detail.value)) {
+        showError({ statusCode: error.value?.statusCode ?? 404, fatal: true })
+      }
+    },
+    { immediate: true }
+  )
 }
 
 const product = computed(() => detail.value?.product)

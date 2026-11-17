@@ -10,6 +10,7 @@ const invalid = (message: string, reason: CouponRefusal = 'not_usable') =>
 // One answer for "no such code", "expired" and "someone else's personal code", so the form
 // cannot be used to find out which codes exist or whose phone a personal code belongs to
 const NOT_USABLE = 'Mã giảm giá không hợp lệ hoặc đã hết hạn'
+const NOT_USABLE_WITHOUT_PHONE = 'Mã chưa dùng được. Nếu đây là mã quán tặng riêng cho bạn, hãy nhập số điện thoại nhận hàng trước.'
 
 type Db = ReturnType<typeof useDb>
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
@@ -19,20 +20,18 @@ type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 export async function findUsableCoupon(db: Db | Tx, code: string, subtotal: number, phone?: string | null) {
   const coupon = await db.query.coupons.findFirst({ where: eq(schema.coupons.code, code.trim().toUpperCase()) })
   const now = new Date()
-  if (
+  const normalized = phone ? normalizePhone(phone) : ''
+  const dead =
     !coupon ||
     !coupon.isActive ||
     (coupon.startsAt && coupon.startsAt > now) ||
     (coupon.endsAt && coupon.endsAt < now) ||
     (coupon.usageLimit != null && coupon.usedCount >= coupon.usageLimit)
-  ) {
-    throw invalid(NOT_USABLE)
-  }
-  const normalized = phone ? normalizePhone(phone) : ''
+  // Without a phone number, a dead code and someone's personal code get the very same answer:
+  // otherwise the form would tell which personal codes exist
+  if (!normalized && (dead || coupon.customerId)) throw invalid(NOT_USABLE_WITHOUT_PHONE, 'phone_required')
+  if (dead) throw invalid(NOT_USABLE)
   if (coupon.customerId) {
-    if (!normalized) {
-      throw invalid('Vui lòng nhập số điện thoại nhận hàng trước khi áp dụng mã.', 'phone_required')
-    }
     const owner = await db.query.customers.findFirst({
       where: eq(schema.customers.id, coupon.customerId),
       columns: { phone: true },

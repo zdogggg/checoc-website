@@ -47,7 +47,7 @@
         <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
           <div 
             class="bg-gradient-to-r from-brand-peach to-brand-gold h-full rounded-full transition-all duration-500"
-            :style="{ width: `${Math.min(100, (cartStore.subtotal / cartStore.freeshipThreshold) * 100)}%` }"
+            :style="{ width: `${Math.min(100, (cartStore.freeshipProgress / cartStore.freeshipThreshold) * 100)}%` }"
           ></div>
         </div>
       </div>

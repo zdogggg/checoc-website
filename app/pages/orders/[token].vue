@@ -86,7 +86,7 @@
         <h2 class="font-heading text-lg font-bold text-brand-dark-green mb-4">Món đã đặt</h2>
         <ul class="divide-y divide-gray-100">
           <li v-for="item in order.items" :key="item.id" class="py-3 flex gap-3 text-sm">
-            <img v-if="item.productImage" loading="lazy" decoding="async" width="56" height="56" :src="item.productImage" :alt="item.productName" class="w-14 h-14 rounded-xl object-cover bg-gray-100 shrink-0">
+            <img v-if="item.productImage" loading="lazy" decoding="async" width="56" height="56" :src="imageAt(item.productImage, 200)" :alt="item.productName" class="w-14 h-14 rounded-xl object-cover bg-gray-100 shrink-0">
             <div class="flex-1 min-w-0">
               <p class="font-bold text-brand-dark-green">{{ item.productName }} <span class="text-gray-500 font-normal">× {{ item.quantity }}</span></p>
               <p class="text-xs text-gray-500">{{ [item.sugar, item.ice].filter(Boolean).join(' • ') }}</p>
@@ -152,6 +152,9 @@
         <p><strong class="text-brand-dark-green">{{ order.customerName }}</strong> · {{ order.customerPhone }}</p>
         <p>{{ order.address }}, {{ order.district }}, {{ order.city }}</p>
         <p v-if="order.note" class="italic">Ghi chú: "{{ order.note }}"</p>
+        <p v-if="order.masked" class="text-xs text-gray-500 pt-1">
+          Tên và địa chỉ được ẩn vì trang này không mở trên máy đã đặt đơn. Đăng nhập tài khoản để xem đầy đủ.
+        </p>
       </section>
 
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">

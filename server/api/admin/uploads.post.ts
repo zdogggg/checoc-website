@@ -1,8 +1,12 @@
 import { randomUUID } from 'node:crypto'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import sharp from 'sharp'
 
-const MAX_BYTES = 5 * 1024 * 1024
+// What the browser may send (Caddy refuses bodies above 10 MB anyway)
+const MAX_BYTES = 8 * 1024 * 1024
+// Longest side of the stored image: sharp on large screens, still small on phones
+const MAX_SIDE = 1600
 
 // Accepts one image (multipart field "file") and returns its public URL
 export default defineEventHandler(async (event) => {
@@ -18,11 +22,25 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 415, statusMessage: 'Unsupported', message: 'Chỉ nhận ảnh JPG, PNG, WEBP, AVIF' })
   }
   if (file.data.length > MAX_BYTES) {
-    throw createError({ statusCode: 413, statusMessage: 'Too large', message: 'Ảnh tối đa 5MB' })
+    throw createError({ statusCode: 413, statusMessage: 'Too large', message: 'Ảnh tối đa 8MB' })
+  }
+
+  // Phone photos are often 4-12 MB: shrink them once here so every visitor does not download
+  // the original. Turned upright from the EXIF orientation, then saved without metadata
+  // (camera details and GPS position are dropped).
+  let image: Buffer
+  try {
+    image = await sharp(file.data, { limitInputPixels: 50_000_000 })
+      .rotate()
+      .resize({ width: MAX_SIDE, height: MAX_SIDE, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 82 })
+      .toBuffer()
+  } catch {
+    throw createError({ statusCode: 415, statusMessage: 'Unsupported', message: 'Không đọc được ảnh này, vui lòng thử ảnh khác' })
   }
 
   await mkdir(UPLOAD_DIR, { recursive: true })
-  const name = `${randomUUID()}.${ext}`
-  await writeFile(join(UPLOAD_DIR, name), file.data)
+  const name = `${randomUUID()}.webp`
+  await writeFile(join(UPLOAD_DIR, name), image)
   return { url: `/uploads/${name}` }
 })

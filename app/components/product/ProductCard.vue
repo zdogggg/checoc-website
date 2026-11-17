@@ -4,7 +4,11 @@
     <div class="aspect-square bg-brand-cream relative overflow-hidden cursor-pointer" @click="navigateToProduct">
       <img
 decoding="async" 
-        :src="product.image || PLACEHOLDER_IMAGE" 
+        :src="imageAt(product.image, 400) || PLACEHOLDER_IMAGE"
+        :srcset="imageSrcset(product.image, [400, 800])"
+        sizes="(min-width: 1024px) 25vw, 50vw"
+        width="400"
+        height="400"
         class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" 
         :alt="product.name" 
         loading="lazy"

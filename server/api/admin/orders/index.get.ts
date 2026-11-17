@@ -2,6 +2,7 @@ import { and, count, desc, eq, ilike, inArray, or, sql, type SQL } from 'drizzle
 import { z } from 'zod'
 import type { AdminOrderListItem } from '#shared/types/orders'
 import type { OrderStatus } from '#shared/utils/orders'
+import { isIsoDay } from '#shared/utils/reports'
 
 const PAGE_SIZE = 30
 
@@ -9,10 +10,7 @@ const query = z.object({
   status: z.enum(['all', 'active', 'pending', 'confirmed', 'preparing', 'shipping', 'completed', 'cancelled']).default('active'),
   q: z.string().trim().max(60).default(''),
   // YYYY-MM-DD in shop time (Asia/Ho_Chi_Minh)
-  day: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
+  day: z.string().refine(isIsoDay, 'Ngày không hợp lệ').optional(),
   channel: z.enum(['all', 'website', 'shopeefood']).default('all'),
   page: z.coerce.number().int().min(1).default(1),
 })

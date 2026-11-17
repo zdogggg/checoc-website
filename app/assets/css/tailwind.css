@@ -53,3 +53,36 @@
     @apply px-4 py-3 border-t border-gray-100 align-middle;
   }
 }
+
+/* Page change: a short fade (nuxt.config app.pageTransition). Short on purpose: the new page
+   is already loaded when it starts, a longer fade would only make the site feel slower. */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.15s ease;
+}
+.page-enter-from,
+.page-leave-to {
+  opacity: 0;
+}
+
+/* Grey blocks standing in for content that is on its way */
+.skeleton {
+  background: linear-gradient(90deg, #ece6da 25%, #f5f0e6 37%, #ece6da 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* Visitors who asked their device for less motion get no fades or shimmer */
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-active,
+  .page-leave-active {
+    transition: none;
+  }
+  .skeleton {
+    animation: none;
+  }
+}

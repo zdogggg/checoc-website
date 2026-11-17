@@ -15,7 +15,7 @@ export default defineEventHandler(async (event): Promise<PlacedOrder> => {
   }
   // Spending points needs a valid sign-in (checked against the database, not only the cookie)
   const customer = await currentCustomer(event)
-  const { order, itemCount, replayed } = await createOrder(input, customer ?? undefined)
+  const { order, itemCount, replayed } = await createOrder(input, customer ?? undefined, deviceHashFor(event))
 
   // Fire and forget: a slow or failing notification must not affect the customer.
   // A retried request returns the order placed the first time; the shop was told already.

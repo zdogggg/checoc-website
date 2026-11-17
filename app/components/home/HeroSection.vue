@@ -2,7 +2,7 @@
   <section class="relative min-h-screen flex items-center bg-brand-dark-green overflow-hidden pt-32 pb-12">
     <!-- Background Image with Overlay -->
     <div class="absolute inset-0 z-0">
-      <img v-if="image" decoding="async" fetchpriority="high" :src="image" class="w-full h-full object-cover opacity-40" alt="" />
+      <img v-if="image" decoding="async" fetchpriority="high" :src="imageAt(image, 800)" class="w-full h-full object-cover opacity-40" alt="" />
       <div class="absolute inset-0 bg-gradient-to-r from-brand-dark-green via-brand-dark-green/80 to-transparent"></div>
       <div class="absolute inset-0 bg-gradient-to-t from-brand-dark-green via-transparent to-transparent"></div>
     </div>
@@ -50,7 +50,7 @@
       
       <!-- Right Image Area -->
       <div class="relative hidden lg:flex justify-center items-center h-full">
-         <img decoding="async" :src="image || PLACEHOLDER_IMAGE" class="w-[500px] h-[600px] object-cover rounded-full border-[12px] border-brand-dark-green shadow-2xl relative z-10 bg-[#F7F1E5]" alt="Một món chè của Chè Cốc" />
+         <img decoding="async" :src="imageAt(image, 800) || PLACEHOLDER_IMAGE" class="w-[500px] h-[600px] object-cover rounded-full border-[12px] border-brand-dark-green shadow-2xl relative z-10 bg-[#F7F1E5]" alt="Một món chè của Chè Cốc" />
          <!-- Decorative handwritten text -->
          <div class="absolute -right-10 top-20 text-brand-peach font-handwriting text-4xl rotate-12 z-20 max-w-[200px] text-center">
             Một cốc chè là một chút hạnh phúc!

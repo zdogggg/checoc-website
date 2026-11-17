@@ -6,7 +6,7 @@ import { emailChangeVerifyInput } from '#shared/schemas/customers'
 export default defineEventHandler(async (event) => {
   await rateLimit(event, 'otp-verify', 20, 15 * 60 * 1000)
   const { email, code } = await readValidated(event, emailChangeVerifyInput)
-  const customer = await linkableCustomer(getRouterParam(event, 'token') ?? '')
+  const customer = await linkableCustomer(event, getRouterParam(event, 'token') ?? '')
   await verifyEmailChangeCode(customer.id, email, code)
   const [row] = await useDb()
     .update(schema.customers)

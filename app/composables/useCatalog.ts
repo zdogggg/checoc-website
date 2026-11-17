@@ -25,9 +25,11 @@ export function useProducts() {
   return useFetch<Product[]>('/api/products', { key: 'catalog:products', default: () => [] })
 }
 
-export function useProductDetail(slug: MaybeRefOrGetter<string>) {
+// lazy: render the page at once and fill it in when the data arrives (navigation in the browser)
+export function useProductDetail(slug: MaybeRefOrGetter<string>, opts: { lazy?: boolean } = {}) {
   return useFetch<ProductDetailResponse>(() => `/api/products/${encodeURIComponent(toValue(slug))}`, {
     key: () => `catalog:product:${toValue(slug)}`,
+    lazy: opts.lazy ?? false,
   })
 }
 

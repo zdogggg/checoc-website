@@ -12,8 +12,12 @@ export async function currentCustomer(event: H3Event): Promise<{ id: number; pho
     where: eq(schema.customers.id, signedIn.id),
     columns: { id: true, phone: true, sessionsValidAfter: true },
   })
+  const since = signedIn.since ?? 0
   const valid =
-    row && row.phone === signedIn.phone && (!row.sessionsValidAfter || (signedIn.since ?? 0) >= row.sessionsValidAfter.getTime())
+    row &&
+    row.phone === signedIn.phone &&
+    Date.now() - since <= CUSTOMER_SESSION_DAYS * 86_400_000 &&
+    (!row.sessionsValidAfter || since >= row.sessionsValidAfter.getTime())
   if (!valid) {
     await endCustomerSession(event)
     return null
@@ -89,14 +93,23 @@ export async function loadAccount(customerId: number): Promise<CustomerAccount |
 }
 
 // The customer behind a delivered website order who has no sign-in email yet
-// (see server/api/orders/[token]/link-email). Any other case answers 404/409.
-export async function linkableCustomer(trackingToken: string) {
+// (see server/api/orders/[token]/link-email). Only the browser that placed the order may do
+// this: the tracking link can be looked up by anyone who knows the phone number and order code.
+// Any other case answers 403/404/409.
+export async function linkableCustomer(event: H3Event, trackingToken: string) {
   const { orders, customers } = schema
   const order = await useDb().query.orders.findFirst({
     where: eq(orders.trackingToken, trackingToken),
-    columns: { status: true, channel: true, customerId: true },
+    columns: { status: true, channel: true, customerId: true, deviceHash: true, createdAt: true },
   })
   if (!order) throw createError({ statusCode: 404, statusMessage: 'Order not found' })
+  if (!order.deviceHash || !(await isOrderOwner(event, { deviceHash: order.deviceHash, customerId: null, createdAt: order.createdAt }))) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Forbidden',
+      message: 'Chỉ thêm được email trên trình duyệt đã đặt đơn này. Bạn có thể nhờ quán thêm email giúp.',
+    })
+  }
   const customer =
     order.customerId != null
       ? await useDb().query.customers.findFirst({ where: eq(customers.id, order.customerId), columns: { id: true, phone: true, email: true } })

@@ -10,7 +10,7 @@ const input = emailChangeInput.extend({ phone: z.string().trim().min(1, 'Nhập 
 export default defineEventHandler(async (event) => {
   await rateLimit(event, 'link-email', 6, 15 * 60 * 1000)
   const { email, phone } = await readValidated(event, input)
-  const customer = await linkableCustomer(getRouterParam(event, 'token') ?? '')
+  const customer = await linkableCustomer(event, getRouterParam(event, 'token') ?? '')
   if (customer.phone !== normalizePhone(phone)) {
     throw createError({
       statusCode: 400,

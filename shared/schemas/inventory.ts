@@ -1,11 +1,14 @@
 import { z } from 'zod'
+import { DB_INT_MAX } from '../utils/limits'
+import { isIsoDay } from '../utils/reports'
 
 const quantity = z.coerce
   .number()
   .finite()
   .refine((n) => Math.abs(n) < 1e10, 'Số lượng quá lớn')
 const positiveQty = quantity.refine((n) => n > 0, 'Số lượng phải lớn hơn 0')
-const cost = z.coerce.number().finite().min(0, 'Giá không được âm')
+// unit_cost is numeric(14, 4): up to 10 billion per unit
+const cost = z.coerce.number().finite().min(0, 'Giá không được âm').max(9_999_999_999, 'Giá quá lớn')
 
 export const ingredientInput = z.object({
   name: z.string().trim().min(1, 'Vui lòng nhập tên nguyên liệu').max(120),
@@ -34,7 +37,7 @@ export const stockAdjustInput = z
 
 export const recipeInput = z.object({
   items: z
-    .array(z.object({ ingredientId: z.coerce.number().int().positive(), quantity: positiveQty }))
+    .array(z.object({ ingredientId: z.coerce.number().int().max(DB_INT_MAX).positive(), quantity: positiveQty }))
     .max(30)
     .refine((items) => new Set(items.map((i) => i.ingredientId)).size === items.length, 'Mỗi nguyên liệu chỉ nhập một lần'),
 })
@@ -48,27 +51,29 @@ export const supplierInput = z.object({
 })
 
 export const purchaseInput = z.object({
-  supplierId: z.coerce.number().int().positive().nullish(),
+  supplierId: z.coerce.number().int().max(DB_INT_MAX).positive().nullish(),
   note: z.string().trim().max(500).default(''),
   items: z
     .array(
       z.object({
-        ingredientId: z.coerce.number().int().positive('Chọn nguyên liệu'),
+        ingredientId: z.coerce.number().int().max(DB_INT_MAX).positive('Chọn nguyên liệu'),
         quantity: positiveQty,
         unitCost: cost,
       })
     )
     .min(1, 'Phiếu nhập cần ít nhất một dòng')
-    .max(100),
+    .max(100)
+    // Line and receipt totals are stored as integers
+    .refine((items) => items.reduce((sum, i) => sum + Math.round(i.quantity * i.unitCost), 0) <= DB_INT_MAX, 'Tổng tiền phiếu nhập quá lớn'),
 })
 export type PurchaseInput = z.infer<typeof purchaseInput>
 
 export const expenseInput = z.object({
   category: z.enum(['rent', 'utilities', 'salary', 'marketing', 'packaging', 'equipment', 'other']),
-  amount: z.coerce.number().int('Số tiền phải là số nguyên').positive('Số tiền phải lớn hơn 0'),
+  amount: z.coerce.number().int('Số tiền phải là số nguyên').max(DB_INT_MAX).positive('Số tiền phải lớn hơn 0'),
   spentOn: z
     .string()
     .trim()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày không hợp lệ'),
+    .refine(isIsoDay, 'Ngày không hợp lệ'),
   note: z.string().trim().max(255).default(''),
 })

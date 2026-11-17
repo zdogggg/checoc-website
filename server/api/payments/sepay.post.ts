@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const occurredAt = body.transactionDate ? new Date(`${body.transactionDate.replace(' ', 'T')}+07:00`) : null
-  const { outcome, orderCode } = await applyBankTransfer({
+  const { outcome, orderCode, note } = await applyBankTransfer({
     provider: 'sepay',
     providerId: body.id,
     amount: body.transferAmount,
@@ -46,13 +46,22 @@ export default defineEventHandler(async (event) => {
   })
 
   // Staff look at anything that did not settle an order by itself
-  if (outcome === 'unmatched' || outcome === 'amount_mismatch' || outcome === 'already_paid') {
+  if (outcome !== 'matched' && outcome !== 'duplicate') {
     const what = {
       unmatched: 'không khớp đơn nào',
+      order_cancelled: `đơn ${orderCode} đã huỷ, cần hoàn tiền cho khách`,
       amount_mismatch: `thiếu tiền so với đơn ${orderCode}`,
       already_paid: `đơn ${orderCode} đã thanh toán trước đó`,
     }[outcome]
     event.waitUntil(notifyTransferToCheck(body.transferAmount, what, body.content))
+  }
+  // Settled, but someone has to act on it
+  if (outcome === 'matched' && (note.overpaid || note.codOrder)) {
+    const parts = [
+      note.codOrder ? `đơn ${orderCode} đặt COD nhưng khách đã chuyển khoản, đừng thu tiền mặt nữa` : '',
+      note.overpaid ? `khách chuyển dư ${note.overpaid.toLocaleString('vi-VN')}đ cho đơn ${orderCode}, cần trả lại` : '',
+    ].filter(Boolean)
+    event.waitUntil(notifyTransferToCheck(body.transferAmount, parts.join('; '), body.content))
   }
   return { success: true }
 })

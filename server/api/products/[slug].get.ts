@@ -1,6 +1,7 @@
 import type { ProductDetailResponse } from '#shared/types/catalog'
 
-export default defineEventHandler(async (event): Promise<ProductDetailResponse> => {
+// Cached per product (see server/utils/menuCache.ts)
+export default defineCachedEventHandler(async (event): Promise<ProductDetailResponse> => {
   const slug = getRouterParam(event, 'slug') ?? ''
   const product = await findStoreProduct(slug)
   if (!product) {
@@ -8,4 +9,4 @@ export default defineEventHandler(async (event): Promise<ProductDetailResponse> 
   }
   const related = await listRelatedProducts(product)
   return { product, related }
-})
+}, menuCacheOptions('product', (event) => getRouterParam(event, 'slug') ?? ''))

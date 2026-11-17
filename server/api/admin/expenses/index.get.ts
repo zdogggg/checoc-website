@@ -5,7 +5,7 @@ import type { ExpenseView, MonthlyPnl } from '#shared/types/inventory'
 const query = z.object({
   month: z
     .string()
-    .regex(/^\d{4}-\d{2}$/)
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Tháng không hợp lệ')
     .optional(),
 })
 

@@ -14,6 +14,9 @@ export async function requireStaff(event: H3Event, roles?: StaffRole[]) {
   if (!account?.isActive) {
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized', message: 'Tài khoản đã bị khoá' })
   }
+  if (Date.now() - (loggedInAt ?? 0) > STAFF_SESSION_DAYS * 86_400_000) {
+    throw createError({ statusCode: 401, statusMessage: 'Unauthorized', message: 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại' })
+  }
   // Signed in before the password was changed or reset: that session is over
   if (account.passwordChangedAt && (loggedInAt ?? 0) < account.passwordChangedAt.getTime()) {
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized', message: 'Mật khẩu đã đổi, vui lòng đăng nhập lại' })

@@ -11,7 +11,8 @@ export default defineEventHandler(async (event) => {
 
   const shopDay = sql<string>`to_char((${orders.createdAt} at time zone 'Asia/Ho_Chi_Minh')::date, 'YYYY-MM-DD')`
   const today = sql`(now() at time zone 'Asia/Ho_Chi_Minh')::date`
-  const isToday = sql`(${orders.createdAt} at time zone 'Asia/Ho_Chi_Minh')::date = ${today}`
+  // Bounds on the raw column so the created_at index is used
+  const isToday = sql`${orders.createdAt} >= ${today}::timestamp at time zone 'Asia/Ho_Chi_Minh'`
   const weekStart = sql`((${today} - 6)::timestamp at time zone 'Asia/Ho_Chi_Minh')`
   const notCancelled = ne(orders.status, 'cancelled')
   const goods = sql`${orders.subtotal} - ${orders.discount} - ${orders.pointsDiscount}`

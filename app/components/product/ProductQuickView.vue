@@ -22,7 +22,7 @@
         <div class="md:w-5/12 relative bg-brand-cream shrink-0 h-56 md:h-auto">
           <img
 loading="lazy" decoding="async" 
-            :src="product?.image || PLACEHOLDER_IMAGE" 
+            :src="imageAt(product?.image, 800) || PLACEHOLDER_IMAGE"
             class="w-full h-full object-cover" 
             :alt="product?.name || 'Chè Cốc'"
           />

@@ -1,10 +1,11 @@
 import { z } from 'zod'
+import { DB_INT_MAX } from '../utils/limits'
 import { normalizePhone, VN_MOBILE_REGEX } from '../utils/orders'
 import { DELIVERY_CITY, isDeliveryArea } from '../utils/delivery'
 import { optionalEmail } from './customers'
 
 export const orderItemInput = z.object({
-  productId: z.coerce.number().int().positive(),
+  productId: z.coerce.number().int().max(DB_INT_MAX).positive(),
   quantity: z.coerce.number().int().min(1).max(50),
   // Option labels as shown in the cart; the server resolves them to current prices
   sugar: z.string().trim().max(60).default(''),
@@ -55,6 +56,10 @@ export const paymentStatusInput = z.object({
   paymentStatus: z.enum(['unpaid', 'paid', 'refunded']),
 })
 
+// App orders are entered within days of being delivered. A limit keeps a mistyped date from
+// landing in a month whose figures (P&L, reports) have already been looked at.
+export const PLATFORM_BACKDATE_DAYS = 7
+
 // An order received on ShopeeFood, entered by staff after it is done. Prices default to
 // the website menu; `subtotal` overrides them with the amount shown in the app.
 export const platformOrderInput = z
@@ -65,7 +70,7 @@ export const platformOrderInput = z
     items: z
       .array(
         z.object({
-          productId: z.coerce.number().int().positive(),
+          productId: z.coerce.number().int().max(DB_INT_MAX).positive(),
           quantity: z.coerce.number().int().min(1).max(50),
           toppings: z.array(z.string().trim().min(1).max(160)).max(10).default([]),
         }),
@@ -74,12 +79,16 @@ export const platformOrderInput = z
       .max(30),
     subtotal: z.coerce.number().int().min(0).max(100_000_000).optional(),
     // Voucher the shop itself paid for (platform-funded vouchers do not change shop revenue)
-    discount: z.coerce.number().int().min(0).default(0),
+    discount: z.coerce.number().int().max(DB_INT_MAX).min(0).default(0),
     feePercent: z.coerce.number().min(0).max(60, 'Phí tối đa 60%').default(0),
     note: z.string().trim().max(500).default(''),
   })
   .refine((v) => !v.placedAt || v.placedAt.getTime() <= Date.now() + 5 * 60 * 1000, {
     message: 'Thời gian đặt không được ở tương lai',
+    path: ['placedAt'],
+  })
+  .refine((v) => !v.placedAt || v.placedAt.getTime() >= Date.now() - PLATFORM_BACKDATE_DAYS * 86_400_000, {
+    message: `Chỉ nhập được đơn trong ${PLATFORM_BACKDATE_DAYS} ngày gần đây`,
     path: ['placedAt'],
   })
 export type PlatformOrderInput = z.infer<typeof platformOrderInput>

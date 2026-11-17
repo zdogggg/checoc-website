@@ -30,4 +30,10 @@ describe('shippingFeeFor', () => {
     expect(shippingFeeFor(50000, { ...base, type: 'free_shipping' })).toBe(0)
     expect(shippingFeeFor(50000, null)).toBe(15000)
   })
+
+  it('measures the threshold on the goods after the coupon', () => {
+    expect(shippingFeeFor(100000, { ...base, discount: 50 })).toBe(15000)
+    expect(shippingFeeFor(120000, { ...base, type: 'fixed', discount: 20000 })).toBe(0)
+    expect(shippingFeeFor(120000, { ...base, type: 'fixed', discount: 20001 })).toBe(15000)
+  })
 })

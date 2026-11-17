@@ -124,6 +124,9 @@
           <p v-if="order.paymentMethod === 'cod' && order.paymentStatus === 'unpaid' && order.status !== 'cancelled'" class="text-xs text-gray-500">
             Tự chuyển sang "Đã thanh toán" khi đơn hoàn tất.
           </p>
+          <p v-if="order.status === 'cancelled' && order.paymentStatus === 'paid'" class="bg-red-50 text-red-700 rounded-xl px-3 py-2 text-xs">
+            Đơn đã huỷ nhưng quán đã nhận {{ formatVnd(order.total) }}. Chuyển trả lại cho khách rồi bấm "Đã hoàn tiền".
+          </p>
           <div v-if="canEditMoney" class="flex flex-wrap gap-2">
             <button v-if="order.paymentStatus === 'unpaid'" type="button" class="admin-btn-primary !py-1.5 !text-xs" :disabled="isBusy" @click="setPayment('paid')">Đánh dấu đã thanh toán</button>
             <button v-if="order.paymentStatus === 'paid'" type="button" class="admin-btn-secondary !py-1.5 !text-xs" :disabled="isBusy" @click="setPayment('unpaid')">Huỷ đánh dấu</button>
@@ -151,6 +154,9 @@
           Khách sẽ thấy lý do này trên trang theo dõi đơn.
           <span v-if="order.couponCode">Lượt dùng mã {{ order.couponCode }} sẽ được trả lại.</span>
           <span v-if="order.pointsUsed">{{ order.pointsUsed.toLocaleString('vi-VN') }} điểm khách đã dùng sẽ được hoàn lại.</span>
+          <strong v-if="order.paymentStatus === 'paid'" class="block mt-2 text-red-700">
+            Khách đã thanh toán {{ formatVnd(order.total) }}: sau khi huỷ, nhớ chuyển trả lại tiền cho khách.
+          </strong>
         </p>
         <div v-if="!isPlatform" class="flex flex-wrap gap-2">
           <button v-for="r in cancelPresets" :key="r" type="button" class="text-xs px-3 py-1.5 rounded-full border border-gray-200 hover:border-brand-gold" @click="cancelReason = r">{{ r }}</button>

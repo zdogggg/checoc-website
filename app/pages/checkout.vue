@@ -299,7 +299,7 @@
                 class="pt-3 first:pt-0 flex gap-3 items-center justify-between text-xs"
               >
                 <div class="flex items-center gap-3 min-w-0">
-                  <img loading="lazy" decoding="async" width="48" height="48" :src="item.image" :alt="item.name" class="w-12 h-12 rounded-xl object-cover bg-gray-100 shrink-0" />
+                  <img loading="lazy" decoding="async" width="48" height="48" :src="imageAt(item.image, 200)" :alt="item.name" class="w-12 h-12 rounded-xl object-cover bg-gray-100 shrink-0" />
                   <div class="min-w-0">
                     <h5 class="font-bold text-brand-dark-green truncate text-xs">{{ item.name }}</h5>
                     <div class="text-[11px] text-gray-500 truncate">

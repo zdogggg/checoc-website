@@ -28,6 +28,8 @@ export interface PublicOrder {
   code: string
   // Delivered, and the customer has no sign-in email yet: the page offers to add one
   canLinkEmail?: boolean
+  // Name and address hidden: this browser did not place the order (see server/utils/orderDevice.ts)
+  masked?: boolean
   status: OrderStatus
   paymentStatus: PaymentStatus
   paymentMethod: PaymentMethod

@@ -8,8 +8,7 @@ export default defineEventHandler(async (event) => {
   const kind = getQuery(event).kind === 'products' ? 'products' : 'orders'
   const db = useDb()
   const { orders, orderItems } = schema
-  const shopDay = sql`(${orders.createdAt} at time zone 'Asia/Ho_Chi_Minh')::date`
-  const range = sql`${shopDay} between ${from}::date and ${to}::date`
+  const range = createdBetween(orders.createdAt, from, to)
 
   let lines: unknown[][]
   if (kind === 'orders') {
@@ -65,16 +64,16 @@ export default defineEventHandler(async (event) => {
       .select({
         name: orderItems.productName,
         quantity: sum(orderItems.quantity).mapWith(Number),
-        revenue: sum(orderItems.lineTotal).mapWith(Number),
+        revenue: lineRevenueSum(),
         cost: sum(orderItems.costTotal).mapWith(Number),
       })
       .from(orderItems)
       .innerJoin(orders, eq(orders.id, orderItems.orderId))
       .where(and(range, eq(orders.status, 'completed')))
       .groupBy(orderItems.productName)
-      .orderBy(desc(sum(orderItems.lineTotal)))
+      .orderBy(desc(lineRevenueSum()))
     lines = [
-      ['Món', 'Số lượng', 'Doanh thu (trước giảm giá)', 'Giá vốn', 'Lãi gộp'],
+      ['Món', 'Số lượng', 'Doanh thu (sau giảm giá)', 'Giá vốn', 'Lãi gộp'],
       ...rows.map((r) => [r.name, r.quantity, r.revenue, r.cost, r.revenue - r.cost]),
     ]
   }

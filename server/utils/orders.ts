@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { OrderInput } from '#shared/schemas/orders'
 import type { AdminOrder, OrderItemView, PublicOrder } from '#shared/types/orders'
 import {
@@ -27,18 +27,28 @@ function toItemView(item: ItemRow): OrderItemView {
   return rest
 }
 
-export function toPublicOrder(order: OrderRow & { items: ItemRow[]; logs: LogRow[] }): PublicOrder {
+// "Nguyễn Văn Anh" -> "N. V. Anh"; "12 Lê Lợi, P. Bến Nghé" -> "1***"
+export function maskName(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean)
+  if (words.length < 2) return words[0] ? `${words[0].slice(0, 1)}***` : ''
+  return [...words.slice(0, -1).map((w) => `${w.slice(0, 1)}.`), words.at(-1)].join(' ')
+}
+export const maskAddress = (address: string) => (address ? `${address.slice(0, 1)}***` : '')
+
+// owner: the viewer placed the order (or is its signed-in customer); anyone else holding the
+// tracking link sees the progress and the dishes but not who and where (server/utils/orderDevice.ts)
+export function toPublicOrder(order: OrderRow & { items: ItemRow[]; logs: LogRow[] }, owner = true): PublicOrder {
   return {
     code: order.code,
     status: order.status,
     paymentStatus: order.paymentStatus,
     paymentMethod: order.paymentMethod,
-    customerName: order.customerName,
+    customerName: owner ? order.customerName : maskName(order.customerName),
     customerPhone: maskPhone(order.customerPhone),
     city: order.city,
     district: order.district,
-    address: order.address,
-    note: order.note,
+    address: owner ? order.address : maskAddress(order.address),
+    note: owner ? order.note : '',
     items: order.items.map(toItemView),
     subtotal: order.subtotal,
     discount: order.discount,
@@ -127,11 +137,12 @@ async function requestIdTaken(requestId: string) {
 
 // sessionCustomer: the shopper signed in by SMS code, if any (needed to spend points).
 // replayed: the request was a retry of an order already placed, nothing new was created.
-export async function createOrder(input: OrderInput, sessionCustomer?: { id: number; phone: string }) {
+// deviceHash: the browser placing the order (see server/utils/orderDevice.ts).
+export async function createOrder(input: OrderInput, sessionCustomer?: { id: number; phone: string }, deviceHash?: string) {
   const existing = await findReplayedOrder(input)
   if (existing) return { order: existing, itemCount: 0, replayed: true }
   try {
-    return { ...(await insertOrder(input, sessionCustomer)), replayed: false }
+    return { ...(await insertOrder(input, sessionCustomer, deviceHash)), replayed: false }
   } catch (error) {
     // Two copies of the same request racing: the second hits the unique request id
     if ((error as { cause?: { code?: string } })?.cause?.code === '23505') {
@@ -151,7 +162,7 @@ export async function createOrder(input: OrderInput, sessionCustomer?: { id: num
 // orders on a number (theirs or someone else's).
 export const MAX_OPEN_ORDERS_PER_PHONE = 3
 
-async function insertOrder(input: OrderInput, sessionCustomer?: { id: number; phone: string }) {
+async function insertOrder(input: OrderInput, sessionCustomer?: { id: number; phone: string }, deviceHash?: string) {
   // Checkout disables the button outside opening hours; this catches tabs left open
   if (!useRuntimeConfig().ignoreOpeningHours && !isShopOpen()) {
     throw createError({
@@ -160,24 +171,6 @@ async function insertOrder(input: OrderInput, sessionCustomer?: { id: number; ph
       message: `Quán đang nghỉ, nhận đơn ${SHOP_HOURS_LABEL}. Bạn đặt lại khi quán mở cửa nhé!`,
     })
   }
-  const [open] = await useDb()
-    .select({ n: count() })
-    .from(orders)
-    .where(
-      and(
-        eq(orders.customerPhone, input.phone),
-        eq(orders.channel, 'website'),
-        inArray(orders.status, ['pending', 'confirmed', 'preparing', 'shipping'])
-      )
-    )
-  if ((open?.n ?? 0) >= MAX_OPEN_ORDERS_PER_PHONE) {
-    throw createError({
-      statusCode: 429,
-      statusMessage: 'Too Many Requests',
-      message: `Số điện thoại này đang có ${MAX_OPEN_ORDERS_PER_PHONE} đơn chưa giao xong. Vui lòng gọi quán nếu cần đặt thêm.`,
-    })
-  }
-
   const { productMap, options } = await loadPricingInputs([...new Set(input.items.map((i) => i.productId))])
 
   let lines: PricedLine[]
@@ -191,6 +184,27 @@ async function insertOrder(input: OrderInput, sessionCustomer?: { id: number; ph
   }
 
   return useDb().transaction(async (tx) => {
+    // Orders for one phone number are placed one after the other (lock held until commit), so
+    // several sent at the same moment cannot all slip under the limit
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`open-orders:${input.phone}`}))`)
+    const [open] = await tx
+      .select({ n: count() })
+      .from(orders)
+      .where(
+        and(
+          eq(orders.customerPhone, input.phone),
+          eq(orders.channel, 'website'),
+          inArray(orders.status, ['pending', 'confirmed', 'preparing', 'shipping'])
+        )
+      )
+    if ((open?.n ?? 0) >= MAX_OPEN_ORDERS_PER_PHONE) {
+      throw createError({
+        statusCode: 429,
+        statusMessage: 'Too Many Requests',
+        message: `Số điện thoại này đang có ${MAX_OPEN_ORDERS_PER_PHONE} đơn chưa giao xong. Vui lòng gọi quán nếu cần đặt thêm.`,
+      })
+    }
+
     let coupon: Awaited<ReturnType<typeof findUsableCoupon>> | null = null
     if (input.couponCode) {
       const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0)
@@ -236,6 +250,7 @@ async function insertOrder(input: OrderInput, sessionCustomer?: { id: number; ph
       .values({
         trackingToken: randomBytes(16).toString('base64url'),
         requestId: input.requestId ?? null,
+        deviceHash: deviceHash ?? null,
         paymentMethod: input.paymentMethod,
         customerName: input.fullName,
         customerPhone: input.phone,
@@ -319,6 +334,8 @@ export async function changeOrderStatus(id: number, to: OrderStatus, note: strin
     return order
   })
   if (to === 'completed') await linkCustomerEmail(order)
+  // The customer paid by transfer and the order will not be delivered: the money must go back
+  if (to === 'cancelled' && order.paymentStatus === 'paid') await notifyRefundDue(order.code, order.total, note)
 }
 
 // The email typed at checkout becomes the customer's sign-in email only once the order is
@@ -350,6 +367,15 @@ export async function changePaymentStatus(id: number, to: PaymentStatus) {
   await useDb().transaction(async (tx) => {
     const [order] = await tx.select().from(orders).where(eq(orders.id, id)).for('update')
     if (!order) throw createError({ statusCode: 404, statusMessage: 'Order not found' })
+    // "Refunded" means the order is off the books: a completed order is taken back with the
+    // refund action (stock, points and revenue reversed), not by relabelling its payment
+    if (to === 'refunded' && order.status !== 'cancelled') {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'Conflict',
+        message: 'Chỉ đánh dấu hoàn tiền cho đơn đã huỷ. Đơn đã giao thì dùng "Hoàn trả đơn".',
+      })
+    }
     if (!PAYMENT_TRANSITIONS[order.paymentStatus].includes(to)) {
       throw createError({
         statusCode: 409,

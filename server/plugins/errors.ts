@@ -5,6 +5,8 @@ export default defineNitroPlugin((nitroApp) => {
   nitroApp.hooks.hook('error', (error, { event }) => {
     const status = (error as { statusCode?: number }).statusCode ?? 500
     if (status < 500) return
-    void notifyServerError(error, event?.path.split('?')[0] ?? '(ngoài request)')
+    // The route pattern groups /api/products/a and /api/products/b as one error
+    const route = (event?.context.matchedRoute as { path?: string } | undefined)?.path
+    void notifyServerError(error, event?.path.split('?')[0] ?? '(ngoài request)', route)
   })
 })

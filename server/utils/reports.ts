@@ -8,7 +8,7 @@ import { eachDay, previousRange } from '#shared/utils/reports'
 const { orders, orderItems, products, categories, customers } = schema
 
 const shopDay = sql`(${orders.createdAt} at time zone 'Asia/Ho_Chi_Minh')::date`
-const inRange = (from: string, to: string) => sql`${shopDay} between ${from}::date and ${to}::date`
+const inRange = (from: string, to: string) => createdBetween(orders.createdAt, from, to)
 const completed = eq(orders.status, 'completed')
 const goods = sql`${orders.subtotal} - ${orders.discount} - ${orders.pointsDiscount}`
 
@@ -95,7 +95,7 @@ export async function salesReport(from: string, to: string): Promise<SalesReport
       .select({
         name: orderItems.productName,
         quantity: sum(orderItems.quantity).mapWith(Number),
-        revenue: sum(orderItems.lineTotal).mapWith(Number),
+        revenue: lineRevenueSum(),
         cost: sum(orderItems.costTotal).mapWith(Number),
       })
       .from(orderItems)
@@ -108,7 +108,7 @@ export async function salesReport(from: string, to: string): Promise<SalesReport
       .select({
         name: sql<string>`coalesce(${categories.name}, 'Món đã xoá')`,
         quantity: sum(orderItems.quantity).mapWith(Number),
-        revenue: sum(orderItems.lineTotal).mapWith(Number),
+        revenue: lineRevenueSum(),
       })
       .from(orderItems)
       .innerJoin(orders, eq(orders.id, orderItems.orderId))
@@ -116,7 +116,7 @@ export async function salesReport(from: string, to: string): Promise<SalesReport
       .leftJoin(categories, eq(categories.id, products.categoryId))
       .where(range)
       .groupBy(categories.name)
-      .orderBy(desc(sum(orderItems.lineTotal))),
+      .orderBy(desc(lineRevenueSum())),
     db
       .select({ method: orders.paymentMethod, orders: count(), revenue: sum(goods).mapWith(Number) })
       .from(orders)

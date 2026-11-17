@@ -19,17 +19,38 @@ export async function notifyNewOrder(order: Order, itemCount: number) {
   await sendTelegram(text)
 }
 
-// Server errors (5xx), at most one message per distinct error every 10 minutes.
-// The text never carries customer data (see describeErrorForAlert); details stay in the server log.
+// Server errors (5xx): at most one message per distinct error every 10 minutes, and at most
+// ALERTS_PER_HOUR in all, so nobody can flood the shop's chat by requesting many different
+// URLs that fail. The text never carries customer data (see describeErrorForAlert); details
+// stay in the server log.
+// route: the matched route pattern ("/api/products/:slug"), so /api/products/a and /b count as
+// one error
+const ALERTS_PER_HOUR = 20
 const lastAlert = new Map<string, number>()
-export async function notifyServerError(error: Error, path: string) {
+let hourStart = 0
+let sentThisHour = 0
+let suppressed = 0
+export async function notifyServerError(error: Error, path: string, route?: string) {
   const summary = describeErrorForAlert(error)
-  const key = `${path} ${summary}`.slice(0, 200)
+  const where = redactPath(route ?? path)
+  const key = `${where} ${summary}`.slice(0, 200)
   const now = Date.now()
   if (now - (lastAlert.get(key) ?? 0) < 10 * 60 * 1000) return
   if (lastAlert.size > 500) lastAlert.clear()
   lastAlert.set(key, now)
-  await sendTelegram(`Lỗi máy chủ tại ${redactPath(path)}\n${summary}\nChi tiết: xem log của server.`)
+
+  if (now - hourStart >= 60 * 60 * 1000) {
+    hourStart = now
+    sentThisHour = 0
+  }
+  if (sentThisHour >= ALERTS_PER_HOUR) {
+    suppressed++
+    return
+  }
+  sentThisHour++
+  const skipped = suppressed ? `\n(${suppressed} cảnh báo khác đã bị ẩn để tránh làm ngập tin nhắn, xem log)` : ''
+  suppressed = 0
+  await sendTelegram(`Lỗi máy chủ tại ${where}\n${summary}\nChi tiết: xem log của server.${skipped}`)
 }
 
 async function sendTelegram(text: string) {
@@ -44,6 +65,20 @@ async function sendTelegram(text: string) {
   } catch (error) {
     console.warn('[notify] Telegram message failed', (error as Error).message)
   }
+}
+
+// A staff account was locked after repeated wrong passwords (server/api/auth/login.post.ts)
+export async function notifyStaffLocked(email: string) {
+  await sendTelegram(`Tài khoản quản trị ${email} vừa bị khoá 15 phút vì nhập sai mật khẩu 5 lần. Nếu không phải nhân viên của quán, hãy đổi mật khẩu.`)
+}
+
+// A paid order was cancelled: someone has to send the money back
+export async function notifyRefundDue(code: string, total: number, reason: string) {
+  await sendTelegram(
+    [`Đơn ${code} đã huỷ nhưng khách đã thanh toán ${total.toLocaleString('vi-VN')}đ: cần hoàn tiền cho khách.`, reason ? `Lý do huỷ: ${reason.slice(0, 200)}` : '']
+      .filter(Boolean)
+      .join('\n')
+  )
 }
 
 // A transfer the system could not settle by itself (no matching order, short amount, paid twice)

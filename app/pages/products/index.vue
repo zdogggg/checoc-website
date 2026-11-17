@@ -121,7 +121,7 @@
             <AppIcon name="gift" />
           </div>
           <h4 class="font-heading font-bold text-base text-brand-dark-green mb-1">Freeship Đơn Từ {{ formatVnd(FREESHIP_THRESHOLD) }}</h4>
-          <p class="text-xs text-gray-500 leading-relaxed max-w-xs">Áp dụng cho đơn đặt trên website, tính trên tiền món.</p>
+          <p class="text-xs text-gray-500 leading-relaxed max-w-xs">Áp dụng cho đơn đặt trên website, tính trên tiền món sau khi trừ mã giảm giá.</p>
         </div>
       </div>
     </div>

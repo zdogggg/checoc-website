@@ -2,7 +2,9 @@
   <div class="flex gap-4 p-3 rounded-2xl bg-white border border-gray-100 shadow-sm transition-all hover:shadow-md">
     <img
 loading="lazy" decoding="async" 
-      :src="item.image || PLACEHOLDER_IMAGE" 
+      :src="imageAt(item.image, 200) || PLACEHOLDER_IMAGE"
+      width="96"
+      height="96"
       :alt="item.name"
       class="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl bg-gray-100 shrink-0" 
     />

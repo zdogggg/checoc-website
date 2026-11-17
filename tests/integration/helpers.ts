@@ -32,19 +32,27 @@ export interface ApiResponse<T = any> {
   data: T
 }
 
+// A browser-like client: keeps every cookie the server sets (session, device) and sends them back
 export function client() {
-  let cookie = ''
+  const jar = new Map<string, string>()
   return async function api<T = any>(path: string, init: { method?: string; body?: unknown } = {}): Promise<ApiResponse<T>> {
     const headers: Record<string, string> = { origin: BASE, 'x-forwarded-for': TEST_IP }
-    if (cookie) headers.cookie = cookie
-    if (init.body !== undefined) headers['content-type'] = 'application/json'
+    if (jar.size) headers.cookie = [...jar].map(([k, v]) => `${k}=${v}`).join('; ')
+    const isForm = init.body instanceof FormData
+    if (init.body !== undefined && !isForm) headers['content-type'] = 'application/json'
     const res = await fetch(BASE + path, {
       method: init.method ?? 'GET',
       headers,
-      body: init.body === undefined ? undefined : JSON.stringify(init.body),
+      body: init.body === undefined ? undefined : isForm ? (init.body as FormData) : JSON.stringify(init.body),
     })
-    const setCookie = res.headers.get('set-cookie')
-    if (setCookie) cookie = setCookie.split(';')[0]!
+    for (const line of res.headers.getSetCookie()) {
+      const [pair] = line.split(';')
+      const at = pair!.indexOf('=')
+      const name = pair!.slice(0, at)
+      const value = pair!.slice(at + 1)
+      if (!value || /max-age=0|expires=thu, 01 jan 1970/i.test(line)) jar.delete(name)
+      else jar.set(name, value)
+    }
     const text = await res.text()
     let data: any = text
     try {
@@ -103,10 +111,12 @@ export async function cleanup() {
     await tx`delete from push_subscriptions where order_id in (${orders})`
     await tx`delete from loyalty_ledger where customer_id in (select id from customers where phone like ${like})`
     await tx`delete from orders where customer_phone like ${like} or external_code like 'ITEST-%'`
+    await tx`delete from coupons where customer_id in (select id from customers where phone like ${like})`
     await tx`delete from customers where phone like ${like}`
     await tx`delete from coupons where code like 'ITEST%'`
     await tx`delete from product_ingredients where ingredient_id in (select id from ingredients where name like 'ZZ-IT %')`
     await tx`delete from ingredients where name like 'ZZ-IT %'`
     await tx`delete from rate_limits where key like ${'%' + TEST_IP}`
+    await tx`delete from rate_limits where key like ${'fail:lookup:' + like}`
   })
 }

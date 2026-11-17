@@ -1,6 +1,6 @@
 import { createHmac, randomInt, timingSafeEqual } from 'node:crypto'
 import type { H3Event } from 'h3'
-import { and, count, desc, eq, gte, isNull } from 'drizzle-orm'
+import { and, count, desc, eq, gte, isNull, lt, sql } from 'drizzle-orm'
 import type { LoginTarget } from '#shared/schemas/customers'
 
 const CODE_TTL_MS = 5 * 60 * 1000
@@ -106,13 +106,26 @@ async function checkCode(target: LoginTarget, code: string, purpose: OtpPurpose,
     orderBy: desc(otpCodes.id),
   })
   if (!row || row.expiresAt < new Date()) throw fail(400, 'Mã đã hết hạn. Vui lòng yêu cầu mã mới.')
-  if (row.attempts >= MAX_ATTEMPTS) throw fail(429, 'Nhập sai quá nhiều lần. Vui lòng yêu cầu mã mới.')
+
+  // Take one attempt before comparing, in a single statement: guesses sent in parallel each
+  // need their own attempt, so no more than MAX_ATTEMPTS codes are ever compared
+  const [taken] = await db
+    .update(otpCodes)
+    .set({ attempts: sql`${otpCodes.attempts} + 1` })
+    .where(and(eq(otpCodes.id, row.id), lt(otpCodes.attempts, MAX_ATTEMPTS), isNull(otpCodes.consumedAt)))
+    .returning({ attempts: otpCodes.attempts })
+  if (!taken) throw fail(429, 'Nhập sai quá nhiều lần. Vui lòng yêu cầu mã mới.')
 
   const expected = Buffer.from(row.codeHash, 'hex')
   const actual = Buffer.from(hashCode(target, code, scope), 'hex')
   if (!timingSafeEqual(expected, actual)) {
-    await db.update(otpCodes).set({ attempts: row.attempts + 1 }).where(eq(otpCodes.id, row.id))
-    throw fail(400, `Mã không đúng. Bạn còn ${MAX_ATTEMPTS - row.attempts - 1} lần thử.`)
+    throw fail(400, `Mã không đúng. Bạn còn ${MAX_ATTEMPTS - taken.attempts} lần thử.`)
   }
-  await db.update(otpCodes).set({ consumedAt: new Date() }).where(eq(otpCodes.id, row.id))
+  // A code signs in once, even if the right code is sent twice at the same moment
+  const [used] = await db
+    .update(otpCodes)
+    .set({ consumedAt: new Date() })
+    .where(and(eq(otpCodes.id, row.id), isNull(otpCodes.consumedAt)))
+    .returning({ id: otpCodes.id })
+  if (!used) throw fail(400, 'Mã đã được dùng. Vui lòng yêu cầu mã mới.')
 }

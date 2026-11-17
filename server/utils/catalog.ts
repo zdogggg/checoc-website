@@ -60,7 +60,22 @@ export async function listStoreProducts(): Promise<Product[]> {
     with: productWith,
     orderBy: [asc(products.sortOrder), asc(products.id)],
   })
-  return rows.filter((r) => r.category.isActive).map(toProductDto)
+  return rows.filter((r) => r.category.isActive).map(toListProductDto)
+}
+
+// The list is embedded in every storefront page (home, menu, cart). Cards, the quick view and
+// the menu search only need the first lines of the description; the photo gallery, nutrition
+// and preparation time are shown on the product page, which loads the full product.
+const LIST_DESCRIPTION_CHARS = 240
+function toListProductDto(row: ProductRow): Product {
+  const full = toProductDto(row)
+  return {
+    ...full,
+    description: full.description.length > LIST_DESCRIPTION_CHARS ? `${full.description.slice(0, LIST_DESCRIPTION_CHARS).trimEnd()}…` : full.description,
+    galleryImages: [],
+    nutrition: null,
+    prepTime: '',
+  }
 }
 
 export async function findStoreProduct(slug: string): Promise<Product | null> {
@@ -113,7 +128,7 @@ export async function listRelatedProducts(current: Product, limit = 4): Promise<
     // A few extra in case some sit in a hidden category
     limit: limit * 3,
   })
-  return rows.filter((r) => r.category.isActive).slice(0, limit).map(toProductDto)
+  return rows.filter((r) => r.category.isActive).slice(0, limit).map(toListProductDto)
 }
 
 

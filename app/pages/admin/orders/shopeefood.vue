@@ -46,7 +46,7 @@
           </div>
           <div>
             <label class="admin-label" for="spf-time">Thời gian đặt</label>
-            <input id="spf-time" v-model="form.placedAtLocal" type="datetime-local" class="admin-input" :max="nowLocal()">
+            <input id="spf-time" v-model="form.placedAtLocal" type="datetime-local" class="admin-input" :min="nowLocal(-PLATFORM_BACKDATE_DAYS)" :max="nowLocal()">
             <p v-if="errors.placedAt" class="admin-error">{{ errors.placedAt }}</p>
           </div>
         </div>
@@ -141,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { platformOrderInput } from '#shared/schemas/orders'
+import { PLATFORM_BACKDATE_DAYS, platformOrderInput } from '#shared/schemas/orders'
 import type { AdminOrderListItem } from '#shared/types/orders'
 import type { ProductOptions } from '#shared/types/catalog'
 
@@ -184,7 +184,7 @@ const filteredProducts = computed(() => {
 })
 
 // "YYYY-MM-DDTHH:mm" in shop time for the datetime-local input (Vietnam has no DST: +07:00)
-function nowLocal(): string {
+function nowLocal(offsetDays = 0): string {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: SHOP_TIME_ZONE,
     year: 'numeric',
@@ -193,7 +193,7 @@ function nowLocal(): string {
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
-  }).formatToParts(new Date())
+  }).formatToParts(new Date(Date.now() + offsetDays * 86_400_000))
   const get = (t: string) => parts.find((p) => p.type === t)?.value ?? ''
   return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`
 }

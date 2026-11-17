@@ -11,7 +11,10 @@ export default defineEventHandler(async (event) => {
   const user = await useDb().query.users.findFirst({ where: eq(schema.users.email, email) })
   // Same error for unknown email and wrong password
   if (!user || !user.isActive || !(await verifyStaffPassword(user.passwordHash, password))) {
-    await recordFailure(lockKey)
+    const failures = await recordFailure(lockKey)
+    // Someone may be guessing a real staff password (or locking the account on purpose):
+    // tell the shop once, when the lock starts
+    if (user && failures === 5) event.waitUntil(notifyStaffLocked(user.email))
     await writeAudit(event, { userId: user?.id ?? null, userEmail: email, status: 401 })
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized', message: 'Email hoặc mật khẩu không đúng' })
   }
