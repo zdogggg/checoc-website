@@ -11,8 +11,10 @@ export default defineEventHandler(async (event) => {
   const file = parts?.find((p) => p.name === 'file' && p.filename)
   if (!file) throw createError({ statusCode: 400, statusMessage: 'Missing file' })
 
-  const ext = Object.entries(IMAGE_TYPES).find(([, type]) => type === file.type)?.[0]
-  if (!ext) {
+  // The file's own bytes decide its type (and the extension it is served with), not the
+  // type the browser declared: an HTML or SVG file renamed .jpg is refused
+  const ext = sniffImageType(file.data)
+  if (!ext || !(ext in IMAGE_TYPES)) {
     throw createError({ statusCode: 415, statusMessage: 'Unsupported', message: 'Chỉ nhận ảnh JPG, PNG, WEBP, AVIF' })
   }
   if (file.data.length > MAX_BYTES) {

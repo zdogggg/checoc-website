@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { and, eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import type { PlatformOrderInput } from '#shared/schemas/orders'
 import { OrderPricingError, platformFeeFor, priceOrderLines, repriceLines } from './orderPricing'
 
@@ -8,7 +8,7 @@ import { OrderPricingError, platformFeeFor, priceOrderLines, repriceLines } from
 // commission is kept on the order, and no customer, points or notification is involved
 // (delivery apps do not share the buyer's contact details).
 
-const { orders, orderItems, orderStatusLogs, stockMovements } = schema
+const { orders, orderItems, orderStatusLogs } = schema
 
 export async function createPlatformOrder(input: PlatformOrderInput, userId: number) {
   const { productMap, options } = await loadPricingInputs([...new Set(input.items.map((i) => i.productId))])
@@ -98,21 +98,13 @@ export async function voidPlatformOrder(id: number, reason: string, userId: numb
       })
     }
 
-    // Net quantity this order took out of each ingredient (negative numbers)
-    const used = await tx
-      .select({ ingredientId: stockMovements.ingredientId, quantity: sql<number>`sum(${stockMovements.quantity})`.mapWith(Number) })
-      .from(stockMovements)
-      .where(and(eq(stockMovements.orderId, id), eq(stockMovements.type, 'out')))
-      .groupBy(stockMovements.ingredientId)
-      .orderBy(stockMovements.ingredientId)
+    const used = await orderStockUsage(tx, id)
     for (const u of used) {
-      if (u.quantity < 0) {
-        await moveStock(tx, u.ingredientId, -u.quantity, 'adjust', {
-          orderId: id,
-          userId,
-          note: `Hoàn kho: huỷ đơn ${order.code} nhập nhầm`,
-        })
-      }
+      await moveStock(tx, u.ingredientId, u.quantity, 'adjust', {
+        orderId: id,
+        userId,
+        note: `Hoàn kho: huỷ đơn ${order.code} nhập nhầm`,
+      })
     }
     await syncAutoAvailability(tx, used.map((u) => u.ingredientId))
 

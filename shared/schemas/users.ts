@@ -19,3 +19,13 @@ export const userCreateInput = userUpdateInput.extend({
 export type UserCreateInput = z.infer<typeof userCreateInput>
 
 export const passwordResetInput = z.object({ password })
+
+// A staff member changing their own password
+export const passwordChangeInput = z
+  .object({
+    currentPassword: z.string().min(1, 'Vui lòng nhập mật khẩu hiện tại'),
+    password,
+    confirm: z.string(),
+  })
+  .refine((v) => v.password === v.confirm, { message: 'Mật khẩu nhập lại không khớp', path: ['confirm'] })
+  .refine((v) => v.password !== v.currentPassword, { message: 'Mật khẩu mới phải khác mật khẩu cũ', path: ['password'] })

@@ -6,6 +6,6 @@ export default defineEventHandler(async (event): Promise<ProductDetailResponse> 
   if (!product) {
     throw createError({ statusCode: 404, statusMessage: 'Product not found' })
   }
-  const related = relatedProducts(await listStoreProducts(), product)
+  const related = await listRelatedProducts(product)
   return { product, related }
 })

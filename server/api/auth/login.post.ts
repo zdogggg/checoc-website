@@ -2,15 +2,20 @@ import { eq } from 'drizzle-orm'
 import { loginInput } from '#shared/schemas/catalog'
 
 export default defineEventHandler(async (event) => {
-  rateLimit(event, 'login', 10, 15 * 60 * 1000)
+  await rateLimit(event, 'login', 10, 15 * 60 * 1000)
   const { email, password } = await readValidated(event, loginInput)
+  // 5 wrong passwords for one account lock it for 15 minutes, from any IP
+  const lockKey = `login:${email}`
+  await assertNotLocked(lockKey, 5, 15 * 60 * 1000)
 
   const user = await useDb().query.users.findFirst({ where: eq(schema.users.email, email) })
   // Same error for unknown email and wrong password
-  if (!user || !user.isActive || !(await verifyPassword(user.passwordHash, password))) {
+  if (!user || !user.isActive || !(await verifyStaffPassword(user.passwordHash, password))) {
+    await recordFailure(lockKey)
     await writeAudit(event, { userId: user?.id ?? null, userEmail: email, status: 401 })
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized', message: 'Email hoặc mật khẩu không đúng' })
   }
+  await clearFailures(lockKey)
 
   await setUserSession(event, {
     user: { id: user.id, email: user.email, name: user.name, role: user.role },

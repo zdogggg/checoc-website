@@ -2,7 +2,7 @@ import { eq, sql } from 'drizzle-orm'
 import { emailOtpVerifyInput, phoneOtpVerifyInput } from '#shared/schemas/customers'
 
 export default defineEventHandler(async (event) => {
-  rateLimit(event, 'otp-verify', 20, 15 * 60 * 1000)
+  await rateLimit(event, 'otp-verify', 20, 15 * 60 * 1000)
   const { customers } = schema
   let customer: { id: number; phone: string } | undefined
 
@@ -26,6 +26,6 @@ export default defineEventHandler(async (event) => {
   }
 
   // Keeps a staff login in the same browser intact
-  await setUserSession(event, { customer: customer! })
+  await startCustomerSession(event, customer!)
   return { ok: true }
 })

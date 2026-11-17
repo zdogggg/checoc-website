@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   const { password, ...input } = await readValidated(event, userCreateInput)
   const [row] = await useDb()
     .insert(schema.users)
-    .values({ ...input, passwordHash: await hashPassword(password) })
+    .values({ ...input, passwordHash: await hashStaffPassword(password) })
     .returning()
     .catch((error) => rethrowUnique(error, 'Email này đã có tài khoản'))
   setResponseStatus(event, 201)

@@ -299,7 +299,7 @@
                 class="pt-3 first:pt-0 flex gap-3 items-center justify-between text-xs"
               >
                 <div class="flex items-center gap-3 min-w-0">
-                  <img :src="item.image" :alt="item.name" class="w-12 h-12 rounded-xl object-cover bg-gray-100 shrink-0" />
+                  <img loading="lazy" decoding="async" width="48" height="48" :src="item.image" :alt="item.name" class="w-12 h-12 rounded-xl object-cover bg-gray-100 shrink-0" />
                   <div class="min-w-0">
                     <h5 class="font-bold text-brand-dark-green truncate text-xs">{{ item.name }}</h5>
                     <div class="text-[11px] text-gray-500 truncate">
@@ -408,12 +408,15 @@
             <p v-if="submitError" class="text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2 mb-3">
               {{ submitError }}
             </p>
-            <button 
-              class="w-full bg-brand-dark-green text-brand-cream py-4 rounded-2xl font-bold hover:bg-[#1a4132] transition-all transform active:scale-[0.99] shadow-lg flex items-center justify-center gap-2 cursor-pointer text-sm sm:text-base group disabled:opacity-60 disabled:cursor-wait" 
-              :disabled="isSubmitting"
+            <p v-if="!shopOpen" class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-3">
+              Quán đang nghỉ, nhận đơn {{ SHOP_HOURS_LABEL }}. Giỏ hàng vẫn được giữ, bạn quay lại đặt khi quán mở cửa nhé!
+            </p>
+            <button
+              class="w-full bg-brand-dark-green text-brand-cream py-4 rounded-2xl font-bold hover:bg-[#1a4132] transition-all transform active:scale-[0.99] shadow-lg flex items-center justify-center gap-2 cursor-pointer text-sm sm:text-base group disabled:opacity-60 disabled:cursor-not-allowed"
+              :disabled="isSubmitting || !shopOpen"
               @click="submitOrder"
             >
-              <span>{{ isSubmitting ? 'Đang gửi đơn...' : 'Xác nhận đặt hàng' }}</span>
+              <span>{{ isSubmitting ? 'Đang gửi đơn...' : shopOpen ? 'Xác nhận đặt hàng' : 'Quán đang nghỉ' }}</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-1 transition-transform"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
             </button>
 
@@ -526,6 +529,47 @@ const handleApplyCoupon = async () => {
 const isSubmitting = ref(false)
 const submitError = ref('')
 
+// Opening hours, re-checked every minute while the page is open
+const now = useNow({ interval: 60_000 })
+const shopOpen = computed(() => isShopOpen(now.value))
+
+// The tab may have been open for a while: show today's prices before the customer confirms.
+// (On a fresh page load the cart plugin does this right after restoring the cart.)
+// The coupon is checked again here too (expired, used up), not on every page of the shop:
+// the check counts against the coupon rate limit.
+const checkCoupon = async () => {
+  const message = await cartStore.revalidateCoupon(form.phone)
+  if (message) uiStore.showToast(message, 'warning')
+}
+onMounted(async () => {
+  if (!cartStore.isHydrated) {
+    // Fresh page load: the cart plugin restores the cart and syncs the menu, then the coupon is checked
+    const stop = watch(() => cartStore.isHydrated, (ready) => {
+      if (!ready) return
+      stop()
+      checkCoupon()
+    })
+    return
+  }
+  const message = await cartStore.syncWithMenu()
+  if (message) uiStore.showToast(message, 'warning')
+  await checkCoupon()
+})
+
+// One id per checkout attempt, kept while the order content stays the same. If the order went
+// through but the answer was lost (weak signal), pressing the button again sends the same id
+// and the server returns that order instead of placing a second one.
+let requestId = ''
+let requestFor = ''
+const requestIdFor = (payload: unknown) => {
+  const key = JSON.stringify(payload)
+  if (key !== requestFor || !requestId) {
+    requestId = crypto.randomUUID()
+    requestFor = key
+  }
+  return requestId
+}
+
 // Prices are not sent: the server prices every line from the current menu
 const buildOrder = () => ({
   ...form,
@@ -553,7 +597,8 @@ const submitOrder = async () => {
   if (isSubmitting.value) return
   submitError.value = ''
 
-  const result = validateForm(orderInput, buildOrder())
+  const order = buildOrder()
+  const result = validateForm(orderInput, { ...order, requestId: requestIdFor(order) })
   showFieldErrors(result.errors ?? {})
   if (!result.data) {
     uiStore.showToast('Vui lòng kiểm tra lại thông tin nhận hàng', 'warning')

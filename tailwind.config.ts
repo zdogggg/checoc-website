@@ -21,9 +21,9 @@ export default <Partial<Config>>{
         'brand-gold': '#D9A441',
       },
       fontFamily: {
-        sans: ['Inter', 'Be Vietnam Pro', 'sans-serif'],
-        serif: ['Playfair Display', 'Fraunces', 'serif'],
-        heading: ['Playfair Display', 'Fraunces', 'serif'],
+        sans: ['Inter', 'sans-serif'],
+        serif: ['Playfair Display', 'serif'],
+        heading: ['Playfair Display', 'serif'],
         handwriting: ['Dancing Script', 'cursive'],
       },
     },

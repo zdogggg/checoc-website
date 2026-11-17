@@ -19,6 +19,9 @@ export const VND_PER_POINT_EARNED = 1_000
 // Spending: each point is worth 50đ, i.e. roughly 5% back
 export const VND_PER_POINT_REDEEMED = 50
 export const MIN_POINTS_TO_REDEEM = 100
+// Points expire when a customer has gone this long without being credited any points
+// (an order completed, a grant from the shop, points given back); see server/utils/maintenance.ts
+export const POINTS_EXPIRE_AFTER_MONTHS = 12
 // Points can pay for at most half of the goods after coupons
 export const MAX_REDEEM_SHARE = 0.5
 

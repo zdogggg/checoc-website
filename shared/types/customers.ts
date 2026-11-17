@@ -8,7 +8,7 @@ export interface CustomerAddressView {
   address: string
 }
 
-export type LoyaltyReason = 'order_earn' | 'order_redeem' | 'redeem_refund' | 'manual'
+export type LoyaltyReason = 'order_earn' | 'order_redeem' | 'redeem_refund' | 'manual' | 'refund_reversal' | 'expired'
 
 export interface LedgerEntryView {
   id: number

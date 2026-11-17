@@ -64,6 +64,26 @@ openssl rand -hex 32
 
 `DATABASE_URL` trong `.env` không cần sửa: `docker-compose.prod.yml` tự trỏ app tới database bên trong.
 
+### Tự xác nhận chuyển khoản (SePay, tuỳ chọn)
+
+Khi khách trả bằng VietQR, nội dung chuyển khoản là mã đơn (VD `CC1234`). SePay theo dõi tài khoản
+ngân hàng của quán và báo về website mỗi giao dịch; website tìm mã đơn trong nội dung và tự đánh dấu
+"Đã thanh toán" khi đủ tiền. Không cấu hình thì nhân viên đánh dấu tay như trước.
+
+1. Đăng ký SePay, liên kết đúng tài khoản ngân hàng đã điền ở `NUXT_PUBLIC_BANK_ACCOUNT_NO`.
+2. Tạo một chuỗi khoá ngẫu nhiên (`openssl rand -hex 24`), điền vào `.env`:
+   ```bash
+   NUXT_SEPAY_WEBHOOK_KEY=<chuỗi vừa tạo>
+   ```
+3. Trong SePay, thêm webhook:
+   - URL: `https://<tên miền>/api/payments/sepay`
+   - Kiểu xác thực: **API Key**, giá trị là chuỗi ở bước 2 (SePay gửi `Authorization: Apikey <chuỗi>`)
+   - Chỉ gửi giao dịch tiền vào.
+4. Khởi động lại app, rồi tự chuyển thử một đơn nhỏ để chắc đơn chuyển sang "Đã thanh toán".
+
+Giao dịch không tự khớp được (không có mã đơn, chuyển thiếu, đơn đã trả rồi) được lưu lại và báo vào
+Telegram của quán để nhân viên kiểm tra. Một giao dịch SePay gửi lại nhiều lần chỉ được tính một lần.
+
 ## 3. Chạy
 
 ```bash
@@ -92,14 +112,41 @@ Migration mới tự chạy khi app khởi động lại. Nên có bản backup 
 
 ## 5. Backup và khôi phục
 
-Service `backup` dump database lúc khởi động và mỗi ngày 03:00 vào `./backups/checoc-YYYYMMDD-HHMM.dump`,
-giữ 14 ngày (`BACKUP_KEEP_DAYS`). Thư mục này nằm trên cùng VPS: **chép định kỳ ra nơi khác**
-(Google Drive bằng `rclone`, máy khác bằng `rsync`), vì hỏng ổ đĩa sẽ mất cả database lẫn backup.
+Service `backup` chạy lúc khởi động và mỗi ngày 03:00, ghi vào `./backups`:
 
-Ảnh món tải lên nằm trong volume `uploads`; sao lưu bằng:
+- `checoc-YYYYMMDD-HHMM.dump`: database.
+- `uploads-YYYYMMDD-HHMM.tar.gz`: ảnh món đã tải lên.
+
+Bản trên VPS giữ 14 ngày (`BACKUP_KEEP_DAYS`).
+
+### Chép backup ra ngoài VPS (nên bật)
+
+Thư mục `./backups` nằm trên cùng VPS với database: hỏng ổ đĩa hay mất VPS là mất cả hai.
+Service `backup` tự chép bản mới mỗi ngày lên kho lưu trữ khác bằng `rclone` khi có file `.env.backup`.
+Ví dụ với Cloudflare R2 (Backblaze B2, Google Drive... cũng được, xem tài liệu rclone):
 
 ```bash
-docker run --rm -v checoc_uploads:/data -v "$PWD/backups":/out alpine tar czf /out/uploads-$(date +%F).tgz -C /data .
+# .env.backup (không commit file này)
+BACKUP_REMOTE=offsite:checoc-backups
+BACKUP_REMOTE_KEEP_DAYS=60
+RCLONE_CONFIG_OFFSITE_TYPE=s3
+RCLONE_CONFIG_OFFSITE_PROVIDER=Cloudflare
+RCLONE_CONFIG_OFFSITE_ACCESS_KEY_ID=...
+RCLONE_CONFIG_OFFSITE_SECRET_ACCESS_KEY=...
+RCLONE_CONFIG_OFFSITE_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+```
+
+Tạo bucket `checoc-backups` trước, cấp khoá chỉ có quyền trên bucket đó. Sau khi tạo file:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d backup
+docker compose -f docker-compose.prod.yml logs backup   # phải thấy "[backup] copied to offsite:checoc-backups"
+```
+
+Khôi phục ảnh món từ một bản backup:
+
+```bash
+docker run --rm -v checoc_uploads:/data -v "$PWD/backups":/in alpine tar xzf /in/uploads-20261027-0300.tar.gz -C /data
 ```
 
 Backup thủ công ngay:

@@ -5,12 +5,19 @@
 //    without a connection the offline page is shown instead of the browser error.
 //  - API and admin requests are never touched.
 //  - Push messages about an order open its tracking page.
+//
+// Each deploy registers this file as /sw.js?v=<build id> (app/plugins/sw.client.ts). A new id
+// installs a new worker with a fresh static cache (offline page included) and the previous
+// deploy's cache is deleted on activation, so old build files do not pile up.
 
-const VERSION = 'v1'
+const VERSION = new URL(self.location.href).searchParams.get('v') || 'dev'
 const STATIC_CACHE = `checoc-static-${VERSION}`
-const IMAGE_CACHE = `checoc-images-${VERSION}`
+// Photos do not change with a deploy: this cache is kept and trimmed to MAX_IMAGES
+const IMAGE_CACHE = 'checoc-images-v1'
 const OFFLINE_URL = '/offline.html'
 const MAX_IMAGES = 80
+// Safety net in case one deploy's build files are many (lazy-loaded pages add up)
+const MAX_STATIC = 300
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -54,7 +61,11 @@ async function cacheFirst(request) {
   const cached = await caches.match(request)
   if (cached) return cached
   const response = await fetch(request)
-  if (response.ok) (await caches.open(STATIC_CACHE)).put(request, response.clone())
+  if (response.ok) {
+    const cache = await caches.open(STATIC_CACHE)
+    await cache.put(request, response.clone())
+    trim(cache, MAX_STATIC)
+  }
   return response
 }
 
@@ -65,7 +76,7 @@ async function staleWhileRevalidate(request) {
     .then(async (response) => {
       if (response.ok) {
         await cache.put(request, response.clone())
-        trimImages(cache)
+        trim(cache, MAX_IMAGES)
       }
       return response
     })
@@ -73,9 +84,10 @@ async function staleWhileRevalidate(request) {
   return cached || refresh
 }
 
-async function trimImages(cache) {
-  const keys = await cache.keys()
-  for (const key of keys.slice(0, Math.max(0, keys.length - MAX_IMAGES))) await cache.delete(key)
+// Oldest entries go first (cache.keys() lists them in insertion order); the offline page stays
+async function trim(cache, max) {
+  const keys = (await cache.keys()).filter((k) => new URL(k.url).pathname !== OFFLINE_URL)
+  for (const key of keys.slice(0, Math.max(0, keys.length - max))) await cache.delete(key)
 }
 
 // Payload sent by server/utils/push.ts: { title, body, url, tag }

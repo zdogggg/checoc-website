@@ -34,16 +34,20 @@ const optionalDate = z
   .nullish()
   .or(z.literal('').transform(() => null))
 
-// What a customer may edit about themselves
+// What a customer may edit about themselves. The email is not here: it signs them in, so it
+// changes only with a code sent to the new address (emailChangeInput / emailChangeVerifyInput)
 export const accountProfileInput = z.object({
   name: z.string().trim().min(1, 'Vui lòng nhập tên').max(120),
-  email: optionalEmail,
   birthday: optionalDate,
 })
 
-// What staff may edit on a customer profile
+export const emailChangeInput = z.object({ email: emailField })
+export const emailChangeVerifyInput = emailChangeInput.extend({ code: codeField })
+
+// What staff may edit on a customer profile (changing the email: managers and owners only)
 export const adminCustomerInput = accountProfileInput.extend({
   name: z.string().trim().max(120),
+  email: optionalEmail,
   tags: z.array(z.string().trim().min(1).max(30)).max(10).default([]),
   note: z.string().trim().max(2000).default(''),
 })

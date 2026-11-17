@@ -5,15 +5,20 @@
         <div class="w-20 h-20 bg-brand-cream rounded-full flex items-center justify-center mx-auto mb-4 text-3xl text-brand-dark-green">
           <AppIcon name="bowl" />
         </div>
-        <h1 class="font-heading text-2xl font-bold text-brand-dark-green mb-2">
+        <h1 v-if="isStaffSessionEnded" class="font-heading text-2xl font-bold text-brand-dark-green mb-2">
+          Phiên đăng nhập đã hết
+        </h1>
+        <h1 v-else class="font-heading text-2xl font-bold text-brand-dark-green mb-2">
           {{ is404 ? 'Không tìm thấy trang này' : 'Đã có lỗi xảy ra' }}
         </h1>
-        <p class="text-sm text-gray-500 mb-6 px-6">
+        <p v-if="isStaffSessionEnded" class="text-sm text-gray-500 mb-6 px-6">Đang chuyển tới trang đăng nhập...</p>
+        <p v-if="!isStaffSessionEnded" class="text-sm text-gray-500 mb-6 px-6">
           {{ is404
             ? 'Món bạn đang tìm có thể đã tạm hết hoặc không còn trong thực đơn.'
             : 'Xin lỗi bạn, vui lòng thử lại sau ít phút.' }}
         </p>
         <button
+          v-if="!isStaffSessionEnded"
           class="bg-brand-dark-green text-brand-cream font-bold px-6 py-3 rounded-full hover:bg-[#1a4132] transition-colors inline-block text-sm"
           @click="clearError({ redirect: '/products' })"
         >
@@ -29,6 +34,17 @@ import type { NuxtError } from '#app'
 
 const props = defineProps<{ error: NuxtError }>()
 const is404 = computed(() => props.error.statusCode === 404)
+
+// An admin page whose data came back 401: the session ended on the server (password changed,
+// account locked). Go to the login screen instead of showing an error.
+const route = useRoute()
+const isStaffSessionEnded = computed(
+  () => props.error.statusCode === 401 && route.path.startsWith('/admin') && !route.path.startsWith('/admin/login')
+)
+const endStaffSession = useStaffSessionEnd()
+onMounted(() => {
+  if (isStaffSessionEnded.value) endStaffSession(route.fullPath)
+})
 
 useHead({ title: () => (is404.value ? 'Không tìm thấy — Chè Cốc' : 'Lỗi — Chè Cốc') })
 </script>

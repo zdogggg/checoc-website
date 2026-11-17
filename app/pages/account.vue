@@ -93,11 +93,6 @@
               <p v-if="profileErrors.name" class="text-xs text-red-600 mt-1">{{ profileErrors.name }}</p>
             </div>
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-brand-dark-green mb-1" for="acc-email">Email (tuỳ chọn)</label>
-              <input id="acc-email" v-model="profile.email" type="email" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold">
-              <p v-if="profileErrors.email" class="text-xs text-red-600 mt-1">{{ profileErrors.email }}</p>
-            </div>
-            <div>
               <label class="block text-xs font-bold uppercase tracking-wider text-brand-dark-green mb-1" for="acc-birthday">Sinh nhật (để nhận quà)</label>
               <input id="acc-birthday" v-model="profile.birthday" type="date" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold">
             </div>
@@ -105,6 +100,49 @@
               {{ isSaving ? 'Đang lưu...' : 'Lưu thông tin' }}
             </button>
           </form>
+
+          <section class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 space-y-3">
+            <h2 class="font-heading text-lg font-bold text-brand-dark-green">Email đăng nhập</h2>
+            <p class="text-sm">
+              <strong v-if="account.email" class="text-brand-dark-green break-all">{{ account.email }}</strong>
+              <span v-else class="text-gray-500">Chưa có. Thêm email để đăng nhập bằng mã gửi qua email.</span>
+            </p>
+            <button v-if="!emailStep" type="button" class="text-sm font-bold text-brand-dark-green underline" @click="emailStep = 'enter'">
+              {{ account.email ? 'Đổi email' : 'Thêm email' }}
+            </button>
+            <form v-else class="space-y-2" novalidate @submit.prevent="emailStep === 'enter' ? sendEmailCode() : confirmEmail()">
+              <input
+                v-model="emailForm.email"
+                type="email"
+                :readonly="emailStep === 'code'"
+                placeholder="ban@gmail.com"
+                aria-label="Email mới"
+                class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold"
+              >
+              <template v-if="emailStep === 'code'">
+                <p class="text-xs text-gray-500">Đã gửi mã 6 số tới email trên. Mã có hiệu lực 5 phút.</p>
+                <p v-if="emailDevCode" class="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-3 py-2">
+                  Chế độ phát triển (chưa cấu hình email): mã là <strong class="font-mono">{{ emailDevCode }}</strong>
+                </p>
+                <input
+                  v-model="emailForm.code"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  maxlength="6"
+                  placeholder="Mã 6 số"
+                  aria-label="Mã xác nhận"
+                  class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm tracking-widest focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-gold"
+                >
+              </template>
+              <p v-if="emailError" class="text-xs text-red-600">{{ emailError }}</p>
+              <div class="flex gap-2">
+                <button type="submit" class="flex-1 bg-brand-dark-green text-brand-cream font-bold py-2.5 rounded-full text-sm disabled:opacity-60" :disabled="emailBusy">
+                  {{ emailStep === 'enter' ? 'Gửi mã xác nhận' : 'Xác nhận' }}
+                </button>
+                <button type="button" class="px-4 text-sm text-gray-500" @click="resetEmailForm">Huỷ</button>
+              </div>
+            </form>
+          </section>
 
           <section class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
             <h2 class="font-heading text-lg font-bold text-brand-dark-green mb-3">Địa chỉ đã dùng</h2>
@@ -119,7 +157,10 @@
 
           <LoyaltyRules />
 
-          <button type="button" class="w-full text-sm text-gray-500 hover:text-red-600 py-2" @click="logout">Đăng xuất</button>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <button type="button" class="flex-1 text-sm text-gray-500 hover:text-red-600 py-2" @click="logout">Đăng xuất</button>
+            <button type="button" class="flex-1 text-sm text-gray-500 hover:text-red-600 py-2" @click="logoutOthers">Đăng xuất khỏi thiết bị khác</button>
+          </div>
         </div>
       </div>
     </div>
@@ -127,7 +168,7 @@
 </template>
 
 <script setup lang="ts">
-import { accountProfileInput } from '#shared/schemas/customers'
+import { accountProfileInput, emailChangeInput, emailChangeVerifyInput } from '#shared/schemas/customers'
 import type { CustomerTier } from '#shared/utils/loyalty'
 import AccountLogin from '~/components/account/AccountLogin.vue'
 import LoyaltyRules from '~/components/account/LoyaltyRules.vue'
@@ -160,10 +201,57 @@ async function onSignedIn() {
   if (redirect.startsWith('/') && !redirect.startsWith('//')) await navigateTo(redirect)
 }
 
-const profile = reactive({ name: '', email: '', birthday: '' })
+// Adding or changing the sign-in email: a code is sent to the new address first
+const emailStep = ref<'' | 'enter' | 'code'>('')
+const emailForm = reactive({ email: '', code: '' })
+const emailError = ref('')
+const emailDevCode = ref('')
+const emailBusy = ref(false)
+
+function resetEmailForm() {
+  emailStep.value = ''
+  Object.assign(emailForm, { email: '', code: '' })
+  emailError.value = ''
+  emailDevCode.value = ''
+}
+
+async function sendEmailCode() {
+  const result = validateForm(emailChangeInput, emailForm)
+  emailError.value = result.errors?.email ?? ''
+  if (!result.data) return
+  emailBusy.value = true
+  try {
+    const res = await $fetch<{ devCode?: string }>('/api/account/email/code', { method: 'POST', body: result.data })
+    emailDevCode.value = res.devCode ?? ''
+    emailStep.value = 'code'
+  } catch (e) {
+    emailError.value = apiErrorMessage(e)
+  } finally {
+    emailBusy.value = false
+  }
+}
+
+async function confirmEmail() {
+  const result = validateForm(emailChangeVerifyInput, emailForm)
+  emailError.value = result.errors ? Object.values(result.errors)[0]! : ''
+  if (!result.data) return
+  emailBusy.value = true
+  try {
+    await $fetch('/api/account/email/verify', { method: 'POST', body: result.data })
+    await refresh()
+    resetEmailForm()
+    uiStore.showToast('Đã xác nhận email đăng nhập')
+  } catch (e) {
+    emailError.value = apiErrorMessage(e)
+  } finally {
+    emailBusy.value = false
+  }
+}
+
+const profile = reactive({ name: '', birthday: '' })
 watch(
   account,
-  (a) => Object.assign(profile, { name: a?.name ?? '', email: a?.email ?? '', birthday: a?.birthday ?? '' }),
+  (a) => Object.assign(profile, { name: a?.name ?? '', birthday: a?.birthday ?? '' }),
   { immediate: true }
 )
 const profileErrors = ref<FieldErrors>({})
@@ -190,6 +278,17 @@ async function removeAddress(id: number) {
   try {
     await $fetch(`/api/account/addresses/${id}`, { method: 'DELETE' })
     await refresh()
+  } catch (e) {
+    uiStore.showToast(apiErrorMessage(e), 'warning')
+  }
+}
+
+// Lost phone, shared computer: every other device signs out, this one stays
+async function logoutOthers() {
+  if (!confirm('Đăng xuất tài khoản này trên mọi thiết bị khác?')) return
+  try {
+    await $fetch('/api/account/logout-all', { method: 'POST' })
+    uiStore.showToast('Đã đăng xuất khỏi các thiết bị khác')
   } catch (e) {
     uiStore.showToast(apiErrorMessage(e), 'warning')
   }

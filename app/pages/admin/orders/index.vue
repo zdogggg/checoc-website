@@ -161,6 +161,12 @@ async function advance(o: AdminOrderListItem) {
     await adminFetch(`/api/admin/orders/${o.id}/status`, { method: 'POST', body: { status: to } })
     uiStore.showToast(`${o.code}: ${ORDER_STATUS_LABELS[to]}`)
   } catch (e) {
+    // Unpaid bank transfer: the order page asks whether the money arrived
+    if ((e as { data?: { data?: { reason?: string } } }).data?.data?.reason === 'unpaid_transfer') {
+      uiStore.showToast(`${o.code}: chưa ghi nhận tiền chuyển khoản, mở đơn để xác nhận`, 'warning')
+      await navigateTo(`/admin/orders/${o.id}`)
+      return
+    }
     uiStore.showToast(apiErrorMessage(e), 'warning')
   } finally {
     pendingId.value = null

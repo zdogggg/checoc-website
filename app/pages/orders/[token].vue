@@ -65,7 +65,7 @@
         </div>
 
         <div v-if="showQr" class="flex flex-col sm:flex-row items-center gap-5 p-4 rounded-2xl border border-brand-gold/30 bg-brand-cream/40">
-          <img :src="qrUrl" alt="Mã VietQR chuyển khoản" class="w-48 h-48 sm:w-44 sm:h-44 rounded-xl bg-white p-1.5 border border-gray-200 object-contain">
+          <img loading="lazy" decoding="async" width="192" height="192" :src="qrUrl" alt="Mã VietQR chuyển khoản" class="w-48 h-48 sm:w-44 sm:h-44 rounded-xl bg-white p-1.5 border border-gray-200 object-contain">
           <div class="text-sm space-y-1.5 text-gray-700">
             <p class="font-bold text-brand-dark-green">Quét mã bằng ứng dụng ngân hàng bất kỳ</p>
             <div>Ngân hàng: <strong>{{ bank.bankId }}</strong></div>
@@ -86,7 +86,7 @@
         <h2 class="font-heading text-lg font-bold text-brand-dark-green mb-4">Món đã đặt</h2>
         <ul class="divide-y divide-gray-100">
           <li v-for="item in order.items" :key="item.id" class="py-3 flex gap-3 text-sm">
-            <img v-if="item.productImage" :src="item.productImage" :alt="item.productName" class="w-14 h-14 rounded-xl object-cover bg-gray-100 shrink-0">
+            <img v-if="item.productImage" loading="lazy" decoding="async" width="56" height="56" :src="item.productImage" :alt="item.productName" class="w-14 h-14 rounded-xl object-cover bg-gray-100 shrink-0">
             <div class="flex-1 min-w-0">
               <p class="font-bold text-brand-dark-green">{{ item.productName }} <span class="text-gray-500 font-normal">× {{ item.quantity }}</span></p>
               <p class="text-xs text-gray-500">{{ [item.sugar, item.ice].filter(Boolean).join(' • ') }}</p>
@@ -118,6 +118,31 @@
         </p>
         <p v-else-if="order.status !== 'cancelled' && order.status !== 'completed'" class="mt-4 text-xs text-gray-500">
           Điểm thưởng sẽ được cộng theo số điện thoại {{ order.customerPhone }} khi đơn hoàn tất.
+        </p>
+
+        <!-- No sign-in email yet: add one here, then the points can be used on the next order -->
+        <div v-if="order.canLinkEmail && !linked" class="mt-4 rounded-2xl border border-brand-gold/40 bg-brand-cream/40 p-4 space-y-2">
+          <p class="text-sm font-bold text-brand-dark-green">Thêm email để đăng nhập và dùng điểm</p>
+          <p class="text-xs text-gray-600">Quán gửi mã 6 số tới email của bạn. Sau khi xác nhận, bạn đăng nhập bằng email này để xem và dùng điểm.</p>
+          <form class="space-y-2" novalidate @submit.prevent="linkStep === 'enter' ? sendLinkCode() : confirmLink()">
+            <div class="grid sm:grid-cols-2 gap-2">
+              <input v-model="linkForm.email" type="email" :readonly="linkStep === 'code'" placeholder="ban@gmail.com" aria-label="Email" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm">
+              <input v-model="linkForm.phone" inputmode="tel" :readonly="linkStep === 'code'" placeholder="Số điện thoại đặt đơn này" aria-label="Số điện thoại đặt hàng" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm">
+            </div>
+            <template v-if="linkStep === 'code'">
+              <p v-if="linkDevCode" class="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-3 py-2">
+                Chế độ phát triển (chưa cấu hình email): mã là <strong class="font-mono">{{ linkDevCode }}</strong>
+              </p>
+              <input v-model="linkForm.code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Mã 6 số trong email" aria-label="Mã xác nhận" class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm tracking-widest">
+            </template>
+            <p v-if="linkError" class="text-xs text-red-600">{{ linkError }}</p>
+            <button type="submit" class="w-full bg-brand-dark-green text-brand-cream font-bold py-2.5 rounded-full text-sm disabled:opacity-60" :disabled="linkBusy">
+              {{ linkStep === 'enter' ? 'Gửi mã xác nhận' : 'Xác nhận và đăng nhập' }}
+            </button>
+          </form>
+        </div>
+        <p v-if="linked" class="mt-4 text-sm bg-green-50 text-green-800 rounded-xl px-3 py-2">
+          Đã thêm email và đăng nhập. <NuxtLink to="/account" class="underline font-semibold">Xem điểm của bạn</NuxtLink>
         </p>
       </section>
 
@@ -174,6 +199,45 @@ const showQr = computed(
     isBankConfigured(bank)
 )
 const qrUrl = computed(() => (order.value && isBankConfigured(bank) ? vietQrImageUrl(bank, order.value.total, order.value.code) : ''))
+
+// Adding a sign-in email from a delivered order
+const linkStep = ref<'enter' | 'code'>('enter')
+const linkForm = reactive({ email: '', phone: '', code: '' })
+const linkError = ref('')
+const linkDevCode = ref('')
+const linkBusy = ref(false)
+const linked = ref(false)
+
+async function sendLinkCode() {
+  linkError.value = ''
+  linkBusy.value = true
+  try {
+    const res = await $fetch<{ devCode?: string }>(`/api/orders/${token.value}/link-email/code`, {
+      method: 'POST',
+      body: { email: linkForm.email, phone: linkForm.phone },
+    })
+    linkDevCode.value = res.devCode ?? ''
+    linkStep.value = 'code'
+  } catch (e) {
+    linkError.value = Object.values(apiFieldErrors(e))[0] ?? apiErrorMessage(e)
+  } finally {
+    linkBusy.value = false
+  }
+}
+
+async function confirmLink() {
+  linkError.value = ''
+  linkBusy.value = true
+  try {
+    await $fetch(`/api/orders/${token.value}/link-email/verify`, { method: 'POST', body: { email: linkForm.email, code: linkForm.code } })
+    linked.value = true
+    refreshNuxtData('account:me')
+  } catch (e) {
+    linkError.value = Object.values(apiFieldErrors(e))[0] ?? apiErrorMessage(e)
+  } finally {
+    linkBusy.value = false
+  }
+}
 
 // Keep the page fresh while the order is moving (stops once it is completed or cancelled)
 const { pause } = useIntervalFn(() => {

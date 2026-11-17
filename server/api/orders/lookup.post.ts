@@ -9,7 +9,7 @@ const lookupInput = z.object({
 
 // Find a tracking link from order code + phone (both must match)
 export default defineEventHandler(async (event) => {
-  rateLimit(event, 'order-lookup', 10, 10 * 60 * 1000)
+  await rateLimit(event, 'order-lookup', 10, 10 * 60 * 1000)
   const { code, phone } = await readValidated(event, lookupInput)
   const order = await useDb().query.orders.findFirst({
     where: and(eq(schema.orders.code, code.toUpperCase()), eq(schema.orders.customerPhone, normalizePhone(phone))),

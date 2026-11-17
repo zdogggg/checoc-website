@@ -5,6 +5,7 @@ import {
   marginRate,
   optionKey,
   recipeCost,
+  removeFromAverage,
   sumUsage,
   weightedAverageCost,
   type RecipeBook,
@@ -77,5 +78,15 @@ describe('recipes', () => {
   it('computes the margin', () => {
     expect(marginRate(35000, 10500)).toBeCloseTo(0.7)
     expect(marginRate(0, 100)).toBeNull()
+  })
+})
+
+describe('removeFromAverage', () => {
+  it('undoes weightedAverageCost', () => {
+    const avg = weightedAverageCost(10, 100, 5, 130)
+    expect(removeFromAverage(15, avg, 5, 130)).toBeCloseTo(100, 9)
+  })
+  it('keeps the cost when nothing would remain', () => {
+    expect(removeFromAverage(5, 120, 5, 120)).toBe(120)
   })
 })

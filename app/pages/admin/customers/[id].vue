@@ -80,8 +80,11 @@
           </div>
           <div>
             <label class="admin-label" for="c-email">Email</label>
-            <input id="c-email" v-model="profile.email" type="email" class="admin-input">
+            <input id="c-email" v-model="profile.email" type="email" class="admin-input" :readonly="!canEdit" :class="{ 'bg-gray-50 text-gray-500': !canEdit }">
             <p v-if="profileErrors.email" class="admin-error">{{ profileErrors.email }}</p>
+            <p v-else class="text-xs text-gray-500 mt-1">
+              Khách đăng nhập bằng email này.{{ canEdit ? ' Chỉ đổi khi đã gọi xác nhận với khách.' : ' Chỉ quản lý hoặc chủ quán được đổi.' }}
+            </p>
           </div>
           <div>
             <label class="admin-label" for="c-birthday">Sinh nhật</label>
@@ -152,6 +155,22 @@
         </section>
       </div>
     </div>
+
+    <section v-if="isOwner" class="admin-card p-6 mt-6 border border-red-100 space-y-3">
+      <h2 class="font-bold text-red-700">Xoá dữ liệu khách</h2>
+      <p class="text-sm text-gray-600">
+        Dùng khi khách yêu cầu xoá thông tin cá nhân. Hồ sơ, địa chỉ, lịch sử điểm, ghi chú và mã giảm giá riêng của khách bị xoá hẳn.
+        Các đơn cũ vẫn giữ để đối chiếu doanh thu, nhưng tên, số điện thoại, email, địa chỉ và ghi chú trên đơn bị xoá trắng.
+        <strong>Không hoàn tác được.</strong>
+      </p>
+      <form class="flex flex-wrap gap-2 items-start" @submit.prevent="erase">
+        <div class="flex-1 min-w-[12rem]">
+          <input v-model="eraseConfirm" class="admin-input" inputmode="tel" :placeholder="`Nhập lại ${c.phone} để xác nhận`" aria-label="Số điện thoại xác nhận">
+          <p v-if="eraseError" class="admin-error">{{ eraseError }}</p>
+        </div>
+        <button type="submit" class="admin-btn-danger" :disabled="busy">Xoá dữ liệu khách này</button>
+      </form>
+    </section>
   </div>
 </template>
 
@@ -165,6 +184,7 @@ const route = useRoute()
 const adminFetch = useAdminApi()
 const uiStore = useUiStore()
 const canEdit = useCanEditCatalog()
+const isOwner = useIsOwner()
 
 const { data: c, error, refresh } = await useFetch<AdminCustomerDetail>(`/api/admin/customers/${route.params.id}`)
 if (error.value || !c.value) throw createError({ statusCode: error.value?.statusCode ?? 404, fatal: true })
@@ -189,6 +209,24 @@ async function run(action: () => Promise<unknown>, success: string, onError?: (e
     if (onError) onError(e)
     else uiStore.showToast(apiErrorMessage(e), 'warning')
     return false
+  } finally {
+    busy.value = false
+  }
+}
+
+// Erase on request (owner only, as on the server)
+const eraseConfirm = ref('')
+const eraseError = ref('')
+async function erase() {
+  eraseError.value = ''
+  if (!confirm('Xoá vĩnh viễn dữ liệu cá nhân của khách này? Không hoàn tác được.')) return
+  busy.value = true
+  try {
+    await adminFetch(`/api/admin/customers/${route.params.id}/erase`, { method: 'POST', body: { confirmPhone: eraseConfirm.value } })
+    uiStore.showToast('Đã xoá dữ liệu khách')
+    await navigateTo('/admin/customers', { replace: true })
+  } catch (e) {
+    eraseError.value = apiFieldErrors(e).confirmPhone ?? apiErrorMessage(e)
   } finally {
     busy.value = false
   }

@@ -33,6 +33,9 @@ export const orderInput = z.object({
   // Loyalty points to spend; requires being signed in with the same phone
   pointsToUse: z.coerce.number().int().min(0).max(1_000_000).default(0),
   items: z.array(orderItemInput).min(1, 'Giỏ hàng đang trống').max(30),
+  // Random id of this checkout attempt: sending it again (lost response, double tap on a
+  // slow network) returns the order already placed instead of creating a second one
+  requestId: z.uuid().optional(),
 })
 export type OrderInput = z.infer<typeof orderInput>
 
@@ -40,6 +43,8 @@ export const orderStatusInput = z
   .object({
     status: z.enum(['pending', 'confirmed', 'preparing', 'shipping', 'completed', 'cancelled']),
     note: z.string().trim().max(255).default(''),
+    // Completing a bank-transfer order that is not marked paid needs this explicit yes
+    confirmUnpaid: z.boolean().default(false),
   })
   .refine((v) => v.status !== 'cancelled' || v.note.length > 0, {
     message: 'Vui lòng ghi lý do huỷ đơn',
@@ -81,4 +86,11 @@ export type PlatformOrderInput = z.infer<typeof platformOrderInput>
 
 export const voidOrderInput = z.object({
   reason: z.string().trim().min(1, 'Vui lòng ghi lý do').max(255),
+})
+
+// Taking back a completed website order
+export const refundOrderInput = z.object({
+  reason: z.string().trim().min(1, 'Vui lòng ghi lý do hoàn trả').max(255),
+  // Ingredients go back into stock instead of being written off
+  restock: z.boolean().default(false),
 })

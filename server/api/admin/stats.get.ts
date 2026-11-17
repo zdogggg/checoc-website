@@ -2,8 +2,10 @@ import { and, count, desc, eq, gte, inArray, isNull, lte, ne, sql, sum } from 'd
 
 // Live view: revenue counts every order not cancelled (including ones still in progress), on the
 // day it was placed (shop time). Goods only, shipping excluded, same as the reports and the P&L.
+// Money is for the roles that see the reports; staff get the order counts only.
 export default defineEventHandler(async (event) => {
-  await requireStaff(event)
+  const user = await requireStaff(event)
+  const seesRevenue = CATALOG_EDITORS.includes(user.role)
   const db = useDb()
   const { products, categories, coupons, orders, orderItems } = schema
 
@@ -62,10 +64,10 @@ export default defineEventHandler(async (event) => {
     activeCoupons: activeCoupons!.n,
     lowStockIngredients: lowStock!.n,
     todayOrders: todayRow!.orders,
-    todayRevenue: todayRow!.revenue ?? 0,
+    todayRevenue: seesRevenue ? (todayRow!.revenue ?? 0) : null,
     activeOrders: active!.n,
     pendingOrders: pending!.n,
-    last7Days: daily,
+    last7Days: daily.map((d) => ({ day: d.day, orders: d.orders, revenue: seesRevenue ? (d.revenue ?? 0) : null })),
     topProducts: top,
   }
 })

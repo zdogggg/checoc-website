@@ -10,29 +10,30 @@ type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 
 // Find or create the customer for an order's phone number and remember the address.
 // The latest name typed at checkout wins (people fix typos), unless it is empty.
-export async function upsertCustomerForOrder(
-  tx: Tx,
-  input: { phone: string; name: string; city: string; district: string; address: string }
-) {
+// isOwner: the order comes from the signed-in owner of this phone, who may rename themself.
+// A guest typing an existing number only fills in a missing name.
+export async function upsertCustomerForOrder(tx: Tx, input: { phone: string; name: string }, isOwner = false) {
   const now = new Date()
+  const name = isOwner
+    ? sql`coalesce(nullif(${input.name}, ''), ${customers.name})`
+    : sql`coalesce(nullif(${customers.name}, ''), ${input.name})`
   const [customer] = await tx
     .insert(customers)
     .values({ phone: input.phone, name: input.name, lastOrderAt: now })
-    .onConflictDoUpdate({
-      target: customers.phone,
-      set: { name: sql`coalesce(nullif(${input.name}, ''), ${customers.name})`, lastOrderAt: now },
-    })
+    .onConflictDoUpdate({ target: customers.phone, set: { name, lastOrderAt: now } })
     .returning()
+  return customer!
+}
 
+// Add the address to the customer's address book, or mark it as just used
+export async function rememberAddress(tx: Tx, customerId: number, a: { city: string; district: string; address: string }) {
   await tx
     .insert(customerAddresses)
-    .values({ customerId: customer!.id, city: input.city, district: input.district, address: input.address })
+    .values({ customerId, city: a.city, district: a.district, address: a.address })
     .onConflictDoUpdate({
       target: [customerAddresses.customerId, customerAddresses.city, customerAddresses.district, customerAddresses.address],
-      set: { lastUsedAt: now },
+      set: { lastUsedAt: new Date() },
     })
-
-  return customer!
 }
 
 // Change a balance and write the ledger line; refuses to go below zero
@@ -63,18 +64,29 @@ export async function adjustPoints(
   return row.points
 }
 
+type CompletedOrder = {
+  id: number
+  customerId: number | null
+  subtotal: number
+  discount: number
+  pointsDiscount: number
+  pointsUsed: number
+  pointsEarned: number
+}
+
+// What a customer spent on an order: goods after discounts, shipping excluded.
+// The same amount drives revenue, points and the tier.
+const goodsOf = (o: Pick<CompletedOrder, 'subtotal' | 'discount' | 'pointsDiscount'>) => o.subtotal - o.discount - o.pointsDiscount
+
 // Called inside the status-change transaction when an order is completed:
 // grant points (at the tier the customer had when ordering), add to spend, re-tier
-export async function applyOrderCompletion(
-  tx: Tx,
-  order: { id: number; customerId: number | null; total: number; subtotal: number; discount: number; pointsDiscount: number }
-): Promise<number> {
+export async function applyOrderCompletion(tx: Tx, order: CompletedOrder): Promise<number> {
   if (!order.customerId) return 0
   const [customer] = await tx.select().from(customers).where(eq(customers.id, order.customerId)).for('update')
   if (!customer) return 0
 
-  const earned = pointsEarned(order.subtotal - order.discount - order.pointsDiscount, customer.tier)
-  const totalSpent = customer.totalSpent + order.total
+  const earned = pointsEarned(goodsOf(order), customer.tier)
+  const totalSpent = customer.totalSpent + goodsOf(order)
   await tx
     .update(customers)
     .set({ totalSpent, completedOrders: customer.completedOrders + 1, tier: tierFor(totalSpent) })
@@ -86,11 +98,31 @@ export async function applyOrderCompletion(
   return earned
 }
 
+// A completed order is taken back: undo applyOrderCompletion and give back the points spent.
+// Points earned are taken back only as far as the balance allows (they may be spent already).
+export async function reverseOrderCompletion(tx: Tx, order: CompletedOrder) {
+  if (!order.customerId) return
+  const [customer] = await tx.select().from(customers).where(eq(customers.id, order.customerId)).for('update')
+  if (!customer) return
+
+  const totalSpent = Math.max(0, customer.totalSpent - goodsOf(order))
+  await tx
+    .update(customers)
+    .set({ totalSpent, completedOrders: Math.max(0, customer.completedOrders - 1), tier: tierFor(totalSpent) })
+    .where(eq(customers.id, customer.id))
+
+  if (order.pointsUsed > 0) await adjustPoints(tx, customer.id, order.pointsUsed, 'redeem_refund', { orderId: order.id })
+  const takeBack = Math.min(order.pointsEarned, customer.points + order.pointsUsed)
+  if (takeBack > 0) await adjustPoints(tx, customer.id, -takeBack, 'refund_reversal', { orderId: order.id })
+}
+
 const REASON_NOTES: Record<LoyaltyReason, string> = {
   order_earn: 'Tích điểm đơn hàng',
   order_redeem: 'Dùng điểm cho đơn hàng',
   redeem_refund: 'Hoàn điểm do huỷ đơn',
   manual: 'Điều chỉnh',
+  refund_reversal: 'Trừ điểm do trả đơn',
+  expired: 'Điểm hết hạn',
 }
 
 export function toLedgerView(

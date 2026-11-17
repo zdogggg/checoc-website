@@ -1,12 +1,16 @@
 // Security headers on every response, and a same-origin check on state-changing API calls.
 
+import { randomBytes } from 'node:crypto'
+
 // Production only: the Vite dev server needs eval and its own websocket.
-// Nuxt inlines its payload and hydration scripts, hence 'unsafe-inline' for scripts.
-const CSP = [
+// Inline scripts (Nuxt's payload and hydration scripts) run only with this request's nonce,
+// added to every <script> tag by server/plugins/csp-nonce.ts; an injected script has none.
+const cspFor = (nonce: string) => [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' data: https://fonts.gstatic.com",
+  `script-src 'self' 'nonce-${nonce}'`,
+  // Fonts are downloaded at build time and served from the site (nuxt.config googleFonts.download)
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
   // Menu photos may be hosted elsewhere; VietQR codes come from img.vietqr.io
   "img-src 'self' data: blob: https:",
   "connect-src 'self'",
@@ -26,7 +30,9 @@ export default defineEventHandler((event) => {
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
   })
   if (!import.meta.dev) {
-    setResponseHeader(event, 'Content-Security-Policy', CSP)
+    const nonce = randomBytes(16).toString('base64')
+    event.context.cspNonce = nonce
+    setResponseHeader(event, 'Content-Security-Policy', cspFor(nonce))
     if (getRequestProtocol(event, { xForwardedProto: true }) === 'https') {
       setResponseHeader(event, 'Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
     }

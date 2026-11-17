@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import type { AppliedCoupon, Product } from '#shared/types/catalog'
+import type { AppliedCoupon, Product, ProductOptions } from '#shared/types/catalog'
 import { couponDiscount, FREESHIP_THRESHOLD, shippingFeeFor } from '#shared/utils/pricing'
+import { cartKeyFor, cartSyncMessage, defaultChoice, reconcileCart } from '~/utils/cartSync'
 
 export type { AppliedCoupon }
 
@@ -28,6 +29,8 @@ export const useCartStore = defineStore('cart', () => {
   const items = ref<CartItem[]>([])
   const appliedCoupon = ref<AppliedCoupon | null>(null)
   const isHydrated = ref(false)
+  // Current sugar/ice/topping lists, known once syncWithMenu has run
+  const menuOptions = ref<ProductOptions | null>(null)
 
   // Load cart from localStorage. Must run after the app is mounted on the client
   // (see plugins/cart.client.ts) so the first client render matches the SSR HTML.
@@ -48,8 +51,8 @@ export const useCartStore = defineStore('cart', () => {
             image: item.image || '',
             quantity: item.quantity || 1,
             options: {
-              sugar: item.options?.sugar || '100% đường',
-              ice: item.options?.ice || 'Đá riêng',
+              sugar: item.options?.sugar || '',
+              ice: item.options?.ice || '',
               toppings: Array.isArray(item.options?.toppings) ? item.options.toppings : [],
               note: item.options?.note || ''
             }
@@ -106,19 +109,16 @@ export const useCartStore = defineStore('cart', () => {
     return Math.max(0, freeshipThreshold - subtotal.value)
   })
 
-  function generateCartKey(productId: number, options?: Partial<CartItemOption>): string {
-    const sugar = options?.sugar || '100% đường'
-    const ice = options?.ice || 'Đá riêng'
-    const toppings = (options?.toppings || []).map(t => typeof t === 'string' ? t : t.name).sort().join(',')
-    const note = options?.note || ''
-    return `${productId}__${sugar}__${ice}__${toppings}__${note}`
-  }
+  // '' when the menu options are not loaded yet: the server then picks the shop default,
+  // and the next syncWithMenu fills in its name
+  const defaultSugar = () => (menuOptions.value ? defaultChoice(menuOptions.value.sugar) : '')
+  const defaultIce = () => (menuOptions.value ? defaultChoice(menuOptions.value.ice) : '')
 
   type CartProduct = Pick<Product, 'id' | 'slug' | 'name' | 'price' | 'image'>
 
   function addItem(product: CartProduct, quantity: number = 1, customOptions?: Partial<CartItemOption>) {
-    const sugar = customOptions?.sugar || '100% đường'
-    const ice = customOptions?.ice || 'Đá riêng'
+    const sugar = customOptions?.sugar || defaultSugar()
+    const ice = customOptions?.ice || defaultIce()
     const rawToppings = customOptions?.toppings || []
     const note = customOptions?.note || ''
 
@@ -130,7 +130,7 @@ export const useCartStore = defineStore('cart', () => {
     const toppingsTotal = normalizedToppings.reduce((sum, t) => sum + t.price, 0)
     const unitPrice = (Number(product.price) || 0) + toppingsTotal
 
-    const cartKey = generateCartKey(product.id, { sugar, ice, toppings: normalizedToppings, note })
+    const cartKey = cartKeyFor(product.id, { sugar, ice, toppings: normalizedToppings, note })
     const existingItem = items.value.find(item => item.cartKey === cartKey)
 
     if (existingItem) {
@@ -200,6 +200,48 @@ export const useCartStore = defineStore('cart', () => {
     appliedCoupon.value = null
   }
 
+  // Check the saved coupon again (it may have expired or run out since it was applied) and take
+  // its current terms. Returns a message when it had to be removed. Codes that only need the
+  // phone number first, or a bigger order, are kept: the totals already ignore them meanwhile.
+  // Network errors and rate limits leave the coupon alone: the server checks it at checkout anyway.
+  async function revalidateCoupon(phone?: string): Promise<string> {
+    const coupon = appliedCoupon.value
+    if (!coupon || !items.value.length) return ''
+    try {
+      appliedCoupon.value = await $fetch<AppliedCoupon>('/api/coupons/validate', {
+        method: 'POST',
+        body: { code: coupon.code, subtotal: subtotal.value, phone: phone || undefined },
+      })
+      return ''
+    } catch (error) {
+      const e = error as { statusCode?: number; data?: { message?: string; data?: { reason?: string } } }
+      const reason = e.data?.data?.reason
+      if (e.statusCode !== 400 || reason === 'phone_required' || reason === 'min_order') return ''
+      appliedCoupon.value = null
+      return `Đã bỏ mã ${coupon.code}: ${e.data?.message ?? 'mã không còn dùng được'}`
+    }
+  }
+
+  // Re-read prices, availability and option names from the menu. Returns a message for the
+  // customer when something they would notice changed, '' otherwise. Network errors are
+  // ignored: the server still prices the order from the menu.
+  async function syncWithMenu(): Promise<string> {
+    try {
+      const [products, options] = await Promise.all([
+        $fetch<Product[]>('/api/products'),
+        $fetch<ProductOptions>('/api/options'),
+      ])
+      menuOptions.value = options
+      if (!items.value.length) return ''
+      const result = reconcileCart(items.value, products, options)
+      items.value = result.items
+      return cartSyncMessage(result)
+    } catch (e) {
+      console.warn('Could not refresh the cart from the menu', e)
+      return ''
+    }
+  }
+
   return {
     items,
     totalItems,
@@ -217,6 +259,8 @@ export const useCartStore = defineStore('cart', () => {
     updateQuantity,
     clearCart,
     applyCoupon,
-    removeCoupon
+    removeCoupon,
+    revalidateCoupon,
+    syncWithMenu
   }
 })

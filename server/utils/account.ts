@@ -2,13 +2,46 @@ import type { H3Event } from 'h3'
 import { desc, eq } from 'drizzle-orm'
 import type { CustomerAccount, CustomerOrderSummary } from '#shared/types/customers'
 
-// The shopper signed in by SMS code; 401 otherwise
-export async function requireCustomer(event: H3Event) {
+// The signed-in shopper, checked against the database: a session whose customer was erased,
+// whose phone changed, or that started before "sign out everywhere" is dropped. null if none.
+export async function currentCustomer(event: H3Event): Promise<{ id: number; phone: string } | null> {
   const session = await getUserSession(event)
-  if (!session.customer) {
-    throw createError({ statusCode: 401, statusMessage: 'Unauthorized', message: 'Vui lòng đăng nhập' })
+  const signedIn = session.customer
+  if (!signedIn) return null
+  const row = await useDb().query.customers.findFirst({
+    where: eq(schema.customers.id, signedIn.id),
+    columns: { id: true, phone: true, sessionsValidAfter: true },
+  })
+  const valid =
+    row && row.phone === signedIn.phone && (!row.sessionsValidAfter || (signedIn.since ?? 0) >= row.sessionsValidAfter.getTime())
+  if (!valid) {
+    await endCustomerSession(event)
+    return null
   }
-  return session.customer
+  return { id: row.id, phone: row.phone }
+}
+
+// 401 when nobody valid is signed in
+export async function requireCustomer(event: H3Event) {
+  const customer = await currentCustomer(event)
+  if (!customer) throw createError({ statusCode: 401, statusMessage: 'Unauthorized', message: 'Vui lòng đăng nhập' })
+  return customer
+}
+
+// Start a shopper session (keeps a staff session in the same browser)
+export async function startCustomerSession(event: H3Event, customer: { id: number; phone: string }, since = Date.now()) {
+  await setUserSession(event, { customer: { id: customer.id, phone: customer.phone, since } })
+}
+
+// Drop only the shopper part of the session
+export async function endCustomerSession(event: H3Event) {
+  const session = await getUserSession(event)
+  if (session.user) {
+    const { customer: _customer, ...rest } = session
+    await replaceUserSession(event, rest)
+  } else {
+    await clearUserSession(event)
+  }
 }
 
 export async function loadCustomerOrders(customerId: number, limit: number, withToken: boolean): Promise<CustomerOrderSummary[]> {
@@ -53,4 +86,23 @@ export async function loadAccount(customerId: number): Promise<CustomerAccount |
     orders: await loadCustomerOrders(customer.id, 20, true),
     ledger: customer.ledger.map((l) => toLedgerView(l)),
   }
+}
+
+// The customer behind a delivered website order who has no sign-in email yet
+// (see server/api/orders/[token]/link-email). Any other case answers 404/409.
+export async function linkableCustomer(trackingToken: string) {
+  const { orders, customers } = schema
+  const order = await useDb().query.orders.findFirst({
+    where: eq(orders.trackingToken, trackingToken),
+    columns: { status: true, channel: true, customerId: true },
+  })
+  if (!order) throw createError({ statusCode: 404, statusMessage: 'Order not found' })
+  const customer =
+    order.customerId != null
+      ? await useDb().query.customers.findFirst({ where: eq(customers.id, order.customerId), columns: { id: true, phone: true, email: true } })
+      : null
+  if (order.status !== 'completed' || order.channel !== 'website' || !customer || customer.email) {
+    throw createError({ statusCode: 409, statusMessage: 'Conflict', message: 'Đơn này không dùng để thêm email được' })
+  }
+  return { id: customer.id, phone: customer.phone }
 }

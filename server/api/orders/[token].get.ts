@@ -9,5 +9,13 @@ export default defineEventHandler(async (event): Promise<PublicOrder> => {
   })
   if (!order) throw createError({ statusCode: 404, statusMessage: 'Order not found' })
   setResponseHeader(event, 'Cache-Control', 'no-store')
-  return toPublicOrder(order)
+  let canLinkEmail = false
+  if (order.status === 'completed' && order.channel === 'website' && order.customerId) {
+    const customer = await useDb().query.customers.findFirst({
+      where: eq(schema.customers.id, order.customerId),
+      columns: { email: true },
+    })
+    canLinkEmail = !!customer && !customer.email
+  }
+  return { ...toPublicOrder(order), canLinkEmail }
 })

@@ -26,6 +26,8 @@ export interface OrderTimelineEntry {
 // What the customer sees on the tracking page
 export interface PublicOrder {
   code: string
+  // Delivered, and the customer has no sign-in email yet: the page offers to add one
+  canLinkEmail?: boolean
   status: OrderStatus
   paymentStatus: PaymentStatus
   paymentMethod: PaymentMethod
@@ -63,6 +65,8 @@ export interface AdminOrder extends Omit<PublicOrder, 'timeline'> {
   paidAt: string | null
   completedAt: string | null
   cancelledAt: string | null
+  // A completed order that was taken back (status is then cancelled)
+  refundedAt: string | null
   timeline: OrderTimelineEntry[]
 }
 

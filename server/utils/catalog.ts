@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull } from 'drizzle-orm'
+import { and, asc, eq, isNull, ne, sql } from 'drizzle-orm'
 import type { Category, CustomOption, Product, ProductOptions, ToppingOption } from '#shared/types/catalog'
 import type { ProductInput } from '#shared/schemas/catalog'
 
@@ -104,12 +104,18 @@ export async function listStoreOptions(): Promise<ProductOptions> {
   }
 }
 
-export function relatedProducts(all: Product[], current: Product, limit = 4): Product[] {
-  const others = all.filter((p) => p.id !== current.id)
-  const same = others.filter((p) => p.categoryId === current.categoryId)
-  const rest = others.filter((p) => p.categoryId !== current.categoryId)
-  return [...same, ...rest].slice(0, limit)
+// Same category first, then the rest of the menu, in menu order; only a few rows are read
+export async function listRelatedProducts(current: Product, limit = 4): Promise<Product[]> {
+  const rows = await useDb().query.products.findMany({
+    where: and(isNull(products.deletedAt), ne(products.id, current.id)),
+    with: productWith,
+    orderBy: [sql`(${products.categoryId} = ${current.categoryId}) desc`, asc(products.sortOrder), asc(products.id)],
+    // A few extra in case some sit in a hidden category
+    limit: limit * 3,
+  })
+  return rows.filter((r) => r.category.isActive).slice(0, limit).map(toProductDto)
 }
+
 
 // Insert (id = null) or update a product and replace its gallery, in one transaction
 export async function saveProduct(id: number | null, input: ProductInput): Promise<number> {

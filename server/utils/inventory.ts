@@ -177,3 +177,15 @@ export async function productRecipeCosts(db: Db): Promise<Map<number, { cost: nu
     .groupBy(productIngredients.productId)
   return new Map(rows.map((r) => [r.productId, { cost: Math.round(r.cost), hasRecipe: true }]))
 }
+
+// Net quantity an order took out of each ingredient when it was completed (positive numbers),
+// in ingredient id order so callers lock rows in the same order as consumeOrderStock
+export async function orderStockUsage(tx: Tx, orderId: number): Promise<{ ingredientId: number; quantity: number }[]> {
+  const rows = await tx
+    .select({ ingredientId: stockMovements.ingredientId, quantity: sql<number>`sum(${stockMovements.quantity})`.mapWith(Number) })
+    .from(stockMovements)
+    .where(and(eq(stockMovements.orderId, orderId), eq(stockMovements.type, 'out')))
+    .groupBy(stockMovements.ingredientId)
+    .orderBy(stockMovements.ingredientId)
+  return rows.filter((r) => r.quantity < 0).map((r) => ({ ingredientId: r.ingredientId, quantity: roundQty(-r.quantity) }))
+}

@@ -15,6 +15,7 @@ import {
   serial,
   text,
   timestamp,
+  uuid,
   varchar,
 } from 'drizzle-orm/pg-core'
 
@@ -46,6 +47,8 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   role: userRole('role').notNull().default('staff'),
   isActive: boolean('is_active').notNull().default(true),
+  // Sessions signed in before this moment are no longer accepted (password changed or reset)
+  passwordChangedAt: timestamp('password_changed_at', { withTimezone: true }),
   ...timestamps,
 })
 
@@ -159,6 +162,8 @@ export const coupons = pgTable('coupons', {
   endsAt: timestamp('ends_at', { withTimezone: true }),
   usageLimit: integer('usage_limit'),
   usedCount: integer('used_count').notNull().default(0),
+  // Uses per phone number (null = no limit); orders that were cancelled do not count
+  perPhoneLimit: integer('per_phone_limit').default(1),
   isActive: boolean('is_active').notNull().default(true),
   // Personal coupon: only this customer (matched by phone at checkout) can use it
   customerId: integer('customer_id').references(() => customers.id, { onDelete: 'cascade' }),
@@ -188,6 +193,8 @@ export const customers = pgTable('customers', {
   // Internal note shown on the admin profile
   note: text('note').notNull().default(''),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+  // Customer sessions started before this moment are no longer accepted ("sign out everywhere")
+  sessionsValidAfter: timestamp('sessions_valid_after', { withTimezone: true }),
   ...timestamps,
 }, (t) => [
   index('customers_last_order_at_idx').on(t.lastOrderAt),
@@ -206,7 +213,7 @@ export const customerAddresses = pgTable('customer_addresses', {
   lastUsedAt: timestamp('last_used_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => [uniqueIndex('customer_addresses_unique').on(t.customerId, t.city, t.district, t.address)])
 
-export const loyaltyReason = pgEnum('loyalty_reason', ['order_earn', 'order_redeem', 'redeem_refund', 'manual'])
+export const loyaltyReason = pgEnum('loyalty_reason', ['order_earn', 'order_redeem', 'redeem_refund', 'manual', 'refund_reversal', 'expired'])
 
 // Every change to a customer's points; customers.points is the running balance
 export const loyaltyLedger = pgTable('loyalty_ledger', {
@@ -238,6 +245,8 @@ export const otpCodes = pgTable('otp_codes', {
   id: serial('id').primaryKey(),
   phone: varchar('phone', { length: 20 }),
   email: varchar('email', { length: 255 }),
+  // 'login', or 'email_change' (a signed-in customer confirming a new email)
+  purpose: varchar('purpose', { length: 20 }).notNull().default('login'),
   codeHash: varchar('code_hash', { length: 64 }).notNull(),
   attempts: integer('attempts').notNull().default(0),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
@@ -284,6 +293,8 @@ export const orders = pgTable('orders', {
   channel: orderChannel('channel').notNull().default('website'),
   // The order's code in the delivery app, so the same order cannot be entered twice
   externalCode: varchar('external_code', { length: 40 }),
+  // Checkout attempt id sent by the browser, so a retried request cannot place the order twice
+  requestId: uuid('request_id').unique(),
   paymentStatus: paymentStatus('payment_status').notNull().default('unpaid'),
   paymentMethod: paymentMethod('payment_method').notNull(),
   // Delivery details are a snapshot taken at checkout
@@ -314,13 +325,17 @@ export const orders = pgTable('orders', {
   paidAt: timestamp('paid_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+  // Set when a completed order was taken back (refunded); its status is then 'cancelled'
+  refundedAt: timestamp('refunded_at', { withTimezone: true }),
   ...timestamps,
 }, (t) => [
   index('orders_status_idx').on(t.status),
   index('orders_created_at_idx').on(t.createdAt),
   index('orders_customer_phone_idx').on(t.customerPhone),
   index('orders_customer_id_idx').on(t.customerId),
-  uniqueIndex('orders_channel_external_code_idx').on(t.channel, t.externalCode),
+  // One live order per delivery-app code; a voided (cancelled) entry frees the code so the order
+  // can be entered again correctly
+  uniqueIndex('orders_channel_external_code_idx').on(t.channel, t.externalCode).where(sql`${t.status} <> 'cancelled'`),
 ])
 
 export const orderItems = pgTable('order_items', {
@@ -621,3 +636,36 @@ export const stockMovementsRelations = relations(stockMovements, ({ one }) => ({
 export const expensesRelations = relations(expenses, ({ one }) => ({
   creator: one(users, { fields: [expenses.createdBy], references: [users.id] }),
 }))
+
+// ---------------------------------------------------------------------------
+// Rate limiting: request counters per key (e.g. "login:<ip>") and fixed time window,
+// shared by every app process and kept across restarts. Old windows are pruned by maintenance.
+// ---------------------------------------------------------------------------
+
+export const rateLimits = pgTable('rate_limits', {
+  key: varchar('key', { length: 200 }).notNull(),
+  windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
+  hits: integer('hits').notNull().default(0),
+}, (t) => [primaryKey({ columns: [t.key, t.windowStart] }), index('rate_limits_window_idx').on(t.windowStart)])
+
+// ---------------------------------------------------------------------------
+// Bank transfers reported by SePay (webhook), matched to VietQR orders by the order code
+// in the transfer description. Kept so a transfer is never applied twice and staff can check
+// the ones that did not match.
+// ---------------------------------------------------------------------------
+
+export const bankTransactionStatus = pgEnum('bank_transaction_status', ['matched', 'unmatched', 'amount_mismatch', 'already_paid'])
+
+export const bankTransactions = pgTable('bank_transactions', {
+  id: serial('id').primaryKey(),
+  provider: varchar('provider', { length: 20 }).notNull(),
+  // The provider's own id for the transaction: a retried webhook is recognised by it
+  providerId: varchar('provider_id', { length: 64 }).notNull(),
+  amount: integer('amount').notNull(),
+  content: varchar('content', { length: 500 }).notNull().default(''),
+  accountNumber: varchar('account_number', { length: 40 }).notNull().default(''),
+  occurredAt: timestamp('occurred_at', { withTimezone: true }),
+  orderId: integer('order_id').references(() => orders.id, { onDelete: 'set null' }),
+  status: bankTransactionStatus('status').notNull(),
+  ...timestamps,
+}, (t) => [uniqueIndex('bank_transactions_provider_id_idx').on(t.provider, t.providerId), index('bank_transactions_order_idx').on(t.orderId)])

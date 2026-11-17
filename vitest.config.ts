@@ -10,5 +10,7 @@ export default defineConfig({
   },
   test: {
     include: ['tests/**/*.test.ts'],
+    // Need a running server and database: npm run test:integration
+    exclude: ['tests/integration/**'],
   },
 })

@@ -20,7 +20,8 @@
           <div class="lg:col-span-5 flex flex-col gap-4">
             <!-- Main Display Image -->
             <div class="aspect-square rounded-2xl overflow-hidden bg-brand-cream relative group shadow-inner border border-gray-100">
-              <img 
+              <img
+decoding="async" fetchpriority="high" 
                 :src="activeImage || product?.image" 
                 :alt="product?.name || 'Chè Cốc'" 
                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
@@ -64,7 +65,7 @@
                 :class="activeImage === img ? 'border-brand-gold ring-2 ring-brand-gold/30 scale-[1.02]' : 'border-gray-200 opacity-70 hover:opacity-100'"
                 @click="activeImage = img"
               >
-                <img :src="img" :alt="`${product?.name || 'Chè'} ${idx + 1}`" class="w-full h-full object-cover" />
+                <img loading="lazy" decoding="async" :src="img" :alt="`${product?.name || 'Chè'} ${idx + 1}`" class="w-full h-full object-cover" />
               </button>
             </div>
 
@@ -84,8 +85,8 @@
               <div class="w-px h-8 bg-gray-200"></div>
               <div class="flex flex-col items-center">
                 <AppIcon name="leaf" class="text-base mb-1 text-brand-gold" />
-                <span class="font-bold">Nguyên liệu</span>
-                <span class="text-gray-500 text-[11px]">100% Tự nhiên</span>
+                <span class="font-bold">Tuỳ chọn</span>
+                <span class="text-gray-500 text-[11px]">Độ ngọt & topping</span>
               </div>
             </div>
           </div>

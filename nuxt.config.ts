@@ -29,6 +29,10 @@ export default defineNuxtConfig({
     // Web push (order status notifications); generate with `npx web-push generate-vapid-keys`
     vapidPrivateKey: '',
     vapidSubject: 'mailto:admin@example.com',
+    // SePay webhook key (Authorization: Apikey <key>); empty = automatic transfer matching off
+    sepayWebhookKey: '',
+    // Accept orders at any hour (automated tests, staging); never set on the real shop
+    ignoreOpeningHours: false,
     public: {
       siteUrl: '',
       // false on staging / preview: robots.txt then blocks every crawler
@@ -43,15 +47,17 @@ export default defineNuxtConfig({
       },
     },
   },
+  // Only the families and weights the pages use (all three cover Vietnamese). Downloaded at
+  // build time and served from the site itself: no request to Google, one origin fewer.
   googleFonts: {
     families: {
       Inter: [400, 500, 600, 700],
-      'Be+Vietnam+Pro': [400, 500, 600, 700],
-      'Playfair+Display': [400, 500, 600, 700],
-      Fraunces: [400, 500, 600, 700],
-      'Dancing+Script': [400, 500, 600, 700],
+      'Playfair+Display': [500, 700],
+      'Dancing+Script': [400],
     },
     display: 'swap',
     subsets: ['vietnamese', 'latin'],
+    download: true,
+    inject: true,
   }
 })

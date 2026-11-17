@@ -2,8 +2,9 @@
   <div class="bg-white text-brand-dark-green rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 group flex flex-col h-full border border-gray-100/80 relative">
     <!-- Image & Badges -->
     <div class="aspect-square bg-brand-cream relative overflow-hidden cursor-pointer" @click="navigateToProduct">
-      <img 
-        :src="product.image || 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=600&auto=format&fit=crop'" 
+      <img
+decoding="async" 
+        :src="product.image || PLACEHOLDER_IMAGE" 
         class="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" 
         :alt="product.name" 
         loading="lazy"

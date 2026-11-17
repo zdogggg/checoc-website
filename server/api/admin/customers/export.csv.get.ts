@@ -11,11 +11,6 @@ export default defineEventHandler(async (event) => {
     .where(and(...customerFilters(params)))
     .orderBy(...CUSTOMER_SORT[params.sort])
     .limit(20_000)
-
-  const cell = (v: unknown) => {
-    const s = v == null ? '' : String(v)
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
-  }
   const lines = [
     ['Số điện thoại', 'Tên', 'Email', 'Sinh nhật', 'Hạng', 'Phân khúc', 'Điểm', 'Đơn hoàn tất', 'Tổng chi tiêu', 'Đơn gần nhất', 'Nhãn'],
     ...rows.map((c) => [
@@ -35,6 +30,5 @@ export default defineEventHandler(async (event) => {
 
   setResponseHeader(event, 'Content-Type', 'text/csv; charset=utf-8')
   setResponseHeader(event, 'Content-Disposition', `attachment; filename="khach-hang-${new Date().toISOString().slice(0, 10)}.csv"`)
-  // BOM so Excel opens the Vietnamese text correctly
-  return '﻿' + lines.map((l) => l.map(cell).join(',')).join('\r\n')
+  return toCsv(lines)
 })

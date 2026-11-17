@@ -14,11 +14,12 @@
     <div class="grid lg:grid-cols-2 gap-6">
       <section class="admin-card p-6">
         <ColumnChart
-          title="Doanh thu 7 ngày gần nhất"
+          :title="seesRevenue ? 'Doanh thu 7 ngày gần nhất' : 'Số đơn 7 ngày gần nhất'"
           subtitle="Mọi đơn không bị huỷ, theo ngày đặt"
           :data="dayBars"
           :table="dayTable"
-          :format-tick="compactVnd"
+          :format-tick="seesRevenue ? compactVnd : undefined"
+          :integer="!seesRevenue"
           :height="220"
         />
         <NuxtLink v-if="canSeeReports" to="/admin/reports" class="inline-block text-sm font-semibold underline mt-3">Xem báo cáo chi tiết →</NuxtLink>
@@ -56,7 +57,10 @@ watch(() => [pulse.value?.latestId, pulse.value?.pending], () => refresh())
 const cards = computed(() => {
   const s = stats.value
   return [
-    { label: 'Doanh thu hôm nay', value: formatVnd(s?.todayRevenue ?? 0), to: '/admin/orders?status=all', hint: `${s?.todayOrders ?? 0} đơn chưa huỷ · tiền món`, hintClass: 'text-gray-500' },
+    // Revenue only for the roles that see the reports; the server sends null to staff
+    s?.todayRevenue != null
+      ? { label: 'Doanh thu hôm nay', value: formatVnd(s.todayRevenue), to: '/admin/orders?status=all', hint: `${s.todayOrders} đơn chưa huỷ · tiền món`, hintClass: 'text-gray-500' }
+      : { label: 'Đơn hôm nay', value: s?.todayOrders ?? 0, to: '/admin/orders?status=all', hint: 'Đơn chưa huỷ', hintClass: 'text-gray-500' },
     {
       label: 'Đơn đang xử lý',
       value: s?.activeOrders ?? 0,
@@ -93,19 +97,23 @@ const days = computed(() => {
   })
 })
 
+// Staff get order counts instead of money (see /api/admin/stats)
+const seesRevenue = computed(() => stats.value?.todayRevenue != null)
+
 // Oldest to newest, left to right
 const dayBars = computed<ColumnDatum[]>(() =>
   days.value.map((d) => ({
     key: d.day,
     label: d.label,
     shortLabel: `${d.day.slice(8, 10)}/${d.day.slice(5, 7)}`,
-    value: d.revenue,
-    tooltip: [formatVnd(d.revenue), `${d.orders} đơn`],
+    value: seesRevenue.value ? d.revenue : d.orders,
+    tooltip: seesRevenue.value ? [formatVnd(d.revenue), `${d.orders} đơn`] : [`${d.orders} đơn`],
   }))
 )
-const dayTable = computed(() => ({
-  headers: ['Ngày', 'Số đơn', 'Doanh thu'],
-  rows: [...days.value].reverse().map((d) => [d.label, d.orders, formatVnd(d.revenue)]),
-}))
+const dayTable = computed(() =>
+  seesRevenue.value
+    ? { headers: ['Ngày', 'Số đơn', 'Doanh thu'], rows: [...days.value].reverse().map((d) => [d.label, d.orders, formatVnd(d.revenue)]) }
+    : { headers: ['Ngày', 'Số đơn'], rows: [...days.value].reverse().map((d) => [d.label, d.orders]) }
+)
 const canSeeReports = useCanEditCatalog()
 </script>

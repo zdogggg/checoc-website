@@ -1,7 +1,8 @@
 <template>
   <div class="flex gap-4 p-3 rounded-2xl bg-white border border-gray-100 shadow-sm transition-all hover:shadow-md">
-    <img 
-      :src="item.image || 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=200&auto=format&fit=crop'" 
+    <img
+loading="lazy" decoding="async" 
+      :src="item.image || PLACEHOLDER_IMAGE" 
       :alt="item.name"
       class="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-xl bg-gray-100 shrink-0" 
     />

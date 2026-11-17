@@ -1,4 +1,4 @@
-import { and, count, eq, sql, sum } from 'drizzle-orm'
+import { and, count, eq, isNull, or, sql, sum } from 'drizzle-orm'
 import type { MonthlyPnl } from '#shared/types/inventory'
 import type { ExpenseCategory } from '#shared/utils/inventory'
 
@@ -6,11 +6,13 @@ import type { ExpenseCategory } from '#shared/utils/inventory'
 // Revenue = goods of completed orders (subtotal - discounts, shipping excluded), by order date.
 export async function monthlyPnl(month: string): Promise<MonthlyPnl> {
   const db = useDb()
-  const { orders, expenses } = schema
+  const { orders, expenses, stockMovements } = schema
   const orderMonth = sql`to_char(${orders.createdAt} at time zone 'Asia/Ho_Chi_Minh', 'YYYY-MM')`
   const goods = sql`${orders.subtotal} - ${orders.discount} - ${orders.pointsDiscount}`
 
-  const [[sales], [noCost], byCategory] = await Promise.all([
+  const movementMonth = sql`to_char(${stockMovements.createdAt} at time zone 'Asia/Ho_Chi_Minh', 'YYYY-MM')`
+
+  const [[sales], [noCost], byCategory, [stock]] = await Promise.all([
     db
       .select({
         revenue: sum(goods).mapWith(Number),
@@ -28,12 +30,29 @@ export async function monthlyPnl(month: string): Promise<MonthlyPnl> {
       .from(expenses)
       .where(sql`to_char(${expenses.spentOn}, 'YYYY-MM') = ${month}`)
       .groupBy(expenses.category),
+    // Stock lost outside of sales, at the average cost of the moment: waste (spoiled, dropped,
+    // dishes of refunded orders) and stock-count corrections. Corrections linked to an order or a
+    // purchase only put back what that order/purchase moved, so they are not losses.
+    db
+      .select({ value: sql<number>`coalesce(sum(${stockMovements.quantity} * ${stockMovements.unitCost}), 0)`.mapWith(Number) })
+      .from(stockMovements)
+      .where(
+        and(
+          sql`${movementMonth} = ${month}`,
+          or(
+            eq(stockMovements.type, 'waste'),
+            and(eq(stockMovements.type, 'adjust'), isNull(stockMovements.orderId), isNull(stockMovements.purchaseId))
+          )
+        )
+      ),
   ])
 
   const revenue = sales?.revenue ?? 0
   const cogs = sales?.cogs ?? 0
   const platformFees = sales?.fees ?? 0
   const expenseTotal = byCategory.reduce((s, r) => s + (r.total ?? 0), 0)
+  // Positive = value lost; negative when counts found more than the books (a gain)
+  const stockLoss = -Math.round(stock?.value ?? 0)
   return {
     month,
     revenue,
@@ -41,7 +60,8 @@ export async function monthlyPnl(month: string): Promise<MonthlyPnl> {
     grossProfit: revenue - cogs,
     platformFees,
     expenses: expenseTotal,
-    netProfit: revenue - cogs - platformFees - expenseTotal,
+    stockLoss,
+    netProfit: revenue - cogs - platformFees - expenseTotal - stockLoss,
     expensesByCategory: Object.fromEntries(byCategory.map((r) => [r.category, r.total ?? 0])) as Partial<
       Record<ExpenseCategory, number>
     >,

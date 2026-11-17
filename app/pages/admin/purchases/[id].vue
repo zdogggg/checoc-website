@@ -80,9 +80,15 @@
           </button>
           <button v-if="!isNew" type="button" class="admin-btn-danger w-full" :disabled="isBusy" @click="cancel">Huỷ phiếu</button>
         </div>
-        <p v-else-if="purchase?.status === 'received'" class="text-sm text-emerald-700 bg-emerald-50 rounded-xl px-3 py-2">
-          Hàng đã được cộng vào kho và cập nhật giá vốn bình quân.
-        </p>
+        <div v-else-if="purchase?.status === 'received'" class="space-y-2">
+          <p class="text-sm text-emerald-700 bg-emerald-50 rounded-xl px-3 py-2">
+            Hàng đã được cộng vào kho và cập nhật giá vốn bình quân.
+          </p>
+          <p v-if="formError" class="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{{ formError }}</p>
+          <button v-if="canEdit" type="button" class="admin-btn-secondary w-full" :disabled="isBusy" @click="unreceive">
+            Nhập sai? Huỷ nhận hàng để sửa
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -186,6 +192,21 @@ async function receive() {
     // A new receipt was saved but not received: show it (with the reason) so it can be retried
     uiStore.showToast(apiErrorMessage(e), 'warning')
     if (wasNew) await navigateTo(`/admin/purchases/${id}`, { replace: true })
+    formError.value = apiErrorMessage(e)
+  } finally {
+    isBusy.value = false
+  }
+}
+
+async function unreceive() {
+  if (!confirm('Huỷ nhận hàng? Số lượng của phiếu sẽ bị trừ khỏi kho và giá vốn trở lại như trước, rồi bạn sửa và nhận lại.')) return
+  formError.value = ''
+  isBusy.value = true
+  try {
+    purchase.value = await adminFetch<PurchaseDetail>(`/api/admin/purchases/${route.params.id}/unreceive`, { method: 'POST' })
+    uiStore.showToast('Đã huỷ nhận hàng, phiếu đã mở lại để sửa')
+    refreshNuxtData('admin:pulse')
+  } catch (e) {
     formError.value = apiErrorMessage(e)
   } finally {
     isBusy.value = false

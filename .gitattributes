@@ -2,3 +2,5 @@
 *.sh text eol=lf
 deploy/Caddyfile text eol=lf
 Dockerfile text eol=lf
+# Drizzle records a hash of each migration file; the same bytes on every checkout keep it stable
+server/db/migrations/*.sql text eol=lf

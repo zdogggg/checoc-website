@@ -2,7 +2,7 @@
   <section class="relative min-h-screen flex items-center bg-brand-dark-green overflow-hidden pt-32 pb-12">
     <!-- Background Image with Overlay -->
     <div class="absolute inset-0 z-0">
-      <img src="https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=1920&auto=format&fit=crop" class="w-full h-full object-cover opacity-40" alt="Background" />
+      <img v-if="image" decoding="async" fetchpriority="high" :src="image" class="w-full h-full object-cover opacity-40" alt="" />
       <div class="absolute inset-0 bg-gradient-to-r from-brand-dark-green via-brand-dark-green/80 to-transparent"></div>
       <div class="absolute inset-0 bg-gradient-to-t from-brand-dark-green via-transparent to-transparent"></div>
     </div>
@@ -29,23 +29,17 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </button>
           
-          <button class="bg-transparent text-white px-8 py-4 rounded-full font-medium hover:bg-white/10 transition-colors flex items-center justify-center gap-3">
-            <div class="w-10 h-10 rounded-full border border-white flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            </div>
-            Xem video giới thiệu
-          </button>
         </div>
 
         <!-- Features -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 border-t border-white/20 pt-8 mt-12">
           <div class="flex items-center sm:items-start gap-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-brand-peach shrink-0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <p class="text-xs text-white/80 leading-tight">Nguyên liệu tươi sạch<br/><span class="font-bold text-white">100% tự nhiên</span></p>
+            <p class="text-xs text-white/80 leading-tight">Chè & ăn vặt<br/><span class="font-bold text-white">nấu mới mỗi ngày</span></p>
           </div>
           <div class="flex items-center sm:items-start gap-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-brand-peach shrink-0"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 12l2 2 4-4"/></svg>
-            <p class="text-xs text-white/80 leading-tight">Chế biến an toàn<br/><span class="font-bold text-white">vệ sinh</span></p>
+            <p class="text-xs text-white/80 leading-tight">Tự chọn độ ngọt<br/><span class="font-bold text-white">đá & topping</span></p>
           </div>
           <div class="flex items-center sm:items-start gap-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-brand-peach shrink-0"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
@@ -56,7 +50,7 @@
       
       <!-- Right Image Area -->
       <div class="relative hidden lg:flex justify-center items-center h-full">
-         <img src="https://images.unsplash.com/photo-1589367920969-19611eb2021c?q=80&w=800&auto=format&fit=crop" class="w-[500px] h-[600px] object-cover rounded-full border-[12px] border-brand-dark-green shadow-2xl relative z-10" alt="Chè Cốc" />
+         <img decoding="async" :src="image || PLACEHOLDER_IMAGE" class="w-[500px] h-[600px] object-cover rounded-full border-[12px] border-brand-dark-green shadow-2xl relative z-10 bg-[#F7F1E5]" alt="Một món chè của Chè Cốc" />
          <!-- Decorative handwritten text -->
          <div class="absolute -right-10 top-20 text-brand-peach font-handwriting text-4xl rotate-12 z-20 max-w-[200px] text-center">
             Một cốc chè là một chút hạnh phúc!
@@ -74,5 +68,7 @@
 </template>
 
 <script setup lang="ts">
+// image: a photo of one of the shop's own dishes (the featured one)
+defineProps<{ image?: string | null }>()
 defineEmits(['explore'])
 </script>

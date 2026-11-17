@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { and, asc, eq, inArray, isNull } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm'
 import type { OrderInput } from '#shared/schemas/orders'
 import type { AdminOrder, OrderItemView, PublicOrder } from '#shared/types/orders'
 import {
@@ -70,6 +70,7 @@ export function toAdminOrder(order: OrderRow & { items: ItemRow[]; logs: LogRow[
     paidAt: order.paidAt?.toISOString() ?? null,
     completedAt: order.completedAt?.toISOString() ?? null,
     cancelledAt: order.cancelledAt?.toISOString() ?? null,
+    refundedAt: order.refundedAt?.toISOString() ?? null,
     timeline: order.logs.map((l) => ({
       status: l.toStatus,
       at: l.createdAt.toISOString(),
@@ -109,8 +110,74 @@ export async function loadPricingInputs(productIds: number[]) {
   return { productMap, options }
 }
 
-// sessionCustomer: the shopper signed in by SMS code, if any (needed to spend points)
+// An order already placed by this checkout attempt (same request id, same phone)
+async function findReplayedOrder(input: OrderInput) {
+  if (!input.requestId) return null
+  const [order] = await useDb()
+    .select()
+    .from(orders)
+    .where(and(eq(orders.requestId, input.requestId), eq(orders.customerPhone, input.phone)))
+  return order ?? null
+}
+
+async function requestIdTaken(requestId: string) {
+  const [row] = await useDb().select({ id: orders.id }).from(orders).where(eq(orders.requestId, requestId))
+  return Boolean(row)
+}
+
+// sessionCustomer: the shopper signed in by SMS code, if any (needed to spend points).
+// replayed: the request was a retry of an order already placed, nothing new was created.
 export async function createOrder(input: OrderInput, sessionCustomer?: { id: number; phone: string }) {
+  const existing = await findReplayedOrder(input)
+  if (existing) return { order: existing, itemCount: 0, replayed: true }
+  try {
+    return { ...(await insertOrder(input, sessionCustomer)), replayed: false }
+  } catch (error) {
+    // Two copies of the same request racing: the second hits the unique request id
+    if ((error as { cause?: { code?: string } })?.cause?.code === '23505') {
+      const order = await findReplayedOrder(input)
+      if (order) return { order, itemCount: 0, replayed: true }
+      // Same id but another phone: not a retry of this customer's order
+      if (input.requestId && (await requestIdTaken(input.requestId))) {
+        throw createError({ statusCode: 409, statusMessage: 'Conflict', message: 'Vui lòng tải lại trang rồi đặt hàng lại' })
+      }
+    }
+    throw error
+  }
+}
+
+// Orders not yet delivered or cancelled that one phone number may have at the same time.
+// A real customer rarely has more than one; this stops someone flooding the shop with fake
+// orders on a number (theirs or someone else's).
+export const MAX_OPEN_ORDERS_PER_PHONE = 3
+
+async function insertOrder(input: OrderInput, sessionCustomer?: { id: number; phone: string }) {
+  // Checkout disables the button outside opening hours; this catches tabs left open
+  if (!useRuntimeConfig().ignoreOpeningHours && !isShopOpen()) {
+    throw createError({
+      statusCode: 409,
+      statusMessage: 'Closed',
+      message: `Quán đang nghỉ, nhận đơn ${SHOP_HOURS_LABEL}. Bạn đặt lại khi quán mở cửa nhé!`,
+    })
+  }
+  const [open] = await useDb()
+    .select({ n: count() })
+    .from(orders)
+    .where(
+      and(
+        eq(orders.customerPhone, input.phone),
+        eq(orders.channel, 'website'),
+        inArray(orders.status, ['pending', 'confirmed', 'preparing', 'shipping'])
+      )
+    )
+  if ((open?.n ?? 0) >= MAX_OPEN_ORDERS_PER_PHONE) {
+    throw createError({
+      statusCode: 429,
+      statusMessage: 'Too Many Requests',
+      message: `Số điện thoại này đang có ${MAX_OPEN_ORDERS_PER_PHONE} đơn chưa giao xong. Vui lòng gọi quán nếu cần đặt thêm.`,
+    })
+  }
+
   const { productMap, options } = await loadPricingInputs([...new Set(input.items.map((i) => i.productId))])
 
   let lines: PricedLine[]
@@ -129,15 +196,15 @@ export async function createOrder(input: OrderInput, sessionCustomer?: { id: num
       const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0)
       coupon = await findUsableCoupon(tx, input.couponCode, subtotal, input.phone)
       await claimCouponUse(tx, coupon.id)
+      await assertPhoneUses(tx, coupon, input.phone)
     }
     const applied = coupon ? toAppliedCoupon(coupon) : null
-    const customer = await upsertCustomerForOrder(tx, {
-      phone: input.phone,
-      name: input.fullName,
-      city: input.city,
-      district: input.district,
-      address: input.address,
-    })
+    // Anyone can type any phone at checkout. Only its signed-in owner may change the saved
+    // name and address book now; for everyone else the address is saved once the order is
+    // delivered (see changeOrderStatus), so a stranger cannot write into someone's account.
+    const owner = sessionCustomer?.phone === input.phone
+    const customer = await upsertCustomerForOrder(tx, { phone: input.phone, name: input.fullName }, owner)
+    if (owner) await rememberAddress(tx, customer.id, input)
 
     // Spending points: only for the signed-in owner of this phone number, within the limits
     let pointsUsed = 0
@@ -168,6 +235,7 @@ export async function createOrder(input: OrderInput, sessionCustomer?: { id: num
       .insert(orders)
       .values({
         trackingToken: randomBytes(16).toString('base64url'),
+        requestId: input.requestId ?? null,
         paymentMethod: input.paymentMethod,
         customerName: input.fullName,
         customerPhone: input.phone,
@@ -200,7 +268,7 @@ export async function createOrder(input: OrderInput, sessionCustomer?: { id: num
 
 // Move an order to a new status. Row-locked so two staff clicking at once cannot
 // both apply a transition; the second one gets a 409 from canTransition.
-export async function changeOrderStatus(id: number, to: OrderStatus, note: string, userId: number) {
+export async function changeOrderStatus(id: number, to: OrderStatus, note: string, userId: number, opts: { confirmUnpaid?: boolean } = {}) {
   const order = await useDb().transaction(async (tx) => {
     const [order] = await tx.select().from(orders).where(eq(orders.id, id)).for('update')
     if (!order) throw createError({ statusCode: 404, statusMessage: 'Order not found' })
@@ -212,11 +280,23 @@ export async function changeOrderStatus(id: number, to: OrderStatus, note: strin
       })
     }
 
+    // A transfer order delivered before the money is seen is easy to forget: ask first
+    if (to === 'completed' && order.paymentMethod === 'vietqr' && order.paymentStatus !== 'paid' && !opts.confirmUnpaid) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'Unpaid transfer',
+        message: 'Đơn chuyển khoản chưa được ghi nhận đã nhận tiền',
+        data: { reason: 'unpaid_transfer' },
+      })
+    }
+
     const now = new Date()
     const patch: Partial<typeof orders.$inferInsert> = { status: to }
     if (to === 'completed') {
       patch.completedAt = now
       patch.pointsEarned = await applyOrderCompletion(tx, order)
+      // Delivered there: the address is the customer's (website orders only)
+      if (order.customerId && order.channel === 'website') await rememberAddress(tx, order.customerId, order)
       // Ingredients leave the stock when the order is done; their cost becomes the order's COGS
       patch.cogs = await consumeOrderStock(tx, id, userId)
       // Cash is collected on delivery

@@ -6,7 +6,8 @@
       <div>
         <div class="flex flex-wrap items-center gap-2">
           <h1 class="font-mono text-3xl font-bold">{{ order.code }}</h1>
-          <span class="text-xs font-semibold px-2.5 py-1 rounded-full" :class="ORDER_STATUS_BADGE[order.status]">{{ ORDER_STATUS_LABELS[order.status] }}</span>
+          <span v-if="order.refundedAt" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-50 text-purple-700">Đã hoàn trả</span>
+          <span v-else class="text-xs font-semibold px-2.5 py-1 rounded-full" :class="ORDER_STATUS_BADGE[order.status]">{{ ORDER_STATUS_LABELS[order.status] }}</span>
         </div>
         <p class="text-sm text-gray-500">
           Đặt lúc {{ formatDateTime(order.createdAt) }}
@@ -17,7 +18,8 @@
         <NuxtLink :to="`/admin/orders/${order.id}/print`" target="_blank" class="admin-btn-secondary"><AppIcon name="printer" /> In phiếu</NuxtLink>
         <button v-if="canCancel" type="button" class="admin-btn-danger" @click="isCancelOpen = true">Huỷ đơn</button>
         <button v-if="canVoid" type="button" class="admin-btn-danger" @click="isCancelOpen = true">Huỷ đơn nhập nhầm</button>
-        <button v-if="forward" type="button" class="admin-btn-primary" :disabled="isBusy" @click="setStatus(forward)">
+        <button v-if="canRefund" type="button" class="admin-btn-danger" @click="isRefundOpen = true">Hoàn trả đơn</button>
+        <button v-if="forward" type="button" class="admin-btn-primary" :disabled="isBusy" @click="moveForward(forward)">
           {{ FORWARD_ACTION_LABELS[forward] }} →
         </button>
       </div>
@@ -29,7 +31,7 @@
           <h2 class="font-bold mb-4">Món ({{ order.items.reduce((n, i) => n + i.quantity, 0) }})</h2>
           <ul class="divide-y divide-gray-100">
             <li v-for="item in order.items" :key="item.id" class="py-3 flex gap-3">
-              <img v-if="item.productImage" :src="item.productImage" :alt="item.productName" class="w-12 h-12 rounded-xl object-cover bg-gray-100 shrink-0">
+              <img v-if="item.productImage" loading="lazy" decoding="async" width="48" height="48" :src="item.productImage" :alt="item.productName" class="w-12 h-12 rounded-xl object-cover bg-gray-100 shrink-0">
               <div class="flex-1 min-w-0 text-sm">
                 <p class="font-semibold"><span class="text-brand-gold font-bold mr-1">{{ item.quantity }}×</span>{{ item.productName }}</p>
                 <p class="text-gray-500 text-xs">{{ [item.sugar, item.ice].filter(Boolean).join(' • ') }}</p>
@@ -104,13 +106,14 @@
           </p>
           <p class="text-gray-600">{{ order.address }}, {{ order.district }}, {{ order.city }}</p>
           <p v-if="order.note" class="bg-amber-50 text-amber-800 rounded-xl px-3 py-2">"{{ order.note }}"</p>
-          <p v-if="order.cancelReason" class="bg-red-50 text-red-700 rounded-xl px-3 py-2">Lý do huỷ: {{ order.cancelReason }}</p>
+          <p v-if="order.cancelReason" class="bg-red-50 text-red-700 rounded-xl px-3 py-2">{{ order.refundedAt ? 'Lý do hoàn trả' : 'Lý do huỷ' }}: {{ order.cancelReason }}</p>
         </section>
 
         <section v-if="!isPlatform" class="admin-card p-6 text-sm space-y-3">
           <h2 class="font-bold">Thanh toán</h2>
           <p class="text-gray-600">{{ PAYMENT_METHOD_LABELS[order.paymentMethod] }}</p>
-          <p v-if="order.pointsEarned" class="text-xs text-green-700">Khách đã được cộng {{ order.pointsEarned.toLocaleString('vi-VN') }} điểm.</p>
+          <p v-if="order.pointsEarned && order.refundedAt" class="text-xs text-gray-500">{{ order.pointsEarned.toLocaleString('vi-VN') }} điểm của đơn đã được trừ lại khi hoàn trả.</p>
+          <p v-else-if="order.pointsEarned" class="text-xs text-green-700">Khách đã được cộng {{ order.pointsEarned.toLocaleString('vi-VN') }} điểm.</p>
           <div class="flex items-center gap-2">
             <span class="text-xs font-semibold px-2.5 py-1 rounded-full" :class="PAYMENT_STATUS_BADGE[order.paymentStatus]">{{ PAYMENT_STATUS_LABELS[order.paymentStatus] }}</span>
             <span v-if="order.paidAt" class="text-xs text-gray-500">{{ formatDateTime(order.paidAt) }}</span>
@@ -163,6 +166,34 @@
         </div>
       </form>
     </AdminModal>
+
+    <AdminModal :open="isRefundOpen" title="Hoàn trả đơn đã giao" @close="isRefundOpen = false">
+      <form class="space-y-4" @submit.prevent="refundOrder">
+        <ul class="text-sm text-gray-600 list-disc pl-5 space-y-1">
+          <li>Đơn không còn tính vào doanh thu và lãi lỗ.</li>
+          <li v-if="order.pointsEarned">Trừ lại {{ order.pointsEarned.toLocaleString('vi-VN') }} điểm khách đã được cộng (trong phạm vi số dư hiện có).</li>
+          <li v-if="order.pointsUsed">Hoàn lại {{ order.pointsUsed.toLocaleString('vi-VN') }} điểm khách đã dùng.</li>
+          <li v-if="order.couponCode">Trả lại lượt dùng mã {{ order.couponCode }}.</li>
+          <li v-if="order.paymentStatus === 'paid'">Thanh toán chuyển sang "Đã hoàn tiền". Nhớ trả tiền cho khách.</li>
+        </ul>
+        <label class="flex items-start gap-2 text-sm">
+          <input v-model="refundRestock" type="checkbox" class="mt-0.5">
+          <span>
+            Trả nguyên liệu về kho
+            <span class="block text-xs text-gray-500">Chỉ chọn khi nguyên liệu còn dùng lại được. Không chọn thì nguyên liệu của đơn được ghi là hao hụt.</span>
+          </span>
+        </label>
+        <div>
+          <label class="admin-label" for="refund-reason">Lý do</label>
+          <input id="refund-reason" v-model="refundReason" class="admin-input" maxlength="255" placeholder="VD: Khách phản ánh món bị đổ">
+          <p v-if="refundError" class="admin-error">{{ refundError }}</p>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button type="button" class="admin-btn-secondary" @click="isRefundOpen = false">Đóng</button>
+          <button type="submit" class="admin-btn-danger" :disabled="isBusy">Xác nhận hoàn trả</button>
+        </div>
+      </form>
+    </AdminModal>
   </div>
 </template>
 
@@ -189,11 +220,13 @@ const canCancel = computed(() => !!order.value && canTransition(order.value.stat
 const isPlatform = computed(() => !!order.value && order.value.channel !== 'website')
 // Undoing an app order changes stock and revenue: managers and owners only (as on the server)
 const canVoid = computed(() => isPlatform.value && order.value?.status === 'completed' && canEditMoney.value)
+// Taking back a delivered website order: managers and owners only (as on the server)
+const canRefund = computed(() => !isPlatform.value && order.value?.status === 'completed' && canEditMoney.value)
 const trackingUrl = computed(() => `${requestUrl.origin}/orders/${order.value?.trackingToken}`)
 
 // Someone else may be working on the same order
 useIntervalFn(() => {
-  if (!isBusy.value && !isCancelOpen.value) refresh()
+  if (!isBusy.value && !isCancelOpen.value && !isRefundOpen.value) refresh()
 }, 20_000)
 
 const isBusy = ref(false)
@@ -215,11 +248,28 @@ async function run(action: () => Promise<AdminOrder>, success: string) {
   }
 }
 
-const setStatus = (status: OrderStatus, note = '') =>
+const setStatus = (status: OrderStatus, note = '', confirmUnpaid = false) =>
   run(
-    () => adminFetch<AdminOrder>(`/api/admin/orders/${route.params.id}/status`, { method: 'POST', body: { status, note } }),
+    () => adminFetch<AdminOrder>(`/api/admin/orders/${route.params.id}/status`, { method: 'POST', body: { status, note, confirmUnpaid } }),
     ORDER_STATUS_LABELS[status]
   )
+
+// Completing a bank-transfer order that is not marked paid: the server asks for an explicit yes.
+// Managers and owners can record the payment first; anyone can still complete it knowingly.
+async function moveForward(status: OrderStatus) {
+  const o = order.value
+  const unpaidTransfer = status === 'completed' && o?.paymentMethod === 'vietqr' && o.paymentStatus !== 'paid'
+  if (!unpaidTransfer) return setStatus(status)
+  if (canEditMoney.value && confirm(`Đơn ${o!.code} trả bằng chuyển khoản nhưng chưa ghi nhận đã nhận tiền.
+
+Đã nhận đủ ${formatVnd(o!.total)}? Bấm OK để đánh dấu đã thanh toán rồi hoàn tất.`)) {
+    if (await setPayment('paid')) await setStatus(status)
+    return
+  }
+  if (confirm(`Hoàn tất đơn ${o!.code} khi CHƯA ghi nhận tiền chuyển khoản? Nhớ kiểm tra lại tài khoản ngân hàng.`)) {
+    await setStatus(status, '', true)
+  }
+}
 
 const setPayment = (paymentStatus: PaymentStatus) =>
   run(
@@ -244,6 +294,28 @@ async function cancelOrder() {
   if (done) {
     isCancelOpen.value = false
     cancelReason.value = ''
+  }
+}
+
+const isRefundOpen = ref(false)
+const refundReason = ref('')
+const refundRestock = ref(false)
+const refundError = ref('')
+
+async function refundOrder() {
+  refundError.value = refundReason.value.trim() ? '' : 'Vui lòng ghi lý do hoàn trả'
+  if (refundError.value) return
+  const done = await run(
+    () => adminFetch<AdminOrder>(`/api/admin/orders/${route.params.id}/refund`, {
+      method: 'POST',
+      body: { reason: refundReason.value.trim(), restock: refundRestock.value },
+    }),
+    'Đã hoàn trả đơn'
+  )
+  if (done) {
+    isRefundOpen.value = false
+    refundReason.value = ''
+    refundRestock.value = false
   }
 }
 

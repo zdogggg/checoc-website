@@ -1,0 +1,82 @@
+# Lint, type check and unit tests on every push and pull request, then the integration tests
+# against a production build of the app with a real PostgreSQL.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint, types, unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      db:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: checoc
+          POSTGRES_PASSWORD: checoc
+          POSTGRES_DB: checoc
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U checoc -d checoc"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://checoc:checoc@localhost:5432/checoc
+      # Throwaway values for this run only
+      ADMIN_EMAIL: ci-owner@example.com
+      ADMIN_PASSWORD: ci-only-password-not-secret
+      TEST_BASE_URL: http://localhost:3000
+      # Turns the SePay webhook on for the bank transfer tests
+      NUXT_SEPAY_WEBHOOK_KEY: ci-sepay-key-not-secret
+      TEST_SEPAY_KEY: ci-sepay-key-not-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Migrate and seed the menu and owner account
+        run: npm run db:seed
+      - name: Start the server
+        run: |
+          NUXT_SESSION_PASSWORD="$(openssl rand -hex 32)" \
+          NUXT_IGNORE_OPENING_HOURS=true \
+          NODE_ENV=production PORT=3000 \
+          nohup node .output/server/index.mjs > server.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3000/api/health && exit 0; sleep 1; done
+          cat server.log; exit 1
+      - run: npm run test:integration
+      - name: Server log
+        if: always()
+        run: cat server.log || true

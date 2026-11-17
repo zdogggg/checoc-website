@@ -19,15 +19,17 @@ export async function notifyNewOrder(order: Order, itemCount: number) {
   await sendTelegram(text)
 }
 
-// Server errors (5xx), at most one message per distinct error every 10 minutes
+// Server errors (5xx), at most one message per distinct error every 10 minutes.
+// The text never carries customer data (see describeErrorForAlert); details stay in the server log.
 const lastAlert = new Map<string, number>()
 export async function notifyServerError(error: Error, path: string) {
-  const key = error.message.slice(0, 200)
+  const summary = describeErrorForAlert(error)
+  const key = `${path} ${summary}`.slice(0, 200)
   const now = Date.now()
   if (now - (lastAlert.get(key) ?? 0) < 10 * 60 * 1000) return
   if (lastAlert.size > 500) lastAlert.clear()
   lastAlert.set(key, now)
-  await sendTelegram(`Lỗi máy chủ tại ${path}\n${error.name}: ${error.message}`.slice(0, 3500))
+  await sendTelegram(`Lỗi máy chủ tại ${redactPath(path)}\n${summary}\nChi tiết: xem log của server.`)
 }
 
 async function sendTelegram(text: string) {
@@ -42,4 +44,13 @@ async function sendTelegram(text: string) {
   } catch (error) {
     console.warn('[notify] Telegram message failed', (error as Error).message)
   }
+}
+
+// A transfer the system could not settle by itself (no matching order, short amount, paid twice)
+export async function notifyTransferToCheck(amount: number, what: string, content: string) {
+  await sendTelegram(
+    [`Chuyển khoản ${amount.toLocaleString('vi-VN')}đ cần kiểm tra: ${what}`, content ? `Nội dung: ${content.slice(0, 200)}` : '']
+      .filter(Boolean)
+      .join('\n')
+  )
 }

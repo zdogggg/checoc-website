@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, sql, sum } from 'drizzle-orm'
-import { ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS, PAYMENT_STATUS_LABELS } from '#shared/utils/orders'
+import { CHANNEL_LABELS, ORDER_STATUS_LABELS, PAYMENT_METHOD_LABELS, PAYMENT_STATUS_LABELS } from '#shared/utils/orders'
 
 // ?kind=orders (one row per order) | products (one row per product, completed orders)
 export default defineEventHandler(async (event) => {
@@ -18,6 +18,8 @@ export default defineEventHandler(async (event) => {
         code: orders.code,
         createdAt: sql<string>`to_char(${orders.createdAt} at time zone 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD HH24:MI')`,
         status: orders.status,
+        channel: orders.channel,
+        externalCode: orders.externalCode,
         customerName: orders.customerName,
         customerPhone: orders.customerPhone,
         district: orders.district,
@@ -29,15 +31,18 @@ export default defineEventHandler(async (event) => {
         shippingFee: orders.shippingFee,
         total: orders.total,
         cogs: orders.cogs,
+        platformFee: orders.platformFee,
         couponCode: orders.couponCode,
       })
       .from(orders)
       .where(range)
       .orderBy(asc(orders.createdAt))
     lines = [
-      ['Mã đơn', 'Thời gian', 'Trạng thái', 'Khách', 'SĐT', 'Quận', 'Thanh toán', 'TT thanh toán', 'Tạm tính', 'Giảm mã', 'Giảm điểm', 'Phí ship', 'Tổng thu', 'Giá vốn', 'Mã giảm giá'],
+      ['Mã đơn', 'Kênh', 'Mã trên app', 'Thời gian', 'Trạng thái', 'Khách', 'SĐT', 'Quận', 'Thanh toán', 'TT thanh toán', 'Tạm tính', 'Giảm mã', 'Giảm điểm', 'Phí ship', 'Tổng thu', 'Giá vốn', 'Phí nền tảng', 'Mã giảm giá'],
       ...rows.map((r) => [
         r.code,
+        CHANNEL_LABELS[r.channel],
+        r.externalCode,
         r.createdAt,
         ORDER_STATUS_LABELS[r.status],
         r.customerName,
@@ -51,6 +56,7 @@ export default defineEventHandler(async (event) => {
         r.shippingFee,
         r.total,
         r.cogs,
+        r.platformFee,
         r.couponCode,
       ]),
     ]
@@ -72,12 +78,7 @@ export default defineEventHandler(async (event) => {
       ...rows.map((r) => [r.name, r.quantity, r.revenue, r.cost, r.revenue - r.cost]),
     ]
   }
-
-  const cell = (v: unknown) => {
-    const s = v == null ? '' : String(v)
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
-  }
   setResponseHeader(event, 'Content-Type', 'text/csv; charset=utf-8')
   setResponseHeader(event, 'Content-Disposition', `attachment; filename="${kind === 'orders' ? 'don-hang' : 'mon-ban'}-${from}_${to}.csv"`)
-  return '﻿' + lines.map((l) => l.map(cell).join(',')).join('\r\n')
+  return toCsv(lines)
 })

@@ -9,7 +9,7 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
 import * as schema from './schema'
 import { seedCategories, seedIce, seedProducts, seedSugar, seedToppings } from './seed-data'
-import { hashPassword } from '../utils/password'
+import { hashStaffPassword } from '../utils/password'
 
 const url = process.env.DATABASE_URL
 if (!url) throw new Error('DATABASE_URL is not set')
@@ -125,7 +125,7 @@ async function seedAdmin() {
   await db.insert(schema.users).values({
     email,
     name: 'Chủ quán',
-    passwordHash: await hashPassword(password),
+    passwordHash: await hashStaffPassword(password),
     role: 'owner',
   })
   console.log(`✔ Created owner account ${email}`)

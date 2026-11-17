@@ -88,6 +88,8 @@ export interface MonthlyPnl {
   // Delivery app commission (ShopeeFood), counted as a selling cost
   platformFees: number
   expenses: number
+  // Ingredients wasted or missing at stock counts (negative: found more than expected)
+  stockLoss: number
   netProfit: number
   expensesByCategory: Partial<Record<ExpenseCategory, number>>
   // Completed orders without a recipe cost (no recipe set up yet)

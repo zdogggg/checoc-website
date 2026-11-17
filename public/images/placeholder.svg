@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Chưa có ảnh món">
+  <rect width="400" height="400" fill="#F7F1E5"/>
+  <g fill="none" stroke="#0D241B" stroke-opacity=".28" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M128 150h144l-16 150a20 20 0 0 1-20 18h-72a20 20 0 0 1-20-18z"/>
+    <path d="M116 150h168"/>
+    <path d="M222 150l26-62h26"/>
+    <path d="M146 210h108" stroke-opacity=".18"/>
+  </g>
+  <circle cx="175" cy="255" r="9" fill="#D9A441" fill-opacity=".45"/>
+  <circle cx="205" cy="270" r="9" fill="#D9A441" fill-opacity=".45"/>
+  <circle cx="228" cy="246" r="9" fill="#D9A441" fill-opacity=".45"/>
+</svg>

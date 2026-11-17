@@ -38,7 +38,7 @@
           <tr v-for="p in filtered" :key="p.id">
             <td>
               <div class="flex items-center gap-3 min-w-[14rem]">
-                <img v-if="p.image" :src="p.image" :alt="p.name" class="w-11 h-11 rounded-xl object-cover bg-gray-100 shrink-0">
+                <img v-if="p.image" loading="lazy" decoding="async" width="44" height="44" :src="p.image" :alt="p.name" class="w-11 h-11 rounded-xl object-cover bg-gray-100 shrink-0">
                 <div v-else class="w-11 h-11 rounded-xl bg-gray-100 shrink-0" />
                 <div class="min-w-0">
                   <NuxtLink :to="`/admin/products/${p.id}`" class="font-semibold hover:underline block truncate">{{ p.name }}</NuxtLink>

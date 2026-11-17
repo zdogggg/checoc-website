@@ -104,3 +104,10 @@ export function formatQty(n: number, unit: string): string {
 export function formatUnitCost(n: number): string {
   return `${n.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}đ`
 }
+
+// Average cost after taking a delivery back out (the inverse of weightedAverageCost)
+export function removeFromAverage(stock: number, avgCost: number, qty: number, cost: number): number {
+  const remaining = stock - qty
+  if (remaining <= 0) return avgCost
+  return Math.max(0, (stock * avgCost - qty * cost) / remaining)
+}

@@ -116,3 +116,59 @@ export async function cancelPurchase(id: number) {
   if (!row) throw createError({ statusCode: 409, statusMessage: 'Conflict', message: 'Chỉ huỷ được phiếu chưa nhận hàng' })
 }
 
+
+// Undo "goods received" (wrong quantity or price typed): the stock and average costs go back to
+// what they were, and the receipt returns to "waiting for goods" so it can be corrected and
+// received again. Refused when part of the delivery has already been used.
+export async function unreceivePurchase(id: number, userId: number) {
+  const { ingredients, stockMovements } = schema
+  await useDb().transaction(async (tx) => {
+    const [po] = await tx.select().from(purchaseOrders).where(eq(purchaseOrders.id, id)).for('update')
+    if (!po) throw createError({ statusCode: 404, statusMessage: 'Purchase not found' })
+    if (po.status !== 'received') {
+      throw createError({ statusCode: 409, statusMessage: 'Conflict', message: 'Phiếu này chưa nhận hàng' })
+    }
+
+    // Lines of the same ingredient are taken back together, at their combined cost
+    const items = await tx.select().from(purchaseItems).where(eq(purchaseItems.purchaseId, id))
+    const byIngredient = new Map<number, { qty: number; value: number }>()
+    for (const i of items) {
+      const cur = byIngredient.get(i.ingredientId) ?? { qty: 0, value: 0 }
+      byIngredient.set(i.ingredientId, { qty: cur.qty + i.quantity, value: cur.value + i.quantity * i.unitCost })
+    }
+
+    const ids = [...byIngredient.keys()].sort((a, b) => a - b)
+    const rows = await tx.select().from(ingredients).where(inArray(ingredients.id, ids)).orderBy(asc(ingredients.id)).for('update')
+    const short = rows.filter((r) => r.stock < byIngredient.get(r.id)!.qty - 1e-9)
+    if (short.length) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'Conflict',
+        message: `Không huỷ được: đã dùng một phần hàng của phiếu này (${short.map((r) => r.name).join(', ')}). Hãy điều chỉnh kho thay vì huỷ nhận hàng.`,
+      })
+    }
+
+    for (const row of rows) {
+      const { qty, value } = byIngredient.get(row.id)!
+      const unitCost = qty > 0 ? value / qty : 0
+      const balance = roundQty(row.stock - qty)
+      await tx
+        .update(ingredients)
+        .set({ stock: balance, avgCost: removeFromAverage(row.stock, row.avgCost, qty, unitCost) })
+        .where(eq(ingredients.id, row.id))
+      // Recorded as a negative delivery so the ingredient's history reads in/out correctly
+      await tx.insert(stockMovements).values({
+        ingredientId: row.id,
+        type: 'in',
+        quantity: roundQty(-qty),
+        balanceAfter: balance,
+        unitCost,
+        purchaseId: id,
+        userId,
+        note: `Huỷ nhận hàng phiếu ${po.code}`,
+      })
+    }
+    await tx.update(purchaseOrders).set({ status: 'draft', receivedAt: null }).where(eq(purchaseOrders.id, id))
+    await syncAutoAvailability(tx, ids)
+  })
+}

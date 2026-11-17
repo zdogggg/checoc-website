@@ -47,6 +47,22 @@ export async function sendMail(message: MailMessage): Promise<void> {
   }
 }
 
+// Confirms a new email on a signed-in account
+export function emailChangeMail(to: string, code: string): MailMessage {
+  return {
+    to,
+    subject: `${code} là mã xác nhận email Chè Cốc`,
+    text: `Mã xác nhận email của bạn là ${code}. Mã có hiệu lực trong 5 phút.\n\nSau khi xác nhận, bạn có thể đăng nhập Chè Cốc bằng email này. Nếu bạn không yêu cầu mã này, hãy bỏ qua email.`,
+    html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:420px;margin:0 auto;padding:24px;color:#0D241B">
+  <p style="font-size:18px;font-weight:bold;margin:0 0 16px">Chè Cốc</p>
+  <p style="margin:0 0 8px">Mã xác nhận email của bạn:</p>
+  <p style="font-size:32px;font-weight:bold;letter-spacing:8px;font-family:'Courier New',monospace;margin:0 0 16px">${code}</p>
+  <p style="margin:0 0 8px;color:#555">Mã có hiệu lực trong 5 phút. Sau khi xác nhận, bạn có thể đăng nhập bằng email này.</p>
+  <p style="margin:0;color:#888;font-size:12px">Nếu bạn không yêu cầu mã này, hãy bỏ qua email.</p>
+</div>`,
+  }
+}
+
 // Login code email; the code is also in the subject so it shows in notification previews
 export function loginCodeMail(to: string, code: string): MailMessage {
   return {

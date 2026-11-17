@@ -42,6 +42,7 @@
             <li><NuxtLink to="/contact" class="hover:text-brand-peach transition-colors">Liên hệ</NuxtLink></li>
             <li><NuxtLink to="/orders" class="hover:text-brand-peach transition-colors">Tra cứu đơn hàng</NuxtLink></li>
             <li><NuxtLink to="/account" class="hover:text-brand-peach transition-colors">Tài khoản & điểm thưởng</NuxtLink></li>
+            <li><NuxtLink to="/privacy" class="hover:text-brand-peach transition-colors">Chính sách bảo mật</NuxtLink></li>
           </ul>
         </div>
 

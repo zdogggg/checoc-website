@@ -1,0 +1,2 @@
+DROP INDEX "orders_channel_external_code_idx";--> statement-breakpoint
+CREATE UNIQUE INDEX "orders_channel_external_code_idx" ON "orders" USING btree ("channel","external_code") WHERE "orders"."status" <> 'cancelled';

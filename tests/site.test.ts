@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { describeAudit } from '#shared/utils/audit'
-import { absoluteUrl } from '#shared/utils/site'
+import { absoluteUrl, isShopOpen } from '#shared/utils/site'
 
 describe('absoluteUrl', () => {
   it('joins origin and path with one slash', () => {
@@ -26,5 +26,23 @@ describe('describeAudit', () => {
     expect(describeAudit('POST', '/api/auth/login', 200)).toBe('Đăng nhập')
     expect(describeAudit('POST', '/api/auth/login', 401)).toBe('Đăng nhập thất bại')
     expect(describeAudit('POST', '/api/admin/something/else', 200)).toBe('POST /api/admin/something/else')
+  })
+})
+
+describe('isShopOpen', () => {
+  // Shop time is UTC+7, so 01:00Z is 08:00 in the shop
+  const at = (utc: string) => new Date(`2026-11-17T${utc}:00Z`)
+  it('follows the opening hours in shop time', () => {
+    expect(isShopOpen(at('00:59'))).toBe(false) // 07:59
+    expect(isShopOpen(at('01:00'))).toBe(true) // 08:00
+    expect(isShopOpen(at('14:59'))).toBe(true) // 21:59
+    expect(isShopOpen(at('15:00'))).toBe(false) // 22:00
+    expect(isShopOpen(at('20:00'))).toBe(false) // 03:00
+  })
+  it('handles hours that run past midnight', () => {
+    const late = { opens: '16:00', closes: '02:00' }
+    expect(isShopOpen(at('18:00'), late)).toBe(true) // 01:00
+    expect(isShopOpen(at('19:00'), late)).toBe(false) // 02:00
+    expect(isShopOpen(at('09:00'), late)).toBe(true) // 16:00
   })
 })

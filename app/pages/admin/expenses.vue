@@ -130,11 +130,15 @@ const cards = computed(() => {
     { label: 'Doanh thu', value: p.revenue, hint: 'Tiền món, không gồm phí ship', cls: '' },
     { label: 'Giá vốn nguyên liệu', value: p.cogs, hint: share(p.cogs), cls: '' },
     { label: 'Lãi gộp', value: p.grossProfit, hint: share(p.grossProfit), cls: tone(p.grossProfit) },
-    // Delivery app commission and operating costs together, so five tiles still fit one row
+    // Operating costs, delivery app commission and stock losses together, so five tiles still fit one row
     {
       label: 'Chi phí',
-      value: p.expenses + p.platformFees,
-      hint: p.platformFees ? `Vận hành ${formatVnd(p.expenses)} · ShopeeFood ${formatVnd(p.platformFees)}` : share(p.expenses),
+      value: p.expenses + p.platformFees + p.stockLoss,
+      hint: [
+        `Vận hành ${formatVnd(p.expenses)}`,
+        p.platformFees ? `ShopeeFood ${formatVnd(p.platformFees)}` : '',
+        p.stockLoss ? `Hao hụt kho ${formatVnd(p.stockLoss)}` : '',
+      ].filter(Boolean).join(' · '),
       cls: '',
     },
     { label: 'Lợi nhuận ròng', value: p.netProfit, hint: share(p.netProfit), cls: tone(p.netProfit) },

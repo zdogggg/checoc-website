@@ -83,6 +83,8 @@ export const couponInput = z
     startsAt: z.coerce.date().nullish(),
     endsAt: z.coerce.date().nullish(),
     usageLimit: z.coerce.number().int().positive().nullish(),
+    // Uses per phone number; null = no limit
+    perPhoneLimit: z.coerce.number().int().positive().nullable().default(1),
     isActive: z.boolean().default(true),
   })
   .refine((c) => c.type !== 'percent' || (c.value > 0 && c.value <= 100), {

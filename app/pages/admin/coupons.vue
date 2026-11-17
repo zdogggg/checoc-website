@@ -88,6 +88,11 @@
             <input id="c-limit" v-model.number="form.usageLimit" type="number" min="1" class="admin-input" placeholder="Không giới hạn">
           </div>
         </div>
+        <div>
+          <label class="admin-label" for="c-phone-limit">Mỗi số điện thoại dùng tối đa</label>
+          <input id="c-phone-limit" v-model.number="form.perPhoneLimit" type="number" min="1" class="admin-input" placeholder="Không giới hạn">
+          <p class="text-xs text-gray-500 mt-1">Để 1 cho mã mỗi khách chỉ dùng một lần. Để trống nếu khách quen được dùng lại.</p>
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="admin-label" for="c-start">Bắt đầu</label>
@@ -128,6 +133,7 @@ interface AdminCoupon {
   startsAt: string | null
   endsAt: string | null
   usageLimit: number | null
+  perPhoneLimit: number | null
   usedCount: number
   isActive: boolean
 }
@@ -181,6 +187,7 @@ const blank = () => ({
   startsAt: '',
   endsAt: '',
   usageLimit: null as number | null | '',
+  perPhoneLimit: 1 as number | null | '',
   isActive: true,
 })
 const form = reactive(blank())
@@ -205,6 +212,7 @@ async function save() {
     value: form.type === 'free_shipping' ? 0 : form.value,
     maxDiscount: form.type === 'percent' ? orNull(form.maxDiscount) : null,
     usageLimit: orNull(form.usageLimit),
+    perPhoneLimit: orNull(form.perPhoneLimit),
     startsAt: form.startsAt ? new Date(form.startsAt) : null,
     endsAt: form.endsAt ? new Date(form.endsAt) : null,
   })

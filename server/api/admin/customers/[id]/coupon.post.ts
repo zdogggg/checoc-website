@@ -2,6 +2,8 @@ import { randomInt } from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import { personalCouponInput } from '#shared/schemas/customers'
 
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
 // A single-use coupon only this customer can redeem (checked against the order phone)
 export default defineEventHandler(async (event) => {
   await requireStaff(event, CATALOG_EDITORS)
@@ -11,9 +13,10 @@ export default defineEventHandler(async (event) => {
   const customer = await db.query.customers.findFirst({ where: eq(schema.customers.id, id), columns: { id: true } })
   if (!customer) throw createError({ statusCode: 404, statusMessage: 'Customer not found' })
 
-  // e.g. KH12-4821; retried on the rare collision
+  // e.g. KH-7QX4M2PD: 8 random characters (no 0/O/1/I), about 10^12 possibilities, so a code
+  // cannot be guessed from the customer number. Retried on the (very unlikely) collision.
   for (let attempt = 0; attempt < 5; attempt++) {
-    const code = `KH${id}-${randomInt(1000, 10000)}`
+    const code = `KH-${Array.from({ length: 8 }, () => CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]).join('')}`
     try {
       const [row] = await db
         .insert(schema.coupons)

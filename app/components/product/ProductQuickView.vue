@@ -20,8 +20,9 @@
 
         <!-- Product Image -->
         <div class="md:w-5/12 relative bg-brand-cream shrink-0 h-56 md:h-auto">
-          <img 
-            :src="product?.image || 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=800&auto=format&fit=crop'" 
+          <img
+loading="lazy" decoding="async" 
+            :src="product?.image || PLACEHOLDER_IMAGE" 
             class="w-full h-full object-cover" 
             :alt="product?.name || 'Chè Cốc'"
           />

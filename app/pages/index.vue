@@ -1,8 +1,8 @@
 <template>
   <div>
-    <HeroSection @explore="scrollToProducts" />
+    <HeroSection :image="bestSeller?.image" @explore="scrollToProducts" />
     
-    <BestSellerHighlight v-if="bestSeller" @add-to-cart="handleAddToCart(bestSeller)" />
+    <BestSellerHighlight v-if="bestSeller" :product="bestSeller" @add-to-cart="handleAddToCart(bestSeller)" />
 
     <div id="products-section">
       <CategorySection 
@@ -16,11 +16,11 @@
       />
     </div>
 
-    <BrandStory />
+    <BrandStory :photos="photos.slice(0, 3)" />
     
     <WhyChooseUs />
     
-    <GallerySection />
+    <GallerySection :photos="photos" />
     
     
     <OrderCTA @order="uiStore.toggleCartDrawer" />
@@ -49,6 +49,15 @@ const { data: products } = await useProducts()
 const activeCategoryId = ref(ALL_CATEGORY_ID)
 
 const bestSeller = computed(() => products.value.find(p => p.badge === 'best-seller') ?? products.value[0])
+
+// The shop's own dish photos for the decorative sections (no stock photos)
+const photos = computed(() => {
+  const seen = new Set<string>()
+  return products.value
+    .filter((p) => p.image && !seen.has(p.image) && seen.add(p.image))
+    .slice(0, 6)
+    .map((p) => ({ url: p.image, title: p.name, slug: p.slug }))
+})
 
 const origin = useSiteOrigin()
 useSeoMeta({

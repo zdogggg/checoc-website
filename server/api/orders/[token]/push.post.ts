@@ -2,7 +2,7 @@ import { pushSubscriptionInput } from '#shared/schemas/push'
 
 // Follow this order: the browser gets a notification at each status change
 export default defineEventHandler(async (event) => {
-  rateLimit(event, 'push', 30, 10 * 60 * 1000)
+  await rateLimit(event, 'push', 30, 10 * 60 * 1000)
   if (!isPushConfigured()) throw createError({ statusCode: 503, statusMessage: 'Push not configured' })
   const order = await findOrderByToken(event)
   if (isFinalStatus(order.status)) {

@@ -1,7 +1,7 @@
 # Chè Cốc — Plan hoàn thiện: Backend, CRUD, ERP, CRM
 
 > Viết ngày 26/10/2026, dựa trên code ở commit `71052c2`.
-> Bổ sung cho `che-coc-website-plan.md` (bản đó vẫn ghi Nuxt 3 + Laravel; code thực tế là **Nuxt 4**).
+> Bổ sung cho bản kế hoạch website ban đầu (`che-coc-website-plan.md`, đã xoá khỏi repo, xem lịch sử git; bản đó ghi Nuxt 3 + Laravel, code thực tế là **Nuxt 4**).
 
 ---
 

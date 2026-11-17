@@ -1,14 +1,15 @@
 import { and, count, eq, lte, max } from 'drizzle-orm'
 
 // Cheap endpoint polled by the admin layout: pending count for the badge,
-// latest id so the browser can tell a new order arrived and play a sound
+// latest website order id so the browser can tell a new order arrived and play a sound
 export default defineEventHandler(async (event) => {
   await requireStaff(event)
   const { orders } = schema
   const { ingredients } = schema
   const [[pending], [latest], [low]] = await Promise.all([
     useDb().select({ n: count() }).from(orders).where(eq(orders.status, 'pending')),
-    useDb().select({ id: max(orders.id) }).from(orders),
+    // Website orders only: ShopeeFood orders are entered by staff, they are not news to the shop
+    useDb().select({ id: max(orders.id) }).from(orders).where(eq(orders.channel, 'website')),
     // Ingredients at or below their minimum (badge on "Kho nguyên liệu")
     useDb()
       .select({ n: count() })

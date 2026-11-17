@@ -50,6 +50,9 @@
         <div class="text-brand-cream/60 text-xs truncate mb-3">
           {{ user?.email }} · {{ ROLE_LABELS[user?.role ?? ''] }}
         </div>
+        <button type="button" class="text-xs text-brand-cream/70 underline hover:text-brand-cream -mt-2 mb-3" @click="isPasswordOpen = true">
+          Đổi mật khẩu
+        </button>
         <div class="flex gap-2">
           <NuxtLink to="/" target="_blank" class="flex-1 text-center text-xs py-2 rounded-lg bg-white/10 hover:bg-white/15">
             Xem website
@@ -67,12 +70,16 @@
       </div>
     </main>
 
+    <PasswordChangeModal :open="isPasswordOpen" @close="isPasswordOpen = false" />
     <AppToast />
   </div>
 </template>
 
 <script setup lang="ts">
 import AppToast from '~/components/common/AppToast.vue'
+import PasswordChangeModal from '~/components/admin/PasswordChangeModal.vue'
+
+const isPasswordOpen = ref(false)
 
 const route = useRoute()
 const { user, clear } = useUserSession()
@@ -135,10 +142,20 @@ async function logout() {
 
 // New-order watch: badge with the pending count, plus a chime and a toast when an order arrives
 const uiStore = useUiStore()
-const { data: pulse, refresh: refreshPulse } = await useFetch<{ pending: number; latestId: number; lowStock: number }>('/api/admin/orders/pulse', {
+const { data: pulse, refresh: refreshPulse, error: pulseError } = await useFetch<{ pending: number; latestId: number; lowStock: number }>('/api/admin/orders/pulse', {
   key: 'admin:pulse',
 })
 useIntervalFn(refreshPulse, 20_000)
+
+// The poll also notices a session ended on the server (password changed, account locked)
+const endStaffSession = useStaffSessionEnd()
+watch(
+  () => pulseError.value?.statusCode,
+  (status) => {
+    if (status === 401 && import.meta.client) endStaffSession(route.fullPath)
+  },
+  { immediate: true }
+)
 
 watch(
   () => pulse.value?.latestId,

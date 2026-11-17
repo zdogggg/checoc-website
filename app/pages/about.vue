@@ -1,14 +1,51 @@
 <template>
-  <div class="pt-32 pb-20 container mx-auto px-6 min-h-screen">
-    <h1 class="font-heading text-4xl text-brand-dark-green font-bold mb-6">Về chúng tôi</h1>
-    <div class="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-brand-dark-green/10 text-brand-dark-green max-w-4xl">
-      <p class="text-lg leading-relaxed mb-6 font-medium">Chè Cốc ra đời từ niềm đam mê với những món ngọt truyền thống Việt Nam, kết hợp cùng phong cách thưởng thức hiện đại.</p>
-      <p class="text-gray-600 mb-4">Với mong muốn mang đến những ly chè không chỉ ngon miệng mà còn tốt cho sức khỏe, chúng tôi luôn chọn lọc những nguyên liệu tự nhiên tươi ngon nhất, từ hạt sen Đồng Tháp, nhãn lồng Hưng Yên đến sương sáo thanh mát.</p>
-      <p class="text-gray-600 mb-8">Nội dung chi tiết đang được đội ngũ cập nhật...</p>
-      <NuxtLink to="/" class="inline-flex items-center gap-2 bg-[#F6B99F] text-brand-dark-green font-bold px-6 py-3 rounded-full hover:bg-[#f3a886] transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        Quay lại trang chủ
-      </NuxtLink>
+  <div class="pt-28 sm:pt-32 pb-20 min-h-screen bg-[var(--color-cream)]">
+    <div class="container mx-auto max-w-4xl px-4 sm:px-6 text-brand-dark-green">
+      <h1 class="font-heading text-3xl sm:text-4xl font-bold mb-3">Về Chè Cốc</h1>
+      <p class="text-lg text-gray-700 mb-10 max-w-2xl">
+        Chè Cốc là quán chè và đồ ăn vặt ở {{ SHOP.address.city }}. Món được nấu mới mỗi ngày, bạn ghé quán hoặc đặt online để quán giao tận nơi.
+      </p>
+
+      <div class="grid gap-6 sm:grid-cols-2">
+        <section class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100">
+          <h2 class="font-heading text-xl font-bold mb-3">Quán bán gì</h2>
+          <p class="text-gray-600 mb-4">Chè truyền thống, chè Thái, chè khúc bạch và các món ăn vặt. Mỗi ly chè đều chọn được độ ngọt, lượng đá và thêm topping theo ý bạn.</p>
+          <NuxtLink to="/products" class="font-bold underline">Xem thực đơn →</NuxtLink>
+        </section>
+
+        <section class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100">
+          <h2 class="font-heading text-xl font-bold mb-3">Đặt online thế nào</h2>
+          <ul class="text-gray-600 space-y-2 list-disc pl-5">
+            <li>Chọn món, nhập địa chỉ trong {{ DELIVERY_CITY }} rồi đặt, không cần tạo tài khoản.</li>
+            <li>Trả tiền mặt khi nhận hàng<template v-if="bankReady"> hoặc chuyển khoản qua mã QR</template>.</li>
+            <li>Theo dõi đơn bằng đường link quán gửi sau khi đặt.</li>
+          </ul>
+        </section>
+
+        <section class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100">
+          <h2 class="font-heading text-xl font-bold mb-3">Tích điểm, đổi quà</h2>
+          <p class="text-gray-600 mb-4">Mỗi đơn hoàn tất được cộng điểm, đủ điểm thì trừ thẳng vào tiền món ở lần đặt sau. Khách quen còn được lên hạng để tích điểm nhanh hơn.</p>
+          <NuxtLink to="/account" class="font-bold underline">Tài khoản & điểm thưởng →</NuxtLink>
+        </section>
+
+        <section class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100">
+          <h2 class="font-heading text-xl font-bold mb-3">Ghé quán</h2>
+          <ul class="text-gray-600 space-y-2">
+            <li class="flex gap-2"><AppIcon name="pin" class="mt-1 shrink-0" /><a :href="SHOP_MAP_URL" target="_blank" rel="noopener" class="underline">{{ SHOP_ADDRESS_LINE }}</a></li>
+            <li class="flex gap-2"><AppIcon name="clock" class="mt-1 shrink-0" />Mở cửa {{ SHOP_HOURS_LABEL }}</li>
+            <li class="flex gap-2"><AppIcon name="phone" class="mt-1 shrink-0" /><a :href="`tel:${SHOP.phone}`" class="underline">{{ SHOP.phone }}</a> (gọi hoặc Zalo)</li>
+          </ul>
+        </section>
+      </div>
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+const bankReady = isBankConfigured(useRuntimeConfig().public.bank)
+
+useSeoMeta({
+  title: 'Về chúng tôi — Chè Cốc',
+  description: `${SHOP.description} Địa chỉ: ${SHOP_ADDRESS_LINE}.`,
+})
+</script>
