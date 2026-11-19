@@ -1,5 +1,5 @@
 # ---- deps: install node_modules once, shared by the other stages ----
-FROM node:22-alpine AS deps
+FROM node:26-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # ---- prod: small runtime image, only .output is needed ----
-FROM node:22-alpine AS prod
+FROM node:26-alpine AS prod
 WORKDIR /app
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
 COPY --from=build /app/.output ./.output
