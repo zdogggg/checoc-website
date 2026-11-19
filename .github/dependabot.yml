@@ -1,0 +1,30 @@
+# Monthly pull requests that update dependencies. Minor and patch updates of npm packages come
+# grouped in one PR; major versions arrive one per PR so each can be checked on its own.
+# CI (.github/workflows/ci.yml) runs the full test suite on every one of them.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  # Node base image in the Dockerfile
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
+
+  # PostgreSQL, Caddy and the backup image in docker-compose.prod.yml
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

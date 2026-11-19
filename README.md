@@ -1,7 +1,7 @@
 # Chè Cốc
 
-Website bán chè & đồ ăn vặt — Nuxt 4, Pinia, Tailwind CSS.
-Lộ trình backend / CRUD / ERP / CRM: [docs/plan-crud-erp-crm.md](docs/plan-crud-erp-crm.md).
+Website bán chè & đồ ăn vặt kèm trang quản trị (đơn hàng, khách hàng, kho, báo cáo) —
+Nuxt 4, PostgreSQL (Drizzle ORM), Pinia, Tailwind CSS. Deploy lên VPS: [docs/deploy.md](docs/deploy.md).
 
 ## Chạy bằng Docker (khuyên dùng)
 
@@ -49,7 +49,8 @@ npm run dev
 | `npm run lint` / `npm run lint:fix` | ESLint |
 | `npm run typecheck` | Kiểm tra kiểu TypeScript (chạy trong container: `docker compose exec frontend npm run typecheck`) |
 | `npm run format` | Prettier |
-| `npm test` | Vitest (`tests/`) |
+| `npm test` | Unit test (`tests/*.test.ts`, không cần database) |
+| `npm run test:integration` | Test tích hợp (`tests/integration/`) gọi API thật: cần server đang chạy và `DATABASE_URL`. Trong container dev: `docker compose exec frontend npm run test:integration` |
 | `npm run build` | Build production vào `.output/` |
 | `npm run db:generate` | Sinh migration mới sau khi sửa `server/db/schema.ts` |
 | `npm run db:seed` | Nạp dữ liệu mẫu + tạo tài khoản chủ quán |
@@ -72,7 +73,13 @@ npm run dev
 - Mã đơn tuần tự (`CC1001`, ...) để đọc qua điện thoại; khách theo dõi đơn qua link có token ngẫu nhiên.
 - Trạng thái: chờ xác nhận → đã xác nhận → đang chuẩn bị → đang giao → hoàn tất (huỷ được ở mọi bước trước hoàn tất,
   bắt buộc ghi lý do; huỷ đơn trả lại lượt dùng mã giảm giá). Đơn COD tự chuyển "đã thanh toán" khi hoàn tất.
-- Chuyển khoản VietQR: cấu hình `NUXT_PUBLIC_BANK_*` trong `.env`; quán xác nhận đã nhận tiền thủ công trong trang đơn.
+- Chuyển khoản VietQR: cấu hình `NUXT_PUBLIC_BANK_*` trong `.env`. Có SePay (`NUXT_SEPAY_WEBHOOK_KEY`, xem
+  docs/deploy.md) thì đơn tự chuyển "đã thanh toán" khi tiền về; không có thì quản lý đánh dấu tay trong trang đơn.
+  Hoàn tất một đơn chuyển khoản chưa nhận tiền cần xác nhận thêm. Chuyển thiếu, chuyển dư, chuyển cho đơn đã huỷ hay
+  cho đơn COD đều được báo qua Telegram.
+- Hoàn trả đơn đã giao (`/admin/orders/:id`, quản lý / chủ quán): đơn rời doanh thu, trả lại điểm và lượt mã giảm giá;
+  nguyên liệu nhập lại kho hoặc ghi hao hụt. Huỷ đơn đã thanh toán sẽ nhắc hoàn tiền cho khách.
+- Một số điện thoại có tối đa 3 đơn chưa giao xong; ngoài giờ mở cửa (`shared/utils/site.ts`) không nhận đơn.
 - Thông báo đơn mới: trang admin tự kiểm tra mỗi 20 giây (badge, tiếng chuông, toast); thêm Telegram nếu cấu hình
   `NUXT_TELEGRAM_*`.
 - Giờ hiển thị luôn theo múi giờ của quán (Asia/Ho_Chi_Minh).
@@ -140,8 +147,8 @@ npm run dev
 - `public/manifest.webmanifest` + icon trong `public/icons/`: khách bấm "Thêm vào Màn hình chính" (iPhone: nút Chia sẻ
   trong Safari) là có biểu tượng Chè Cốc, mở toàn màn hình.
 - Service worker `public/sw.js` (chỉ đăng ký ở production): lưu sẵn file build và ảnh món để mở nhanh; trang luôn lấy
-  từ mạng (giá, tình trạng món, tài khoản luôn mới); mất mạng thì hiện `public/offline.html`. Đổi `VERSION` trong
-  `sw.js` khi sửa cách cache.
+  từ mạng (giá, tình trạng món, tài khoản luôn mới); mất mạng thì hiện `public/offline.html`. Mỗi lần deploy, service
+  worker được đăng ký lại theo build id nên cache cũ tự bị thay, không cần sửa tay.
 - **Thông báo đẩy** theo từng đơn: trang theo dõi đơn có nút "Bật thông báo"; mỗi lần quán đổi trạng thái, khách nhận
   thông báo kể cả khi đã đóng trang. Trên iPhone chỉ hoạt động khi mở từ màn hình chính (iOS 16.4 trở lên).
   Cấu hình `NUXT_PUBLIC_VAPID_PUBLIC_KEY`, `NUXT_VAPID_PRIVATE_KEY`, `NUXT_VAPID_SUBJECT`
@@ -154,6 +161,29 @@ npm run dev
 - Canonical, Open Graph cho mọi trang; JSON-LD `Restaurant` ở trang chủ và `Product` ở trang món
   (thông tin quán trong `shared/utils/site.ts`). Trang riêng tư (admin, thanh toán, theo dõi đơn) có `noindex`.
 - `NUXT_PUBLIC_INDEXABLE=false` cho bản staging để chặn công cụ tìm kiếm.
+
+## Ảnh món
+
+- Ảnh tải lên trong trang quản trị được xoay đúng chiều, xoá thông tin máy chụp / vị trí GPS, thu về tối đa 1600px và
+  lưu dạng WebP (`server/api/admin/uploads.post.ts`). Bản 200 / 400 / 800px được tạo khi có người xem lần đầu
+  (`server/routes/uploads/[name].get.ts`) để thẻ món, giỏ hàng không tải ảnh lớn.
+- Món chưa có ảnh dùng `public/images/placeholder.svg`. Trang chủ chỉ dùng ảnh món thật của quán.
+
+## Bảo mật & dữ liệu khách
+
+- Link theo dõi đơn chỉ hiện đầy đủ tên, địa chỉ trên trình duyệt đã đặt đơn (30 ngày) hoặc khi khách đăng nhập;
+  ai tra cứu bằng mã đơn + SĐT chỉ thấy bản che bớt. Tra cứu sai 5 lần cho một SĐT bị khoá 15 phút.
+- Phiên đăng nhập: nhân viên 14 ngày, khách 60 ngày; khách có nút "Đăng xuất khỏi thiết bị khác".
+- Chủ quán xoá được dữ liệu cá nhân của một khách (`/admin/customers/:id`), đơn vẫn giữ cho sổ sách.
+- Nhân viên (vai trò `staff`) không thấy doanh thu; tiền, mã giảm giá, thực đơn chỉ quản lý / chủ quán sửa.
+- Cảnh báo lỗi máy chủ qua Telegram không chứa thông tin khách, tối đa 20 tin mỗi giờ.
+
+## Kiểm thử & CI
+
+- `.github/workflows/ci.yml` chạy lint, typecheck, unit test, rồi build bản production và chạy test tích hợp với
+  PostgreSQL thật cho mỗi push / pull request.
+- Test tích hợp tạo dữ liệu có dấu riêng (SĐT `090999…`, mã `ITEST…`, nguyên liệu `ZZ-IT …`) và tự dọn sau khi chạy.
+- Dependabot (`.github/dependabot.yml`) mở pull request nâng cấp thư viện, image Docker và GitHub Actions mỗi tháng.
 
 ## Production
 

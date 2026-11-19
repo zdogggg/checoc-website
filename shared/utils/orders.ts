@@ -48,10 +48,6 @@ export function canTransition(from: OrderStatus, to: OrderStatus): boolean {
   return TRANSITIONS[from].includes(to)
 }
 
-export function nextStatuses(from: OrderStatus): OrderStatus[] {
-  return TRANSITIONS[from]
-}
-
 // The "move forward" action for a status, if any (cancel is offered separately)
 export function nextForwardStatus(from: OrderStatus): OrderStatus | null {
   return TRANSITIONS[from].find((s) => s !== 'cancelled') ?? null

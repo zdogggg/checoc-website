@@ -2,8 +2,17 @@
 #   docker compose -f docker-compose.prod.yml up -d --build
 # Full guide: docs/deploy.md
 
+# Docker keeps container logs forever by default; on a small VPS that slowly fills the disk.
+# Each service keeps at most 3 files of 10 MB.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   app:
+    logging: *logging
     build:
       context: .
       target: prod
@@ -22,6 +31,7 @@ services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging: *logging
     environment:
       POSTGRES_USER: checoc
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
@@ -39,6 +49,7 @@ services:
   backup:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging: *logging
     environment:
       PGHOST: db
       PGUSER: checoc
@@ -63,6 +74,7 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    logging: *logging
     ports:
       - "80:80"
       - "443:443"
